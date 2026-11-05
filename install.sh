@@ -7,7 +7,7 @@
 set -eu
 
 REPO="verziqp-ops/NIROVALauncher"
-BASE="https://github.com/$REPO/releases/latest/download"
+API="https://api.github.com/repos/$REPO/releases?per_page=100"
 
 case "$(uname -s)" in
   Linux)
@@ -24,8 +24,18 @@ case "$(uname -s)" in
     ;;
 esac
 
+# Game releases and launcher releases share this repository. Select the newest published
+# launcher@ tag explicitly instead of GitHub's repository-wide /releases/latest alias.
+RELEASES_JSON="$(curl -fsSL "$API")"
+TAG="$(printf '%s\n' "$RELEASES_JSON" | sed -nE 's/^[[:space:]]*"tag_name":[[:space:]]*"(launcher@[^"]+)".*/\1/p' | head -n 1)"
+if [ -z "$TAG" ]; then
+  echo "No published NIROVA Launcher release was found. Download it from GitHub Releases." >&2
+  exit 1
+fi
+BASE="https://github.com/$REPO/releases/download/$TAG"
+
 echo "NIROVA Launcher"
-echo "  Downloading $ASSET"
+echo "  Downloading $ASSET ($TAG)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 curl -fL --progress-bar "$BASE/$ASSET" -o "$TMP/$ASSET"
