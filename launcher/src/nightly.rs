@@ -14,7 +14,7 @@ use horizon_release_sign::NIGHTLY;
 pub const INSTANCE: &str = "nightly";
 
 /// The version a nightly installs as: `nightly-2026-10-28-0c02067`, from its title
-/// ("Nightly 2026-10-28 · 0c02067"), else its publication date.
+/// ("Preview 2026-10-28 · 0c02067"), else its publication date.
 pub fn version_of(release: &Release) -> String {
     let mut words = release
         .name
@@ -37,13 +37,13 @@ pub fn date_of(version: &str) -> Option<&str> {
     is_date(date).then_some(date)
 }
 
-/// A Nightly's version as a player reads it: `Nightly · 4baa571` for `nightly-2026-10-29-4baa571`,
+/// A Nightly's version as a player reads it: `Preview · 4baa571` for `nightly-2026-10-29-4baa571`,
 /// or None for anything that is not one. The date is already on the row beside it.
 pub fn label(version: &str) -> Option<String> {
     date_of(version)?;
     let commit = version.strip_prefix("nightly-")?.get(11..);
     Some(match commit {
-        Some(commit) if !commit.is_empty() => format!("Nightly · {commit}"),
+        Some(commit) if !commit.is_empty() => format!("Preview · {commit}"),
         _ => "Nightly".to_owned(),
     })
 }
@@ -113,7 +113,7 @@ mod tests {
 
     #[test]
     fn a_nightly_installs_under_its_date_and_commit() {
-        let r = release("Nightly 2026-10-28 · 0c02067", "2026-10-28");
+        let r = release("Preview 2026-10-28 · 0c02067", "2026-10-28");
         assert_eq!(version_of(&r), "nightly-2026-10-28-0c02067");
         let untitled = release("Something else", "2026-10-29");
         assert_eq!(version_of(&untitled), "nightly-2026-10-29");
@@ -124,10 +124,10 @@ mod tests {
     }
 
     #[test]
-    fn a_nightly_reads_as_its_commit() {
+    fn a_preview_reads_as_its_commit() {
         assert_eq!(
             label("nightly-2026-10-29-4baa571").as_deref(),
-            Some("Nightly · 4baa571")
+            Some("Preview · 4baa571")
         );
         assert_eq!(label("nightly-2026-10-29").as_deref(), Some("Nightly"));
         assert_eq!(label("v0.2.97"), None);
