@@ -106,7 +106,7 @@ jobs:
           case "${{ matrix.name }}" in
             windows)
               cp "./$out/${{ matrix.binary }}" ../dist/nirova-launcher.exe
-              7z a -tzip ../dist/${{ matrix.asset }} ../dist/nirova-launcher.exe > /dev/null ;;
+              (cd ../dist && 7z a -tzip "${{ matrix.asset }}" nirova-launcher.exe > /dev/null) ;;
             linux)
               tar -czf ../dist/${{ matrix.asset }} --transform='s,^horizon-launcher$,nirova-launcher,' -C "$out" ${{ matrix.binary }} ;;
             macos*)
