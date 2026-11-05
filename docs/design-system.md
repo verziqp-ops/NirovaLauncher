@@ -49,11 +49,11 @@ Every text colour passes WCAG AA (4.5:1) on every background it is used on; the 
 | `rule`       | `#d5e1e8` | `#35495a` | 1 px rules between rows, tracks |
 | `ink`        | `#182a36` | `#f0f6fa` | text, selection, slider fill, the inverted segment |
 | `ink_soft`   | `#3e5665` | `#c7d7e2` | secondary text, values |
-| `muted`      | `#536b7a` | `#9db2c1` | labels, descriptions, mono indices and details |
-| `accent`     | `#347b95` | `#a8d8e8` | the main action, links, focus, progress |
+| `muted`      | `#4b6271` | `#b9cbd6` | labels, descriptions, mono indices and details |
+| `accent`     | `#28647a` | `#a8d8e8` | the main action, links, focus, progress |
 | `on_accent`  | `#ffffff` | `#142630` | text on the accent |
-| `danger`     | `#b4372a` | `#f07a68` | errors, the crash notice's dot |
-| `success`    | `#1d7a48` | `#45c27a` | "Matches vanilla", "Ready" |
+| `danger`     | `#a3301d` | `#ffb3a8` | errors, the crash notice's dot |
+| `success`    | `#136336` | `#7ae2a9` | "Matches vanilla", "Ready" |
 
 The game's menus draw over the live title backdrop, always in the dark palette, with the page
 colour as a flat veil so text keeps its contrast whatever the world shows: `VEIL` (0.90) on
@@ -231,15 +231,15 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
 | Token       | Night     | Dawn      | Use |
 |-------------|-----------|-----------|-----|
 | `sky-0…5`   | `#111923` `#172331` `#1b2b3a` `#202f3e` `#243445` `#293a4a` | `#e2eaf0` `#e6edf2` `#ebf0f4` `#e5edf2` `#dfe9ef` `#d7e3eb` | the sky, top to horizon |
-| `card`      | `#15112e` at 84 % | `#fdfcff` at 86 % | plates |
-| `card-hi`   | `#231c4a` at 90 % | `#ffffff` at 94 % | a selected or raised plate |
-| `stroke`, `rule` | `#b9acff` at 12 %, 10 % | `#3b2f78` at 12 %, 10 % | a plate's inner stroke, rules between rows |
-| `ink`       | `#f4f2ff` | `#1b1530` | text |
-| `ink-soft`  | `#cfc9ea` | `#3b3354` | secondary text |
-| `muted`     | `#a59fc6` | `#585071` | labels, details |
-| `accent`    | `#7656fa` | `#5b3fd6` | the main action, progress |
-| `accent-hi` | `#a08cff` | `#5333c9` | accent text, focus ring |
-| `success`, `warn`, `danger` | `#5fd39a` `#f5b45a` `#ff8a78` | `#136336` `#7a4f00` `#a3301d` | Ready, updates, errors |
+| `card`      | `#1c2a38` at 84 % | `#f6f9fb` at 86 % | plates |
+| `card-hi`   | `#28394a` at 90 % | `#ffffff` at 94 % | a selected or raised plate |
+| `stroke`, `rule` | `#7892a7` at 12 %, 10 % | `#7892a7` at 12 %, 10 % | a plate's inner stroke, rules between rows |
+| `ink`       | `#edf5fa` | `#1b2a36` | text |
+| `ink-soft`  | `#c9d9e5` | `#405363` | secondary text |
+| `muted`     | `#b9cbd6` | `#506776` | labels, details |
+| `accent`    | `#a9dceb` | `#2d6d84` | the main action, progress |
+| `accent-hi` | `#c4eaf5` | `#2d6d84` | accent text, focus ring |
+| `success`, `warn`, `danger` | `#7ae2a9` `#f5c66e` `#ffb3a8` | `#136336` `#7a4f00` `#a3301d` | Ready, updates, errors |
 
 - **Motion that means something**: the sky drifts slowly and stops when the window is hidden or
   unfocused; the interface moves only to show cause and effect (a row arrives where it was added,
