@@ -914,9 +914,7 @@ impl Launcher {
                                 continue;
                             }
                         };
-                        // Past the gate by the developer option alone is no owner, and in this
-                        // fork (`account::GATE_OPEN`) only a session means one: no owner plays
-                        // offline too.
+                        // A session file is only created after the ownership gate succeeds.
                         if file.is_some() {
                             self.owner = Some(true);
                         }
