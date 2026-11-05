@@ -1,9 +1,9 @@
-//! Horizon's design tokens, the one source of truth for the launcher (`launcher/src/theme.rs`),
+//! NIVRORA's design tokens, the one source of truth for the launcher (`launcher/src/theme.rs`),
 //! the game's on-screen keyboard (`horizon-client`'s `ui_theme`) and the website (`tokens.css` in this crate,
 //! generated from [`css`] by `cargo run -p xtask -- tokens`, which the site's build reads from main). Change a value here and all three
 //! follow. The system is described in `docs/design-system.md`.
 //!
-//! Cool neutrals in two appearances and one violet accent; Geist and Geist Mono, bundled here
+//! Cool neutrals in two appearances and one milk-blue accent; Geist and Geist Mono, bundled here
 //! under the SIL Open Font License (`fonts/OFL-Geist.txt`). The launcher's night look and its
 //! Bricolage Grotesque are in [`night`]. Colours are `0xRRGGBB`; sizes
 //! are in logical pixels.
@@ -27,7 +27,7 @@ pub mod fonts {
     pub const PIXEL_MEDIUM: &[u8] = include_bytes!("../fonts/PixelifySans-Medium.ttf");
     pub const PIXEL_SEMIBOLD: &[u8] = include_bytes!("../fonts/PixelifySans-SemiBold.ttf");
     pub const PIXEL_BOLD: &[u8] = include_bytes!("../fonts/PixelifySans-Bold.ttf");
-    /// [`crate::night`]'s faces, cut from upstream's variable font by `tools/bake_bricolage.py`.
+    /// [`crate::night`]'s faces, cut from the bundled variable font by `tools/bake_bricolage.py`.
     pub const BRICOLAGE_REGULAR: &[u8] = include_bytes!("../fonts/BricolageGrotesque-Regular.ttf");
     pub const BRICOLAGE_MEDIUM: &[u8] = include_bytes!("../fonts/BricolageGrotesque-Medium.ttf");
     pub const BRICOLAGE_SEMIBOLD: &[u8] =
@@ -92,7 +92,7 @@ pub mod icons {
     }
 }
 
-/// Horizon's icon at 64 px (PNG), for window title bars and task bars at run time. Rendered from
+/// NIVRORA's icon at 64 px (PNG), for window title bars and task bars at run time. Rendered from
 /// `docs/media/brand/icon.svg` by `cargo run -p xtask -- icons`.
 pub const ICON_PNG: &[u8] = include_bytes!("../icons/nivrora-64.png");
 
