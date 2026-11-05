@@ -49,3 +49,7 @@ DMG и ZIP создаются из app bundle `NIROVA.app`. Сейчас скр�
 ## Ограничение проверки
 
 Сборка на GitHub Actions проверяет компиляцию и тесты. Она не заменяет проверку установки и первого запуска на реальных Windows, Linux и macOS системах. До такой проверки релиз нельзя называть полностью подтверждённым.
+
+## Brand migration boundary
+
+The launcher package and public binary are named `nirova-launcher`. Some internal Rust crate names, source directories, environment variables, game executable names and legacy archive aliases still contain `horizon`. They are compatibility identifiers used across the game engine, updater, user data and release verification; changing them with a blind text replacement could break builds, saves or existing installations. They should be renamed in small dependency-aware changes, with `cargo metadata`, lockfile, installer, update and migration tests. These identifiers are not the product name shown in the launcher.
