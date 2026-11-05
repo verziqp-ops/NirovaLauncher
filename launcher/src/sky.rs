@@ -191,9 +191,8 @@ const STAR_LEVELS: [f32; 4] = [0.95, 0.6, 0.3, 0.6];
 /// different layers share frames: two a second at most.
 const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
-/// How the sky moves: not at all under the system's reduced motion (macOS) or with
-/// `NIVRORA_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
-/// `NIVRORA_LAUNCHER_MOTION=always`, for recordings.
+/// The sky is static by default. Set `NIVRORA_LAUNCHER_MOTION=full` to animate while focused,
+/// or `NIVRORA_LAUNCHER_MOTION=always` for recordings.
 #[derive(Clone, Copy, PartialEq)]
 enum Motion {
     Still,
@@ -213,7 +212,7 @@ fn motion() -> Motion {
         if objc2_app_kit::NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion() {
             return Motion::Still;
         }
-        Motion::InFront
+        Motion::Still
     });
     *MOTION
 }
