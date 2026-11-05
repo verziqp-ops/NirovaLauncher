@@ -44,8 +44,13 @@ if ($Exe) {
     Say "Installing $Exe"
     Copy-Item $Exe $Target -Force
 } else {
-    $url = "https://github.com/$Repo/releases/latest/download/$Asset"
-    Say "Downloading the latest release"
+    $api = "https://api.github.com/repos/$Repo/releases?per_page=100"
+    Say "Finding the latest NIROVA Launcher release"
+    $releases = Invoke-RestMethod -Uri $api -Headers @{ "Accept" = "application/vnd.github+json" }
+    $release = $releases | Where-Object { $_.tag_name -like "launcher@*" -and -not $_.draft -and -not $_.prerelease } | Select-Object -First 1
+    if (-not $release) { throw "No published NIROVA Launcher release was found. Download it from GitHub Releases." }
+    $url = "https://github.com/$Repo/releases/download/$($release.tag_name)/$Asset"
+    Say "Downloading $($release.tag_name)"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $work = Join-Path $env:TEMP "nirova-launcher-install"
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
