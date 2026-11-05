@@ -259,9 +259,9 @@ mod tests {
 
     #[test]
     fn exec_paths_are_quoted() {
-        let entry = launcher_entry(Path::new("/home/a b/NIVRORA \"x\"/horizon-launcher"));
-        assert!(entry.contains("Exec=\"/home/a b/NIVRORA \\\"x\\\"/horizon-launcher\"\n"));
-        assert!(entry.contains("TryExec=/home/a b/NIVRORA \"x\"/horizon-launcher\n"));
+        let entry = launcher_entry(Path::new("/home/a b/NIVRORA \"x\"/nivrora-launcher"));
+        assert!(entry.contains("Exec=\"/home/a b/NIVRORA \\\"x\\\"/nivrora-launcher\"\n"));
+        assert!(entry.contains("TryExec=/home/a b/NIVRORA \"x\"/nivrora-launcher\n"));
         assert!(entry.contains("Icon=nivrora\n"));
     }
 
@@ -269,16 +269,16 @@ mod tests {
     fn installs_follows_a_moved_binary_and_removes() {
         let data = std::env::temp_dir().join(format!("horizon-desktop-{}", std::process::id()));
         let _ = fs::remove_dir_all(&data);
-        assert!(install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
-        assert!(!install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
+        assert!(install_in(&data, Path::new("/opt/a/nivrora-launcher")).unwrap());
+        assert!(!install_in(&data, Path::new("/opt/a/nivrora-launcher")).unwrap());
         let png = data.join("icons/hicolor/48x48/apps/nivrora.png");
         assert!(fs::read(&png).unwrap().starts_with(b"\x89PNG"));
         assert!(data
             .join("icons/hicolor/scalable/apps/nivrora.svg")
             .exists());
-        assert!(install_in(&data, Path::new("/opt/b/horizon-launcher")).unwrap());
+        assert!(install_in(&data, Path::new("/opt/b/nivrora-launcher")).unwrap());
         let entry = fs::read_to_string(data.join("applications").join(LAUNCHER_ENTRY)).unwrap();
-        assert!(entry.contains("Exec=\"/opt/b/horizon-launcher\""));
+        assert!(entry.contains("Exec=\"/opt/b/nivrora-launcher\""));
         remove_in(&data).unwrap();
         assert!(!data.join("applications").join(LAUNCHER_ENTRY).exists());
         assert!(!png.exists());
@@ -288,15 +288,15 @@ mod tests {
 
     #[test]
     fn the_target_is_try_exec_else_the_first_word_of_exec() {
-        let ours = launcher_entry(Path::new("/opt/a b/horizon \"x\"/horizon-launcher"));
+        let ours = launcher_entry(Path::new("/opt/a b/horizon \"x\"/nivrora-launcher"));
         assert_eq!(
             entry_target(&ours).as_deref(),
-            Some("/opt/a b/horizon \"x\"/horizon-launcher")
+            Some("/opt/a b/horizon \"x\"/nivrora-launcher")
         );
         let without_try = ours.replace("TryExec=", "X-Old=");
         assert_eq!(
             entry_target(&without_try).as_deref(),
-            Some("/opt/a b/horizon \"x\"/horizon-launcher")
+            Some("/opt/a b/horizon \"x\"/nivrora-launcher")
         );
         let wrapper = "[Desktop Entry]\nExec=flatpak run dev.horizon.Launcher %U\n";
         assert_eq!(entry_target(wrapper).as_deref(), Some("flatpak"));
@@ -317,7 +317,7 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
         let (data, bin) = (root.join("data"), root.join("bin"));
         fs::create_dir_all(&bin).unwrap();
-        let installed = bin.join("horizon-launcher");
+        let installed = bin.join("nivrora-launcher");
         fs::write(&installed, b"").unwrap();
         let entry = data.join("applications").join(LAUNCHER_ENTRY);
         let path = Some(bin.as_os_str());
@@ -328,7 +328,7 @@ mod tests {
         // Ours works: a build elsewhere leaves it alone.
         assert!(!needs_repair_in(&data, path));
         // So does one another launcher wrote, found on PATH or by its path.
-        fs::write(&entry, "[Desktop Entry]\nExec=horizon-launcher %U\n").unwrap();
+        fs::write(&entry, "[Desktop Entry]\nExec=nivrora-launcher %U\n").unwrap();
         assert!(!needs_repair_in(&data, path));
         assert!(needs_repair_in(&data, None));
         // The program is gone (a deleted target/ folder, a moved binary): write it again.
@@ -345,7 +345,7 @@ mod tests {
     /// when the launcher exits.
     #[test]
     fn an_appimage_entry_starts_the_appimage() {
-        let exe = Path::new("/tmp/.mount_NIVRORA123/usr/bin/horizon-launcher");
+        let exe = Path::new("/tmp/.mount_NIVRORA123/usr/bin/nivrora-launcher");
         let appimage = Path::new("/home/a b/NIVRORA.AppImage");
         assert_eq!(target_from(exe, Some(appimage)), appimage);
         assert_eq!(target_from(exe, None), exe);
