@@ -103,7 +103,38 @@ impl Theme {
             WindowAppearance::Light | WindowAppearance::VibrantLight
         );
         let dark = pinned_dark(choice).unwrap_or(system_dark);
-        let night = if dark { night::NIGHT } else { night::DAWN };
+        let mut night = if dark { night::NIGHT } else { night::DAWN };
+        if dark {
+            night.sky = [0x111923, 0x172331, 0x1b2b3a, 0x202f3e, 0x243445, 0x293a4a];
+            night.page = 0x121b25;
+            night.side = 0x182432;
+            night.card = 0x1c2a38;
+            night.card_hi = 0x28394a;
+            night.stroke = 0x7892a7;
+            night.stroke_alpha = 0.20;
+            night.rule_alpha = 0.13;
+            night.ink = 0xedf5fa;
+            night.ink_soft = 0xc9d9e5;
+            night.muted = 0x9fb3c3;
+            night.accent = 0xa9dceb;
+            night.accent_hi = 0xc4eaf5;
+            night.on_accent = 0x17232c;
+        } else {
+            night.sky = [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb];
+            night.page = 0xe7edf2;
+            night.side = 0xdfe7ed;
+            night.card = 0xf6f9fb;
+            night.card_hi = 0xffffff;
+            night.stroke = 0x7892a7;
+            night.stroke_alpha = 0.18;
+            night.rule_alpha = 0.12;
+            night.ink = 0x1b2a36;
+            night.ink_soft = 0x405363;
+            night.muted = 0x687d8d;
+            night.accent = 0x77b6ce;
+            night.accent_hi = 0x579bb6;
+            night.on_accent = 0x10232d;
+        }
         Self::from(accent.apply(night.blocks()), night)
     }
 
