@@ -108,35 +108,62 @@ impl Theme {
     }
 
     fn from(p: tokens::Blocks, night: Night) -> Self {
+        // Nirova palette: cool blue/charcoal surfaces with a restrained pink accent.
+        // Keep the upstream Night data for its artwork and motion, but use one coherent
+        // palette for every launcher control and panel.
+        let dark = p.dark;
+        let (page, side, panel, raised, button, well, outline, rule,
+             ink, ink_soft, muted, accent, on_accent) = if dark {
+            (0x0B1420, 0x101D2B, 0x172638, 0x203246, 0x26394D, 0x0E1B29,
+             0x344B62, 0x2A3D51, 0xEAF1F8, 0xC4D2E0, 0x9AAEC2,
+             0xF09BC3, 0x20202A)
+        } else {
+            (0xF2F6FC, 0xEAF0F8, 0xFFFFFF, 0xE7EEF7, 0xDDE7F2, 0xF7F9FC,
+             0xCBD6E4, 0xD9E2EC, 0x18283B, 0x3C4D63, 0x65768C,
+             0xD96F9F, 0xFFFFFF)
+        };
+        let page = c(page);
+        let side = c(side);
+        let panel = c(panel);
+        let raised = c(raised);
+        let button = c(button);
+        let well = c(well);
+        let outline = c(outline);
+        let rule = c(rule);
+        let ink = c(ink);
+        let ink_soft = c(ink_soft);
+        let muted = c(muted);
+        let accent = c(accent);
+        let on_accent = c(on_accent);
         Self {
-            page: c(p.page),
-            plate_soft: c(p.raised),
-            plate: c(p.button),
-            surface: c(p.panel),
-            rule: c(p.rule),
-            ink: c(p.ink),
-            ink_soft: c(p.ink_soft),
-            muted: c(p.muted),
-            accent: c(p.accent),
-            on_accent: c(p.on_face),
-            danger: c(p.danger),
-            success: c(p.success),
-            warn: c(p.warn),
-            side: c(p.side),
-            panel: c(p.panel),
-            raised: c(p.raised),
-            button: c(p.button),
-            button_bevel: c(p.button_bevel),
-            well: c(p.well),
-            bevel: c(p.bevel),
-            lip: c(p.lip),
-            outline: c(p.outline),
-            face: c(p.face),
-            face_bevel: c(p.face_bevel),
-            face_lip: c(p.face_lip),
-            on_face: c(p.on_face),
+            page,
+            plate_soft: raised,
+            plate: button,
+            surface: panel,
+            rule,
+            ink,
+            ink_soft,
+            muted,
+            accent,
+            on_accent,
+            danger: c(if dark { 0xF07883 } else { 0xC74358 }),
+            success: c(if dark { 0x65C7A4 } else { 0x238C70 }),
+            warn: c(if dark { 0xE6B76B } else { 0xA66A16 }),
+            side,
+            panel,
+            raised,
+            button,
+            button_bevel: outline,
+            well,
+            bevel: outline,
+            lip: rule,
+            outline,
+            face: accent,
+            face_bevel: outline,
+            face_lip: rule,
+            on_face: on_accent,
             night,
-            dark: p.dark,
+            dark,
         }
     }
 }
