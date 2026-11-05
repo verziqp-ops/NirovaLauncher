@@ -1657,7 +1657,7 @@ fn launch_as(
         .play_as(store, who.clone())
         .and_then(|()| match launch(ep, client_id, store, accounts) {
             // This fork: no owner plays offline, as `launch_for_game` lets it.
-            Err(NoOwner) => Err(e.to_string()),
+            Err(NoOwner) => Err(NoOwner.to_string()),
             pass => pass.map_err(|e| e.to_string()),
         });
     (
