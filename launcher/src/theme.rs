@@ -115,7 +115,7 @@ impl Theme {
             night.rule_alpha = 0.13;
             night.ink = 0xedf5fa;
             night.ink_soft = 0xc9d9e5;
-            night.muted = 0x9fb3c3;
+            night.muted = 0xb9cbd6;
             night.accent = 0xa9dceb;
             night.accent_hi = 0xc4eaf5;
             night.on_accent = 0x17232c;
@@ -130,10 +130,10 @@ impl Theme {
             night.rule_alpha = 0.12;
             night.ink = 0x1b2a36;
             night.ink_soft = 0x405363;
-            night.muted = 0x687d8d;
+            night.muted = 0x506776;
             night.accent = 0x2d6d84;
             night.accent_hi = 0x2d6d84;
-            night.on_accent = 0x10232d;
+            night.on_accent = 0xffffff;
         }
         Self::from(accent.apply(night.blocks()), night)
     }
