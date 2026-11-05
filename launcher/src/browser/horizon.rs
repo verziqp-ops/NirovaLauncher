@@ -403,7 +403,7 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(&project.id)
-            .ok_or_else(|| format!("{} isn't in Horizon's registry.", project.title))?;
+            .ok_or_else(|| format!("{} isn't in the external catalog.", project.title))?;
         let level = crate::backend::game_mod_api_level();
         Ok(p.versions
             .iter()
@@ -416,7 +416,7 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(&project.id)
-            .ok_or_else(|| format!("{} isn't in Horizon's registry.", project.title))?;
+            .ok_or_else(|| format!("{} isn't in the external catalog.", project.title))?;
         let newest = p.versions.first();
         let mut body = p.description.clone();
         if let Some(v) = newest.filter(|v| !v.capabilities.is_empty()) {
@@ -555,7 +555,7 @@ fn install_from(
 ) -> Result<Vec<installed::Entry>, String> {
     let p = index
         .project(&project.id)
-        .ok_or_else(|| format!("{} isn't in Horizon's registry.", project.title))?;
+        .ok_or_else(|| format!("{} isn't in the external catalog.", project.title))?;
     let v = newest(index, p, level)?;
     if needs_port(v) {
         return Err(format!("{} {NEEDS_PORT}.", p.name));
