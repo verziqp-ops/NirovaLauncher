@@ -2436,6 +2436,7 @@ impl Launcher {
                     })),
             );
         }
+        let _ = (rows, headings, list);
         let mut foot = div().mt_auto().flex().flex_col().gap(px(2.)).pt(px(12.));
         let update = |line: String| {
             plate::plate(&n)
@@ -2525,7 +2526,6 @@ impl Launcher {
             .overflow_y_scroll()
             .children(brand)
             .child(primary_nav)
-            .child(list)
             .child(foot)
     }
 
@@ -2678,8 +2678,8 @@ impl Launcher {
                 .gap(px(24.))
                 .pt(px(28.))
                 .child(page_header(
-                    "Play",
-                    "Start the game, or run a server for others to join.",
+                    "Home",
+                    "Choose a Minecraft version and launch your game.",
                     &t,
                 ))
                 .child(centered(tr("No version installed yet."), &t).child(
@@ -3069,14 +3069,6 @@ impl Launcher {
                     cx.open_with_system(&dir);
                 }),
         );
-        let discord = self.links.discord.clone();
-        if !discord.is_empty() {
-            actions = actions.child(
-                button("crash-discord", "Report on Discord", Kind::Secondary, &t)
-                    .bg(t.plate)
-                    .on_click(move |_, _, cx| cx.open_url(&discord)),
-            );
-        }
         actions = actions.child(
             button("crash-dismiss", "Dismiss", Kind::Ghost, &t).on_click(cx.listener(
                 |this, _: &ClickEvent, _, cx| {
@@ -3086,9 +3078,9 @@ impl Launcher {
             )),
         );
         let help = tr(if crash.report.is_some() {
-            "When you report it on Discord, attach the crash report file (or paste it with Copy report) and say what you were doing."
+            "When you report the issue, attach the crash report file (or paste it with Copy report) and say what you were doing."
         } else {
-            "The game ended without a crash report. When you report it on Discord, attach latest.log from the logs folder and say what you were doing."
+            "The game ended without a crash report. When you report the issue, attach latest.log from the logs folder and say what you were doing."
         });
         let mut body = div()
             .flex_1()
