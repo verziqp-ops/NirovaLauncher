@@ -1,7 +1,7 @@
-; Nirova Launcher's Windows installer (Inno Setup 6), built by .github/workflows/launcher.yml:
+; NIVRORA Launcher's Windows installer (Inno Setup 6), built by .github/workflows/launcher.yml:
 ;   iscc /DAppVersion=1.2.0 /DSource=path\to\horizon-launcher.exe /Odist packaging\windows\setup.iss
 ; It installs for this user only, without administrator rights, in the same place as install.ps1
-; (%LOCALAPPDATA%\Programs\NirovaLauncher), so either one updates the other's install and the
+; (%LOCALAPPDATA%\Programs\NIVRORA), so either one updates the other's install and the
 ; launcher's own updates replace the same file. Uninstalling keeps the game, worlds and settings
 ; (%APPDATA%\horizon-launcher).
 
@@ -11,7 +11,7 @@
 #ifndef Source
   #define Source "..\..\launcher\target\release\horizon-launcher.exe"
 #endif
-#define AppName "Nirova Launcher"
+#define AppName "NIVRORA Launcher"
 #define AppExe "nirova-launcher.exe"
 
 [Setup]
@@ -20,17 +20,17 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=gerdaroot
-AppPublisherURL=https://github.com/verziqp-ops/NirovaLauncher
-AppSupportURL=https://github.com/verziqp-ops/NirovaLauncher/issues
-AppUpdatesURL=https://github.com/verziqp-ops/NirovaLauncher/releases
-DefaultDirName={localappdata}\Programs\NirovaLauncher
+AppPublisherURL=https://github.com/verziqp-ops/NIVRORA
+AppSupportURL=https://github.com/verziqp-ops/NIVRORA/issues
+AppUpdatesURL=https://github.com/verziqp-ops/NIVRORA/releases
+DefaultDirName={localappdata}\Programs\NIVRORA
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 DisableReadyPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-OutputBaseFilename=Nirova-Setup
+OutputBaseFilename=NIVRORA-Setup
 SetupIconFile=..\icons\horizon.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
@@ -40,8 +40,12 @@ SolidCompression=yes
 CloseApplications=force
 
 [Languages]
+Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+
+[Setup]
+DefaultLanguage=ukrainian
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
