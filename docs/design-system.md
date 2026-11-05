@@ -22,7 +22,7 @@ almost nothing but type. What we take from it is its restraint rather than its c
 2. **Lists, not cards.** Content is a numbered list: a small mono index on the left (`01`,
    `02`…), the name large, a mono detail on the right, and a 1 px rule between rows. Versions,
    settings, worlds, servers, release notes and the parity table are all this one component.
-3. **One accent, used once.** Neutrals do the work. The milk-blue marks the single main action on a
+3. **One accent, used once.** Neutrals do the work. The rose-pink marks the single main action on a
    screen (Play, Download), focus, links and progress; selection is shown in ink, not in colour.
 4. **Space instead of borders.** Generous margins (64 px on wide screens, 16 px on phones), no
    shadows, no gradients, no outlines around groups. A surface tint appears only under the
@@ -36,7 +36,7 @@ almost nothing but type. What we take from it is its restraint rather than its c
 
 ### Colour
 
-Graphite and blue-gray neutrals in dark mode, cool mist surfaces in light mode, and NIVRORA's milk-blue.
+Graphite and blue-gray neutrals in dark mode, cool mist surfaces in light mode, and NIVRORA's rose-pink.
 Every text colour passes WCAG AA (4.5:1) on every background it is used on; the tests in
 `horizon-theme` check each pair in both palettes.
 
@@ -50,8 +50,8 @@ Every text colour passes WCAG AA (4.5:1) on every background it is used on; the 
 | `ink`        | `#182a36` | `#f0f6fa` | text, selection, slider fill, the inverted segment |
 | `ink_soft`   | `#3e5665` | `#c7d7e2` | secondary text, values |
 | `muted`      | `#4b6271` | `#b9cbd6` | labels, descriptions, mono indices and details |
-| `accent`     | `#28647a` | `#a8d8e8` | the main action, links, focus, progress |
-| `on_accent`  | `#ffffff` | `#142630` | text on the accent |
+| `accent`     | `#a94475` | `#f09bc3` | the main action, links, focus, progress |
+| `on_accent`  | ``#ffffff` | `#17232c` | text on the accent |
 | `danger`     | `#a3301d` | `#ffb3a8` | errors, the crash notice's dot |
 | `success`    | `#136336` | `#7ae2a9` | "Matches vanilla", "Ready" |
 
@@ -164,7 +164,7 @@ of the main action. The game's menus keep `LIGHT` and `DARK`.
   weight's cap height, and the Latin I's glyph, so a Russian or Ukrainian heading stays in the
   pixel face.
 - **Blocks, not rounded cards.** Every surface is square: a 2 px dark outline, a 2 px light bevel
-  along the top and a darker lip along the bottom. The main action is the milk-blue face with its own
+  along the top and a darker lip along the bottom. The main action is the rose-pink face with its own
   bevel and a 4 px lip; it sinks a pixel when pressed. Code and fields are sunk wells.
 - **Inventory tabs** switch the kinds in Mods: the open tab joins the panel under it.
 - **Slots** hold pictures: a mod's or pack's own icon and gallery images from its source,
@@ -237,8 +237,8 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
 | `ink`       | `#edf5fa` | `#1b2a36` | text |
 | `ink-soft`  | `#c9d9e5` | `#405363` | secondary text |
 | `muted`     | `#b9cbd6` | `#506776` | labels, details |
-| `accent`    | `#a9dceb` | `#2d6d84` | the main action, progress |
-| `accent-hi` | `#c4eaf5` | `#2d6d84` | accent text, focus ring |
+| `accent`    | `#f09bc3` | `#a94475` | the main action, progress |
+| `accent-hi` | `#f7c2d9` | `#a94475` | accent text, focus ring |
 | `success`, `warn`, `danger` | `#7ae2a9` `#f5c66e` `#ffb3a8` | `#136336` `#7a4f00` `#a3301d` | Ready, updates, errors |
 
 - **Motion that means something**: the sky drifts slowly and stops when the window is hidden or
