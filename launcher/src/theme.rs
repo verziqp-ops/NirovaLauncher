@@ -1,6 +1,6 @@
 //! The launcher's view of Nirova's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Nirova's blue) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
+//! Nirova's rose-pink) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
 //! Open Font License). Every screen uses the same Nirova palette and type scale, including the legacy page components.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
