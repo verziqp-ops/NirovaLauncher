@@ -131,8 +131,8 @@ impl Theme {
             night.ink = 0x1b2a36;
             night.ink_soft = 0x405363;
             night.muted = 0x687d8d;
-            night.accent = 0x77b6ce;
-            night.accent_hi = 0x579bb6;
+            night.accent = 0x2d6d84;
+            night.accent_hi = 0x2d6d84;
             night.on_accent = 0x10232d;
         }
         Self::from(accent.apply(night.blocks()), night)
