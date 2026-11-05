@@ -83,6 +83,8 @@ use theme::Theme;
 enum Page {
     Play,
     Versions,
+    Instances,
+    Worlds,
     /// Mods, resource packs and modpacks (imported ones and the browser's).
     Mods,
     Servers,
@@ -97,10 +99,12 @@ impl Page {
     /// made-up code, `owner_page::sign_in_preview`; `new-instance`: Home with the New instance
     /// dialog open on Modded; `edit-instance`: the selected one's Edit dialog; `worlds`, `packs`...: Home on that tab, `HomeTab::from_env`).
     fn from_env() -> Page {
-        match std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() {
+        match std::env::var("NIVRORA_LAUNCHER_PAGE").as_deref() {
             Ok("mods" | "modpacks" | "resourcepacks" | "shaders" | "datapacks") => Page::Mods,
             Ok("servers") => Page::Servers,
             Ok("versions") => Page::Versions,
+            Ok("instances") => Page::Instances,
+            Ok("worlds") => Page::Worlds,
             Ok("notes") => Page::Notes,
             Ok("settings") => Page::Settings,
             _ => Page::Play,
@@ -109,12 +113,11 @@ impl Page {
 
     /// Every page, with its name and icon: the top bar shows all but Settings, which has its
     /// own button.
-    const ALL: [(Page, &'static str, &'static str); 6] = [
+    const ALL: [(Page, &'static str, &'static str); 5] = [
         (Page::Play, "Home", "home"),
-        (Page::Mods, "Mods", "package"),
-        (Page::Servers, "Servers", "server"),
         (Page::Versions, "Versions", "archive"),
-        (Page::Notes, "Patch notes", "notes"),
+        (Page::Instances, "Instances", "box"),
+        (Page::Worlds, "Worlds", "globe"),
         (Page::Settings, "Settings", "sliders"),
     ];
 }
@@ -2263,20 +2266,7 @@ impl Launcher {
     fn topbar(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let n = t.night;
-        let mut nav = div().flex().flex_none().items_center().gap(px(4.));
-        for (page, label, _) in Page::ALL {
-            if page == Page::Settings {
-                continue;
-            }
-            nav = nav.child(
-                shell::tab(format!("nav-{label}"), tr(label), self.page == page, &t).on_click(
-                    cx.listener(move |this, _: &ClickEvent, _, cx| {
-                        this.go(page);
-                        cx.notify();
-                    }),
-                ),
-            );
-        }
+
         // Only a signed-in account says "Microsoft account"; otherwise an offline name, or the
         // one the game made up. A signed-in one shows its face (its skin, else its UUID's default).
         let (name, how) = self.who_plays();
@@ -2357,7 +2347,6 @@ impl Launcher {
             .pr(px(12.))
             .border_b_1()
             .border_color(plate::alpha(n.stroke, n.rule_alpha))
-            .child(nav)
             .child(
                 div()
                     .ml_auto()
