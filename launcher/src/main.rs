@@ -1,4 +1,4 @@
-//! NIVRORA launcher: installs NIVRORA builds, prepares them from the player's own Minecraft,
+//! NIROVA launcher: installs NIROVA builds, prepares them from the player's own Minecraft,
 //! and starts the client or a dedicated server.
 
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
@@ -93,13 +93,13 @@ enum Page {
 }
 
 impl Page {
-    /// `NIVRORA_LAUNCHER_PAGE=mods` (or `modpacks`, `resourcepacks`, `shaders`, `servers`, `versions`, `notes`,
+    /// `NIROVA_LAUNCHER_PAGE=mods` (or `modpacks`, `resourcepacks`, `shaders`, `servers`, `versions`, `notes`,
     /// `settings`) opens on that page, for screenshots; Home otherwise (`getting-ready`: Home
     /// preparing, `home::getting_ready_preview`; `sign-in`: the owner gate's sheet with a
     /// made-up code, `owner_page::sign_in_preview`; `new-instance`: Home with the New instance
     /// dialog open on Modded; `edit-instance`: the selected one's Edit dialog; `worlds`, `packs`...: Home on that tab, `HomeTab::from_env`).
     fn from_env() -> Page {
-        match std::env::var("NIVRORA_LAUNCHER_PAGE").as_deref() {
+        match std::env::var("NIROVA_LAUNCHER_PAGE").as_deref() {
             Ok("mods" | "modpacks" | "resourcepacks" | "shaders" | "datapacks") => Page::Mods,
             Ok("servers") => Page::Servers,
             Ok("versions") => Page::Versions,
@@ -111,7 +111,7 @@ impl Page {
         }
     }
 
-    /// NIVRORA's primary destinations, shown in the left sidebar.
+    /// NIROVA's primary destinations, shown in the left sidebar.
     const ALL: [(Page, &'static str, &'static str); 5] = [
         (Page::Play, "Home", "home"),
         (Page::Versions, "Versions", "archive"),
@@ -179,7 +179,7 @@ struct Launcher {
     checked: Option<Instant>,
     update_error: Option<String>,
     self_update: SelfUpdate,
-    /// The NIVRORA version being installed as an update, and whether it becomes the selected one.
+    /// The NIROVA version being installed as an update, and whether it becomes the selected one.
     update_install: Option<(String, bool)>,
     /// The install bar's previous and current fraction, so it moves rather than jumps.
     bar: (f32, f32),
@@ -207,14 +207,14 @@ struct Launcher {
     native_confirm: Option<Result<Vec<native_mods::Bundle>, String>>,
     /// The instance (id) the build under way, or the last one's error, is for.
     native_for: Option<String>,
-    /// The newer NIVRORA the open warning's build moves to (Update), else None: a build stays
-    /// on the NIVRORA the instance plays.
+    /// The newer NIROVA the open warning's build moves to (Update), else None: a build stays
+    /// on the NIROVA the instance plays.
     native_update: Option<String>,
     /// What each installed native build was made from, by version. A build's version names its
     /// contents, so an entry never goes stale.
     native_builds:
         std::cell::RefCell<std::collections::HashMap<String, Option<native_status::Build>>>,
-    /// The mods of a build made for other NIVRORA versions (`native_mods::MISMATCH`): the build
+    /// The mods of a build made for other NIROVA versions (`native_mods::MISMATCH`): the build
     /// waits for "Build anyway".
     native_mismatch: Option<String>,
     confirm_remove: Option<String>,
@@ -306,7 +306,7 @@ struct Launcher {
     collection: collection::Collection,
     /// Settings' "Connect an AI agent" (`agents_page`).
     agents: agents_page::AgentsUi,
-    /// How many play NIVRORA now, while the server answers ("N playing now" on the Play page).
+    /// How many play NIROVA now, while the server answers ("N playing now" on the Play page).
     playing: Option<u64>,
     /// How many play on the official server now, while it answers ("M on the official SMP").
     official_players: Option<u64>,
@@ -328,12 +328,12 @@ struct Launcher {
     /// Modrinth projects' icon URLs (`instance_mods.rs`).
     project_icons: instance_mods::ProjectIcons,
     play_pressed: Option<Instant>,
-    /// `nivrora-launcher benchmark` started this window to measure it.
+    /// `nirova-launcher benchmark` started this window to measure it.
     bench: Option<perf::Bench>,
     /// The Modpacks page: the imported packs (read when the page first opens), the one shown,
     /// the report's filter, and the pipeline step running now with its log.
     packs: Vec<horizon_launcher::modpacks::Imported>,
-    /// Modpacks installed from NIVRORA's registry, each its own profile.
+    /// Modpacks installed from NIROVA's registry, each its own profile.
     registry_packs: Vec<horizon_launcher::browser::horizon::pack::Installed>,
     packs_loaded: Option<Instant>,
     pack_open: Option<String>,
@@ -346,7 +346,7 @@ struct Launcher {
     /// The Mods page: the browser's search, installs and updates (`mods_page.rs`).
     mods: mods_page::Mods,
     github: github_mods_page::Github,
-    /// NIVRORA instances, for the sidebar and Play, and their dialog (`instances_page.rs`).
+    /// NIROVA instances, for the sidebar and Play, and their dialog (`instances_page.rs`).
     instances: instances_page::Instances,
     /// Home's Worlds section, of the selected instance (`worlds_page.rs`).
     worlds: worlds_page::Worlds,
@@ -421,11 +421,11 @@ impl Launcher {
         }
         // Release builds on Linux put their entry back in the applications menu when there is
         // none or it starts a program that is gone (a moved or deleted binary), never over one
-        // that works; `NIVRORA_LAUNCHER_DESKTOP_ENTRY=1` does it in a development build.
+        // that works; `NIROVA_LAUNCHER_DESKTOP_ENTRY=1` does it in a development build.
         if cfg!(target_os = "linux")
             && settings.desktop_entry()
             && (!cfg!(debug_assertions)
-                || std::env::var_os("NIVRORA_LAUNCHER_DESKTOP_ENTRY").is_some())
+                || std::env::var_os("NIROVA_LAUNCHER_DESKTOP_ENTRY").is_some())
         {
             std::thread::spawn(|| {
                 let _ = horizon_launcher::desktop::repair(backend::exe_path());
@@ -608,12 +608,12 @@ impl Launcher {
             this.preparing = true;
             this.play_when_prepared = this.selected().cloned();
         }
-        // `NIVRORA_LAUNCHER_PAGE=new-instance`: the dialog open on Modded, for screenshots.
-        if std::env::var("NIVRORA_LAUNCHER_PAGE").as_deref() == Ok("new-instance") {
+        // `NIROVA_LAUNCHER_PAGE=new-instance`: the dialog open on Modded, for screenshots.
+        if std::env::var("NIROVA_LAUNCHER_PAGE").as_deref() == Ok("new-instance") {
             this.open_instance_dialog(None);
             this.pick_kind(new_instance::NewKind::Modded, cx);
         }
-        if std::env::var("NIVRORA_LAUNCHER_PAGE").as_deref() == Ok("edit-instance") {
+        if std::env::var("NIROVA_LAUNCHER_PAGE").as_deref() == Ok("edit-instance") {
             this.open_instance_dialog(this.selected_instance().cloned());
         }
         // What the game and the launcher kept, if the player allows it and there is a server.
@@ -684,7 +684,7 @@ impl Launcher {
         });
     }
 
-    /// Installs the NIVRORA version the last check found, keeping the player's choice of
+    /// Installs the NIROVA version the last check found, keeping the player's choice of
     /// version unless they were on the newest one.
     fn install_update(&mut self) {
         let Some(release) = self.updates.horizon.clone() else {
@@ -722,9 +722,9 @@ impl Launcher {
     }
 
     /// Builds the selected instance's native mods, once the player accepted the warning. The
-    /// build stays on the NIVRORA the instance plays (`native_mods::base_for`), unless the
-    /// warning was Update's: then it moves to that newer NIVRORA.
-    /// `anyway`: the player agreed to build mods made for other NIVRORA versions together.
+    /// build stays on the NIROVA the instance plays (`native_mods::base_for`), unless the
+    /// warning was Update's: then it moves to that newer NIROVA.
+    /// `anyway`: the player agreed to build mods made for other NIROVA versions together.
     fn build_native(&mut self, anyway: bool) {
         if self.native_step.is_some() {
             return;
@@ -740,7 +740,7 @@ impl Launcher {
             None => native_mods::base_for(plays.as_deref(), &self.installed, false),
         };
         let Some(base) = base else {
-            self.native_error = Some(tr("Install NIVRORA first.").into());
+            self.native_error = Some(tr("Install NIROVA first.").into());
             return;
         };
         let folder = match self.native_mods_to_build() {
@@ -1158,7 +1158,7 @@ impl Launcher {
                                 .and_then(|since| backend::crash_report_since(&home, since));
                             if error.is_some() && report.is_none() && self.switched_to_dx12() {
                                 self.client_error = Some(
-                                    "NIVRORA's Vulkan renderer crashed while starting on this \
+                                    "NIROVA's Vulkan renderer crashed while starting on this \
                                      graphics card, so the game now uses DirectX 12. Press Play \
                                      to start it again. Video Settings > Graphics API switches \
                                      back."
@@ -1236,7 +1236,7 @@ impl Launcher {
         for home in homes {
             match backend::switch_to_dx12(&home) {
                 Ok(changed) => switched |= changed,
-                Err(e) => eprintln!("NIVRORA launcher: could not switch to DirectX 12: {e}"),
+                Err(e) => eprintln!("NIROVA launcher: could not switch to DirectX 12: {e}"),
             }
         }
         switched
@@ -1356,8 +1356,8 @@ impl Launcher {
             .filter(|i| i.java.is_some())
             .cloned();
         if let Some(instance) = java {
-            // Mojang's game: no NIVRORA version or preparation, only no game already running.
-            // It joins a server; a friend's code and opening a world are NIVRORA's.
+            // Mojang's game: no NIROVA version or preparation, only no game already running.
+            // It joins a server; a friend's code and opening a world are NIROVA's.
             self.joining = None;
             let server = self
                 .quick_play
@@ -1413,7 +1413,7 @@ impl Launcher {
     }
 
     /// Whether the selected instance's version can start now, from a shortcut (a server's Join,
-    /// a world's Play, a friend's code): NIVRORA's only, never a Java instance.
+    /// a world's Play, a friend's code): NIROVA's only, never a Java instance.
     pub(crate) fn can_start_selected(&self) -> bool {
         self.selected_instance().is_none_or(|i| i.java.is_none())
             && self.selected().is_some_and(|tag| self.can_start(tag))
@@ -1716,7 +1716,7 @@ fn version_tag(tag: &str) -> Div {
         )
 }
 
-/// NIVRORA's own compact wordmark, used in the sidebar and app chrome.
+/// NIROVA's own compact wordmark, used in the sidebar and app chrome.
 fn mark(size: f32, t: &Theme) -> Div {
     div()
         .relative()
@@ -1828,7 +1828,7 @@ fn button(
     keyboard(track_hover(base, id), &t).active(|s| s.opacity(theme::PRESSED).top(px(1.)))
 }
 
-/// Copies to the clipboard, or into `NIVRORA_LAUNCHER_CLIPBOARD` when a test run sets it
+/// Copies to the clipboard, or into `NIROVA_LAUNCHER_CLIPBOARD` when a test run sets it
 /// (`horizon_launcher::desktop_seams`).
 fn copy_to_clipboard(cx: &mut App, item: gpui::ClipboardItem) {
     if let Some(file) = horizon_launcher::desktop_seams::clipboard_file() {
@@ -2338,7 +2338,7 @@ impl Launcher {
             )
     }
 
-    /// The sidebar, from the top of the window: the wordmark, NIVRORA and the imported modpacks,
+    /// The sidebar, from the top of the window: the wordmark, NIROVA and the imported modpacks,
     /// the player's servers, then the launcher's own update, the community links and its version.
     fn sidebar(&mut self, window: &Window, cx: &mut Context<Self>) -> Stateful<Div> {
         let t = self.theme;
@@ -2347,7 +2347,7 @@ impl Launcher {
         for (page, label, icon) in Page::ALL {
             let selected = self.page == page;
             primary_nav = primary_nav.child(
-                shell::row(format!("nivrora-nav-{label}"), selected, &t)
+                shell::row(format!("nirova-nav-{label}"), selected, &t)
                     .h(px(44.))
                     .child(blocks::icon(icon, 20., shell::c(if selected { n.accent_hi } else { n.ink_soft })))
                     .child(
@@ -2419,7 +2419,7 @@ impl Launcher {
                 .id("launcher-version")
                 .px(px(8.))
                 .pt(px(6.))
-                .child(trf("NIVRORA Launcher {version}", &[("version", backend::VERSION)]))
+                .child(trf("NIROVA Launcher {version}", &[("version", backend::VERSION)]))
                 .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                     this.version_clicked();
                     cx.notify();
@@ -2438,7 +2438,7 @@ impl Launcher {
                 .child(
                     shell::text(theme::night::TITLE, shell::c(n.ink))
                         .font_family(theme::DISPLAY_FONT)
-                        .child("NIVRORA"),
+                        .child("NIROVA"),
                 )
         });
         shell::sidebar_plate(&t)
@@ -2591,7 +2591,7 @@ impl Launcher {
 
     fn play_page(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
-        // A Java instance plays Mojang's game: no NIVRORA version, nothing of NIVRORA's to prepare.
+        // A Java instance plays Mojang's game: no NIROVA version, nothing of NIROVA's to prepare.
         let java = self.selected_instance().and_then(|i| i.java.clone());
         let Some(tag) = self
             .selected()
@@ -2625,7 +2625,7 @@ impl Launcher {
             .as_ref()
             .map_or_else(|| backend::game_version(&tag), |j| j.minecraft.clone());
         let hero = match &java {
-            // Its own game: the Minecraft version and the loader, never NIVRORA's.
+            // Its own game: the Minecraft version and the loader, never NIROVA's.
             Some(j) => {
                 let game = match &j.loader {
                     Some(l) => format!("{version} · {} {}", l.kind.name(), l.version),
@@ -2639,7 +2639,7 @@ impl Launcher {
         let left = self.download_left();
         let steps = self.preparing.then(|| self.steps(&version, left));
 
-        // Not prepared: an owner can have NIVRORA download Minecraft from Mojang; without an
+        // Not prepared: an owner can have NIROVA download Minecraft from Mojang; without an
         // owner there is nothing to play, so signing in comes first.
         let first = (!prepared && !self.preparing)
             .then_some(self.owner_shown())
@@ -2653,7 +2653,7 @@ impl Launcher {
                 &[("version", &version)],
             ),
             Some(true) => trf(
-                "Not prepared. NIVRORA can download Minecraft {version} from Mojang for your account, or use your own install.",
+                "Not prepared. NIROVA can download Minecraft {version} from Mojang for your account, or use your own install.",
                 &[("version", &version)],
             ),
             // No owner never stops this fork (`owner_shown`): what is prepared.
@@ -2726,7 +2726,7 @@ impl Launcher {
             || {
                 div()
                     .child(if owner {
-                        tr("None needed: NIVRORA downloads Minecraft from Mojang for your account.")
+                        tr("None needed: NIROVA downloads Minecraft from Mojang for your account.")
                     } else {
                         tr("Not found. Choose the folder where your launcher keeps Minecraft.")
                     })
@@ -2910,7 +2910,7 @@ impl Launcher {
                             .flex()
                             .flex_col()
                             .gap(px(4.))
-                            .child(shell::text(theme::night::DISPLAY, shell::c(t.night.ink)).child("NIVRORA"))
+                            .child(shell::text(theme::night::DISPLAY, shell::c(t.night.ink)).child("NIROVA"))
                             .child(shell::text(theme::night::UI, shell::c(t.night.ink_soft)).child(tr("Your game. Your settings."))),
                     ),
             )
@@ -2933,7 +2933,7 @@ impl Launcher {
                             // after pressing it, not below the fold (#666).
                             .children(steps),
                     )
-                    // Notes and friends are NIVRORA's.
+                    // Notes and friends are NIROVA's.
                     .children(java.is_none().then(|| self.home_card(&tag, cx))),
             );
         let mut page = div().flex().flex_col().gap(px(28.)).child(banner);
@@ -2950,7 +2950,7 @@ impl Launcher {
         page
     }
 
-    /// "NIVRORA crashed": the report and the logs, and where to report it.
+    /// "NIROVA crashed": the report and the logs, and where to report it.
     fn crash_notice(&self, crash: Crash, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let mut actions = div().flex().flex_wrap().gap(px(8.)).mt(px(8.));
@@ -3018,7 +3018,7 @@ impl Launcher {
             .child(
                 text(theme::HEADING)
                     .text_color(t.ink)
-                    .child(tr("NIVRORA crashed")),
+                    .child(tr("NIROVA crashed")),
             );
         if !crash.summary.is_empty() {
             body = body.child(div().text_color(t.ink_soft).child(crash.summary));
@@ -3289,7 +3289,7 @@ impl Launcher {
                     .child(group("AI", "terminal"))
                     .child(self.no_ai_row(n + 6, cx))
                     .child(group("About", "info-box"))
-                    .child(index_row(n + 7, "NIVRORA", Some(plain(&horizon)), horizon_action, &t))
+                    .child(index_row(n + 7, "NIROVA", Some(plain(&horizon)), horizon_action, &t))
                     .child(index_row(
                         n + 8,
                         tr("Launcher"),
@@ -3328,7 +3328,7 @@ impl Launcher {
                             n + 11,
                             tr("Applications menu"),
                             Some(plain(if self.settings.desktop_entry() {
-                                "NIVRORA and its icon are in your desktop's menu."
+                                "NIROVA and its icon are in your desktop's menu."
                             } else {
                                 "Not in your desktop's menu."
                             })),
@@ -3371,7 +3371,7 @@ impl Launcher {
             .child(tr("The build compiles the game: 20 to 30 minutes and a few GB of disk the first time (it downloads Rust), a few minutes after that.").to_string())
             .children(self.native_update.as_ref().map(|newer| {
                 div().text_color(t.warn).child(trf(
-                    "This moves the instance to NIVRORA {version}. It compiles the game from scratch, so it takes longer than a normal rebuild: up to 30 minutes.",
+                    "This moves the instance to NIROVA {version}. It compiles the game from scratch, so it takes longer than a normal rebuild: up to 30 minutes.",
                     &[("version", &native_status::horizon_label(newer))],
                 ))
             }));
@@ -3401,7 +3401,7 @@ impl Launcher {
         ))
     }
 
-    /// Mods made for other NIVRORA versions: which, and the version the build uses. They often
+    /// Mods made for other NIROVA versions: which, and the version the build uses. They often
     /// still work, so the player may build anyway.
     fn native_mismatch_panel(&self, list: &str, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -3412,7 +3412,7 @@ impl Launcher {
             .mt(px(8.))
             .p(px(12.))
             .bg(t.well)
-            .child(div().text_color(t.danger).child(tr("These mods were made for different NIVRORA versions").to_string()))
+            .child(div().text_color(t.danger).child(tr("These mods were made for different NIROVA versions").to_string()))
             .child(list.to_owned())
             .child(tr("They often still work together. If the build fails, install versions made for the same Nightly.").to_string())
             .child(
@@ -3734,7 +3734,7 @@ impl Launcher {
             }
             Some(SignInState::Done(Err(e))) => div().text_color(t.danger).child(e.clone()),
             None if self.accounts.accounts.is_empty() => div().child(tr(
-                "A Microsoft account plays online servers with your name and skin, and lets NIVRORA download Minecraft from Mojang.",
+                "A Microsoft account plays online servers with your name and skin, and lets NIROVA download Minecraft from Mojang.",
             )),
             None => div().child(tr("Add another account.")),
         };
@@ -3851,7 +3851,7 @@ impl Launcher {
     /// Join a friend: a code field and Join, which starts the game straight
     /// into the friend's world (errors show in the game).
     /// Plays the selected instance straight into a world (`--world`) or a server (`--server`):
-    /// flags every NIVRORA release takes.
+    /// flags every NIROVA release takes.
     pub(crate) fn quick_play(&mut self, flag: &'static str, value: String) {
         self.quick_play = Some((flag, value));
         self.play();
@@ -4235,7 +4235,7 @@ impl Launcher {
                                 .child(tr("Support the work below")),
                         )
                         .child(text(theme::UI).text_color(t.muted).child(tr(
-                            "NIVRORA is built in the open. Sponsors fund the next release.",
+                            "NIROVA is built in the open. Sponsors fund the next release.",
                         ))),
                 )
                 .child(
@@ -4547,7 +4547,7 @@ impl Render for Launcher {
                 .line_height(px(theme::WORDMARK.px * 0.5))
                 .font_weight(FontWeight::BOLD)
                 .text_color(t.ink)
-                .children("NIVRORA".chars().enumerate().map(|(i, c)| {
+                .children("NIROVA".chars().enumerate().map(|(i, c)| {
                     let at = held - i as f32 * theme::STAGGER.as_secs_f32() * 1.5;
                     let p = ease_out_cubic(at / theme::ENTER.as_secs_f32());
                     div()
@@ -4626,7 +4626,7 @@ impl Launcher {
         (reveal, held.as_secs_f32())
     }
 
-    /// `nivrora-launcher benchmark`: scroll the page a little on every frame, back to the top at
+    /// `nirova-launcher benchmark`: scroll the page a little on every frame, back to the top at
     /// the bottom, so the frame times measure scrolling.
     fn bench_scroll(&mut self, window: &mut Window) {
         let handle = &self.content_scroll.handle;
@@ -4690,8 +4690,8 @@ fn key_bindings() -> Vec<KeyBinding> {
 fn menus() -> Vec<Menu> {
     vec![
         Menu {
-            name: "NIVRORA Launcher".into(),
-            items: vec![MenuItem::action("Quit NIVRORA Launcher", Quit)],
+            name: "NIROVA Launcher".into(),
+            items: vec![MenuItem::action("Quit NIROVA Launcher", Quit)],
             disabled: false,
         },
         Menu {
@@ -4752,7 +4752,7 @@ fn main() {
                     titlebar: Some(titlebar::options()),
                     #[cfg(target_os = "linux")]
                     window_decorations: Some(gpui::WindowDecorations::Client),
-                    app_id: Some("app.nivrora.launcher".into()),
+                    app_id: Some("app.nirova.launcher".into()),
                     // GPUI draws a window without focus at most every 33 ms to save energy. A
                     // benchmark's window often starts without it (KDE keeps focus from windows
                     // a background process opens), and it measures drawing, not that limit.
@@ -4911,10 +4911,10 @@ mod tests {
     #[test]
     fn the_app_menu_has_quit() {
         let menus = super::menus();
-        assert_eq!(menus[0].name, "NIVRORA Launcher");
+        assert_eq!(menus[0].name, "NIROVA Launcher");
         assert!(matches!(
             &menus[0].items[0],
-            gpui::MenuItem::Action { name, .. } if name == "Quit NIVRORA Launcher"
+            gpui::MenuItem::Action { name, .. } if name == "Quit NIROVA Launcher"
         ));
     }
 
