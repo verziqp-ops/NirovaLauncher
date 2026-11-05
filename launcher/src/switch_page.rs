@@ -14,10 +14,10 @@ impl Launcher {
                     .map_or_else(String::new, |a| a.name.clone()),
                 tr("Microsoft account"),
             ),
-            Player::Offline(name) => (name, tr("Offline")),
+            Player::Offline(name) => (name, tr("Guest profile")),
             Player::GameName => (
                 self.offline_name.clone().unwrap_or_else(|| "Player".into()),
-                tr("Offline"),
+                tr("Guest profile"),
             ),
         }
     }
@@ -44,7 +44,7 @@ impl Launcher {
                 (
                     Player::Microsoft(a.uuid.clone()),
                     a.name.clone(),
-                    tr("Microsoft"),
+                    tr("Licensed account"),
                 )
             })
             .collect();
@@ -52,12 +52,12 @@ impl Launcher {
             self.accounts
                 .offline
                 .iter()
-                .map(|n| (Player::Offline(n.clone()), n.clone(), tr("Offline"))),
+                .map(|n| (Player::Offline(n.clone()), n.clone(), tr("Guest profile"))),
         );
         out.push((
             Player::GameName,
             self.offline_name.clone().unwrap_or_else(|| "Player".into()),
-            tr("Offline, the game's name"),
+            tr("Guest profile"),
         ));
         out
     }
@@ -240,9 +240,9 @@ impl Launcher {
                 Some(
                     div()
                         .child(tr(if plays {
-                            "Offline name · the game's own · plays"
+                            "Guest profile · game generated · active"
                         } else {
-                            "Offline name · the game's own"
+                            "Guest profile · game generated"
                         }))
                         .into_any_element(),
                 ),
@@ -276,7 +276,7 @@ impl Launcher {
             );
         rows = rows.child(index_row(
             n,
-            tr("Offline name"),
+            tr("Guest profile"),
             Some(
                 div()
                     .child(tr(
