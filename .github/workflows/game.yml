@@ -294,6 +294,8 @@ jobs:
             "dist/nirova-game-macos-arm64.zip#Nirova game: macOS Apple Silicon" \
             "dist/nirova-game-macos-x64.zip#Nirova game: macOS Intel" \
             "dist/nirova-server-linux-x86_64.tar.gz#Nirova dedicated server: Linux x86_64" \
+            "dist/nirova-server-macos-arm64.zip#Nirova dedicated server: macOS Apple Silicon" \
+            "dist/nirova-server-macos-x64.zip#Nirova dedicated server: macOS Intel" \
             dist/SHA256SUMS dist/SHA256SUMS.sig
           python3 tools/ci/nightly.py prune --days 7
       - name: Publish Stable channel
@@ -314,4 +316,6 @@ jobs:
             "dist/nirova-game-macos-arm64.zip#Nirova game: macOS Apple Silicon" \
             "dist/nirova-game-macos-x64.zip#Nirova game: macOS Intel" \
             "dist/nirova-server-linux-x86_64.tar.gz#Nirova dedicated server: Linux x86_64" \
+            "dist/nirova-server-macos-arm64.zip#Nirova dedicated server: macOS Apple Silicon" \
+            "dist/nirova-server-macos-x64.zip#Nirova dedicated server: macOS Intel" \
             dist/SHA256SUMS dist/SHA256SUMS.sig
