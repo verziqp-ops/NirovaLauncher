@@ -130,7 +130,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Windows'
         with:
-          name: Nirova-Setup.exe
+          name: NIVRORA-Setup.exe
           path: dist/Nirova-Setup.exe
 
   release:
