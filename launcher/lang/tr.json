@@ -350,7 +350,7 @@
   "Delete everything?": "Her şeyi sil?",
   "Delete my data": "Verilerimi sil",
   "Your data": "Verileriniz",
-  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Siz açmadığınız sürece her anahtar kapalıdır. Neler gönderildiği aşağıda belirtilmiştir; playNIROVA.dev adresindeki gizlilik sayfasında ne kadar süre saklandığı yazmaktadır.",
+  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. The project's privacy notice explains how long its data is kept.",
   "Performance statistics": "Performans istatistikleri",
   "After each session: frame-time percentiles and a 14-bucket histogram, tick times, peak memory and startup times, with your machine (OS, CPU and its cores and clocks, memory size, GPU, its memory and driver, drive type, screen size and refresh rate, laptop or desktop, on battery or not) and the settings that change performance.": "Her oturumdan sonra: Kare süresi yüzdelikleri ve 14 bölmeli histogram, onay süreleri, pik bellek ve başlangıç süreleri; makinenizle (İşletim Sistemi, CPU çekirdekleri ve saat hızları, bellek boyutu, GPU, belleği ve sürücüsü, sürücü tipi, ekran boyutu ve yenileme hızı, dizüstü veya masaüstü, pilde olup olmadığı) ve performansı değiştiren ayarlar ile birlikte.",
   "Crash reports": "Çökme raporları",
@@ -361,7 +361,6 @@
   "The results of benchmarks you run, for the community results on playhorizon.dev.": "playNIROVA.dev adresindeki topluluk sonuçları için çalıştırdığınız testlerin sonuçları.",
   "Never sent: your account name or UUID, world names, server addresses, chat, or your IP address. Each report is dated to the day, under a random install ID you can delete.": "Asla gönderilmez: Hesap adınız veya UUID'niz, dünya adlarınız, sunucu adresleriniz, sohbetleriniz veya IP adresiniz. Her rapor, silebilir olduğunuz rastgele bir yükleme kimliği altında güne göre tarihlenir.",
   "\"I'm playing\" ping": "\"Oynuyorum\" sinyali",
-  "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is sent whatever the switches say.": "Siz oynarken oyun, başlatıcının şu anda kaç kişinin NIROVA oynadığını gösterebilmesi için dakikada bir anonim \"Oynuyorum\" sinyali gönderir. Şunları içerir: Oyun başladığında oluşturulan ve kapandığında unutulan rastgele bir sayı, NIROVA sürümü, işletim sisteminiz (Linux, macOS veya Windows) ve LAN'a ya da arkadaşlara açık bir dünyanız olup olmadığı. Şunları içermez: Hesabınız, yükleme kimliğiniz, dünya veya sunucu adları ya da oyunda yaptığınız herhangi bir şey. Sunucu IP adresinizi saklamaz. Anahtarlar ne derse desin bu gönderilir.",
   "All": "Tümü",
   "Ported": "Uyarlanmış",
   "Partial": "Kısmi",
@@ -657,5 +656,6 @@
   "Minecraft jar": "Minecraft jar'ı",
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "Launcher'ın bu sürümünde Microsoft girişi yok (NIROVA_MSA_CLIENT_ID).",
   "Offline launcher {version}": "Çevrimdışı launcher {version}",
-  "milk-blue": "Süt mavisi"
+  "milk-blue": "Süt mavisi",
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
 }
