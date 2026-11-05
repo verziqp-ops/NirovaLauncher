@@ -110,8 +110,22 @@ jobs:
           case "${{ matrix.name }}" in
             windows) 7z a -tzip ../dist/${{ matrix.asset }} "./$out/${{ matrix.binary }}" > /dev/null ;;
             linux) tar -czf ../dist/${{ matrix.asset }} -C "$out" ${{ matrix.binary }} ;;
-            macos*) (cd "$out" && zip -q "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" ${{ matrix.binary }}) ;;
+            macos*) echo "macOS app bundle is packaged in the next step" ;;
           esac
+      - name: Build the NIVRORA macOS app and disk image
+        if: runner.os == 'macOS'
+        run: |
+          python3 -m pip install --disable-pip-version-check dmgbuild==1.6.5
+          version="${HORIZON_LAUNCHER_VERSION:-$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)}"
+          arch=arm64
+          [[ "${{ matrix.name }}" == "macos-x64" ]] && arch=x64
+          ../packaging/macos/package.sh "$PWD/$out/${{ matrix.binary }}" "$version" "$GITHUB_WORKSPACE/dist" "$arch"
+      - name: Upload the NIVRORA macOS disk image
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nivrora-launcher-macos-${{ matrix.name == 'macos-x64' && 'x64' || 'arm64' }}.dmg
+          path: dist/nivrora-launcher-macos-${{ matrix.name == 'macos-x64' && 'x64' || 'arm64' }}.dmg
       # The installer most people download (packaging/windows/setup.iss); the zip stays what
       # launchers update themselves from.
       - name: Windows installer
