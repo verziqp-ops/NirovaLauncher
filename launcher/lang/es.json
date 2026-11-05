@@ -177,7 +177,6 @@
   "Nothing found that runs in Horizon. Show everything lists the rest.": "No se encontró nada que funcione en NIROVA. Mostrar todo lista el resto.",
   "The launcher goes down when the game starts, and comes back when it closes.": "El lanzador se minimiza cuando el juego inicia y vuelve cuando se cierra.",
   "GameMode": "GameMode",
-  "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is sent whatever the switches say.": "Mientras juegas, el juego envía un ping anónimo «Estoy jugando» una vez por minuto para que el lanzador pueda mostrar cuántas personas juegan a NIROVA en este momento. Incluye: un número aleatorio generado al iniciar el juego y descartado al cerrarlo, la versión de NIROVA, tu sistema operativo (Linux, macOS o Windows) y si tienes un mundo abierto en LAN o para amigos. No incluye: tu cuenta, tu ID de instalación, nombres de mundos o servidores, ni nada de lo que hagas en el juego, y el servidor no guarda tu dirección IP. Se envía independientemente de cómo estén configuradas las opciones.",
   "When you report it on Discord, attach the crash report file (or paste it with Copy report) and say what you were doing.": "Al reportarlo en Discord, adjunta el archivo del informe de fallos (o pégalo con Copiar informe) y describe qué estabas haciendo.",
   "Get my server": "Obtener mi servidor",
   "New instance": "Nueva instancia",
@@ -411,7 +410,7 @@
   "Filters": "Filtros",
   "{count} followers": "{count} seguidores",
   "Connect an AI agent": "Conectar un agente de IA",
-  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Cada opción está desactivada a menos que la actives. Debajo de cada una se detalla qué envía; la página de privacidad en playNIROVA.dev indica cuánto tiempo se conserva.",
+  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. The project's privacy notice explains how long its data is kept.",
   "Players": "Jugadores",
   "simulation distance": "distancia de simulación",
   "Updated": "Actualizados",
@@ -657,5 +656,6 @@
   "Minecraft jar": "Jar de Minecraft",
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "Esta versión del launcher no tiene inicio de sesión de Microsoft (NIROVA_MSA_CLIENT_ID).",
   "Offline launcher {version}": "Launcher sin conexión {version}",
-  "milk-blue": "Azul lechoso"
+  "milk-blue": "Azul lechoso",
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
 }
