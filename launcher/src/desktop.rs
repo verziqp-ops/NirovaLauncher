@@ -16,39 +16,39 @@ use std::path::{Path, PathBuf};
 const ICONS: [(&str, &[u8]); 9] = [
     (
         "16x16",
-        include_bytes!("../../packaging/icons/hicolor/16x16/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/16x16/apps/nivrora.png"),
     ),
     (
         "24x24",
-        include_bytes!("../../packaging/icons/hicolor/24x24/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/24x24/apps/nivrora.png"),
     ),
     (
         "32x32",
-        include_bytes!("../../packaging/icons/hicolor/32x32/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/32x32/apps/nivrora.png"),
     ),
     (
         "48x48",
-        include_bytes!("../../packaging/icons/hicolor/48x48/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/48x48/apps/nivrora.png"),
     ),
     (
         "64x64",
-        include_bytes!("../../packaging/icons/hicolor/64x64/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/64x64/apps/nivrora.png"),
     ),
     (
         "128x128",
-        include_bytes!("../../packaging/icons/hicolor/128x128/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/128x128/apps/nivrora.png"),
     ),
     (
         "256x256",
-        include_bytes!("../../packaging/icons/hicolor/256x256/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/256x256/apps/nivrora.png"),
     ),
     (
         "512x512",
-        include_bytes!("../../packaging/icons/hicolor/512x512/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/512x512/apps/nivrora.png"),
     ),
     (
         "scalable",
-        include_bytes!("../../packaging/icons/hicolor/scalable/apps/horizon.svg"),
+        include_bytes!("../../packaging/icons/hicolor/scalable/apps/nivrora.svg"),
     ),
 ];
 
@@ -84,7 +84,7 @@ pub fn launcher_entry(exe: &Path) -> String {
          Type=Application\n\
          Name=NIVRORA Launcher\n\
          GenericName=Game launcher\n\
-         Comment=Install, prepare and play Horizon, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
+         Comment=Install, prepare and play NIVRORA, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
          Exec={}\n\
          TryExec={}\n\
          Icon=nivrora\n\
@@ -259,9 +259,9 @@ mod tests {
 
     #[test]
     fn exec_paths_are_quoted() {
-        let entry = launcher_entry(Path::new("/home/a b/Horizon \"x\"/horizon-launcher"));
-        assert!(entry.contains("Exec=\"/home/a b/Horizon \\\"x\\\"/horizon-launcher\"\n"));
-        assert!(entry.contains("TryExec=/home/a b/Horizon \"x\"/horizon-launcher\n"));
+        let entry = launcher_entry(Path::new("/home/a b/NIVRORA \"x\"/horizon-launcher"));
+        assert!(entry.contains("Exec=\"/home/a b/NIVRORA \\\"x\\\"/horizon-launcher\"\n"));
+        assert!(entry.contains("TryExec=/home/a b/NIVRORA \"x\"/horizon-launcher\n"));
         assert!(entry.contains("Icon=nivrora\n"));
     }
 
@@ -271,10 +271,10 @@ mod tests {
         let _ = fs::remove_dir_all(&data);
         assert!(install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
         assert!(!install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
-        let png = data.join("icons/hicolor/48x48/apps/horizon.png");
+        let png = data.join("icons/hicolor/48x48/apps/nivrora.png");
         assert!(fs::read(&png).unwrap().starts_with(b"\x89PNG"));
         assert!(data
-            .join("icons/hicolor/scalable/apps/horizon.svg")
+            .join("icons/hicolor/scalable/apps/nivrora.svg")
             .exists());
         assert!(install_in(&data, Path::new("/opt/b/horizon-launcher")).unwrap());
         let entry = fs::read_to_string(data.join("applications").join(LAUNCHER_ENTRY)).unwrap();
@@ -345,12 +345,12 @@ mod tests {
     /// when the launcher exits.
     #[test]
     fn an_appimage_entry_starts_the_appimage() {
-        let exe = Path::new("/tmp/.mount_Horizon123/usr/bin/horizon-launcher");
-        let appimage = Path::new("/home/a b/Horizon.AppImage");
+        let exe = Path::new("/tmp/.mount_NIVRORA123/usr/bin/horizon-launcher");
+        let appimage = Path::new("/home/a b/NIVRORA.AppImage");
         assert_eq!(target_from(exe, Some(appimage)), appimage);
         assert_eq!(target_from(exe, None), exe);
         // Quoted, so the space in the player's folder survives.
         assert!(launcher_entry(&target_from(exe, Some(appimage)))
-            .contains("Exec=\"/home/a b/Horizon.AppImage\"\n"));
+            .contains("Exec=\"/home/a b/NIVRORA.AppImage\"\n"));
     }
 }
