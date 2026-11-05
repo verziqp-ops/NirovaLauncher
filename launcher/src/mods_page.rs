@@ -1563,7 +1563,7 @@ impl Launcher {
             } else if m.everything {
                 tr("Nothing found.")
             } else {
-                tr("Nothing found that runs in Horizon. Show everything lists the rest.")
+                tr("Nothing found that runs in NIVRORA. Show everything lists the rest.")
             };
             return centered(line, &t);
         }
