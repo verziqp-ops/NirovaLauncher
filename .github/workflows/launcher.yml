@@ -83,6 +83,8 @@ jobs:
         with:
           workspaces: launcher
           key: ${{ matrix.name }}
+      - name: Resolve the launcher lockfile
+        run: cargo generate-lockfile
       - name: Linux libraries GPUI links to
         if: runner.os == 'Linux'
         run: |
