@@ -54,8 +54,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: launcher
-      - name: Resolve the launcher lockfile
-        run: cargo generate-lockfile
+      - name: Verify the committed launcher lockfile
+        run: cargo metadata --locked --format-version 1 > /dev/null
       - name: Libraries GPUI links to
         run: |
           sudo apt-get update
@@ -109,8 +109,8 @@ jobs:
         with:
           workspaces: launcher
           key: ${{ matrix.name }}
-      - name: Resolve the launcher lockfile
-        run: cargo generate-lockfile
+      - name: Verify the committed launcher lockfile
+        run: cargo metadata --locked --format-version 1 > /dev/null
       - name: Linux libraries GPUI links to
         if: runner.os == 'Linux'
         run: |
