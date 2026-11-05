@@ -1,37 +1,38 @@
 # Nirova Launcher
 
-Nirova is a community launcher for the Rust-based Horizon/Minecraft 26.3 client. The project is in active development; **there is no tested public installer release yet**.
-
-## Project status
-
-See **[Project status and roadmap (Ukrainian)](docs/STATUS_UK.md)** for what is already in the repository, what needs testing, and the remaining performance, design and release work.
+A community launcher for the Rust-based Minecraft 26.3 client. This repository is in active development; public release builds are not available yet.
 
 ## Current target
-- One declared game target: **26.3**. Other versions are not currently advertised as supported.
-- Launcher build workflows are configured for Windows, Linux, macOS Apple Silicon and Intel macOS.
-- Local compatible game-file discovery and manual selection.
-- Local offline profiles and Microsoft sign-in in configured flows.
-- Local PNG skin and cape selection for offline profiles.
-- Ely.by integration is planned, not available in this build.
+
+- One supported game version: **26.3**.
+- Windows, Linux and macOS build pipelines.
+- Local game-file discovery and manual selection.
+- Guest/offline profile support.
+- Microsoft account sign-in where configured.
+- Ely.by integration is planned; it is not yet available in this build.
+- Local skin and cape PNG selection is available for offline profiles; remote skin-provider integration is still being developed.
+
+## Before the first public release
+
+The launcher needs a compatible local copy of the game's 26.3 files to prepare resources. It does not bundle Minecraft assets or promise compatibility with other game versions. Guest mode does not grant access to servers that require Microsoft account ownership checks.
 
 ## Downloads
 
-**No public binary release is available yet.** Tested installers and platform archives will appear on the [GitHub Releases page](https://github.com/verziqp-ops/NirovaLauncher/releases).
-
-The launcher does not bundle Minecraft assets or jars. A compatible local copy of the required 26.3 game files is needed. Do not download unofficial builds from third-party mirrors.
+Downloads will appear under [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases) after the first successful, tested release. Do not install unofficial binaries from third-party mirrors.
 
 ## Modding
 
-A Ukrainian beginner guide is available in [docs/modding-uk.md](docs/modding-uk.md). The visual in-launcher mod creator is planned, not implemented. Java Forge/Fabric/NeoForge mods are not automatically compatible with the native Rust engine.
+A Ukrainian beginner guide for creating content mods and native Rust mods is available in [docs/modding-uk.md](docs/modding-uk.md). The visual in-launcher mod creator is planned and is not implemented yet.
 
 ## Build from source
 
-See [launcher CI](.github/workflows/launcher.yml) for launcher build targets and [game CI](.github/workflows/game.yml) for the separate game-client packaging workflow.
+See the workflow files in the .github/workflows directory for supported CI targets and required build dependencies.
 
 ## Security and privacy
-- Never share Microsoft or Ely.by passwords.
-- Account tokens should be stored using the operating system's secure credential store.
-- Offline profiles do not grant Minecraft Java Edition ownership or server entitlements.
+
+- Never share your Microsoft or Ely.by password with anyone.
+- Account tokens must be stored using the operating system's secure credential store.
+- Report security issues privately to the repository owner rather than publishing exploit details.
 
 ## Licensing
 
