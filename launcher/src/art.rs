@@ -8,6 +8,19 @@ use std::sync::Arc;
 /// `texels` (RGBA, row by row) as an image whose texels are `texel` logical pixels square at
 /// `scale`. Texel edges fall on whole device pixels where the scale allows (1×, 2×, 3×).
 pub fn bake(texels: &[[u8; 4]], w: usize, h: usize, texel: f32, scale: f32) -> Arc<RenderImage> {
+    bake_with_blur(texels, w, h, texel, scale, 0.0)
+}
+
+/// Bake a softly blurred background layer without changing crisp UI art or player textures.
+pub fn bake_blurred(
+    texels: &[[u8; 4]], w: usize, h: usize, texel: f32, scale: f32, sigma: f32,
+) -> Arc<RenderImage> {
+    bake_with_blur(texels, w, h, texel, scale, sigma)
+}
+
+fn bake_with_blur(
+    texels: &[[u8; 4]], w: usize, h: usize, texel: f32, scale: f32, sigma: f32,
+) -> Arc<RenderImage> {
     let size = |n: usize| ((n as f32 * texel * scale).round() as u32).max(1);
     let (dw, dh) = (size(w), size(h));
     let mut buf = image::RgbaImage::new(dw, dh);
@@ -21,6 +34,7 @@ pub fn bake(texels: &[[u8; 4]], w: usize, h: usize, texel: f32, scale: f32) -> A
             *px = image::Rgba([pre(b), pre(g), pre(r), a]);
         }
     }
+    let buf = if sigma > 0.0 { image::imageops::blur(&buf, sigma) } else { buf };
     Arc::new(RenderImage::new([image::Frame::new(buf)]))
 }
 
