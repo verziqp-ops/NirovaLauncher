@@ -2975,6 +2975,22 @@ impl Launcher {
                 div()
                     .relative()
                     .flex()
+                    .items_center()
+                    .gap(px(18.))
+                    .child(mark(52., &t))
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(4.))
+                            .child(shell::text(theme::night::DISPLAY, shell::c(night::ink)).child("NIVRORA"))
+                            .child(shell::text(theme::night::UI, shell::c(night::ink_soft)).child(tr("Your game. Your settings."))),
+                    ),
+            )
+            .child(
+                div()
+                    .relative()
+                    .flex()
                     .items_end()
                     .gap(px(32.))
                     .child(
