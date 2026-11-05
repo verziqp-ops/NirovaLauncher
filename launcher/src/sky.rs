@@ -191,8 +191,8 @@ const STAR_LEVELS: [f32; 4] = [0.95, 0.6, 0.3, 0.6];
 /// different layers share frames: two a second at most.
 const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
-/// The sky is static by default. Set `NIVRORA_LAUNCHER_MOTION=full` to animate while focused,
-/// or `NIVRORA_LAUNCHER_MOTION=always` for recordings.
+/// The sky is static by default. Set `NIROVA_LAUNCHER_MOTION=full` to animate while focused,
+/// or `NIROVA_LAUNCHER_MOTION=always` for recordings.
 #[derive(Clone, Copy, PartialEq)]
 enum Motion {
     Still,
@@ -202,7 +202,7 @@ enum Motion {
 
 fn motion() -> Motion {
     static MOTION: LazyLock<Motion> = LazyLock::new(|| {
-        match std::env::var("NIVRORA_LAUNCHER_MOTION").as_deref() {
+        match std::env::var("NIROVA_LAUNCHER_MOTION").as_deref() {
             Ok("off" | "reduced") => return Motion::Still,
             Ok("always") => return Motion::Always,
             Ok("full") => return Motion::InFront,
