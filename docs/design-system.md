@@ -50,7 +50,7 @@ Every text colour passes WCAG AA (4.5:1) on every background it is used on; the 
 | `ink`        | `#182a36` | `#f0f6fa` | text, selection, slider fill, the inverted segment |
 | `ink_soft`   | `#3e5665` | `#c7d7e2` | secondary text, values |
 | `muted`      | `#4b6271` | `#b9cbd6` | labels, descriptions, mono indices and details |
-| `accent`     | `#a94475` | `#f09bc3` | the main action, links, focus, progress |
+| `accent`     | `#a53d70` | `#f09bc3` | the main action, links, focus, progress |
 | `on_accent`  | `#ffffff` | `#17232c` | text on the accent |
 | `danger`     | `#a3301d` | `#ffb3a8` | errors, the crash notice's dot |
 | `success`    | `#136336` | `#7ae2a9` | "Matches vanilla", "Ready" |
@@ -237,8 +237,8 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
 | `ink`       | `#edf5fa` | `#1b2a36` | text |
 | `ink-soft`  | `#c9d9e5` | `#405363` | secondary text |
 | `muted`     | `#b9cbd6` | `#506776` | labels, details |
-| `accent`    | `#f09bc3` | `#a94475` | the main action, progress |
-| `accent-hi` | `#f7c2d9` | `#a94475` | accent text, focus ring |
+| `accent`    | `#f09bc3` | `#a53d70` | the main action, progress |
+| `accent-hi` | `#f7c2d9` | `#a53d70` | accent text, focus ring |
 | `success`, `warn`, `danger` | `#7ae2a9` `#f5c66e` `#ffb3a8` | `#136336` `#7a4f00` `#a3301d` | Ready, updates, errors |
 
 - **Motion that means something**: the sky drifts slowly and stops when the window is hidden or
