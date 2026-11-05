@@ -1,4 +1,4 @@
-//! Settings > Account's skin panel for an offline name (`horizon_launcher::skins`): the front
+//! Settings > Account's skin panel for a profile (`horizon_launcher::skins`): the front
 //! of the skin and the cape, choosing either from a PNG, and the model.
 use super::*;
 use gpui::RenderImage;
@@ -39,10 +39,8 @@ impl Launcher {
         };
         let mut accounts = Accounts::load();
         // The name may have been forgotten while a file dialog was open: keep nothing for it.
-        if !accounts
-            .offline
-            .iter()
-            .any(|n| n.eq_ignore_ascii_case(&name))
+        if accounts.find(&name).is_none()
+            && !accounts.offline.iter().any(|n| n.eq_ignore_ascii_case(&name))
         {
             return Ok(());
         }
@@ -84,10 +82,9 @@ impl Launcher {
             return;
         };
         // The name may have been forgotten while the file dialog was open.
-        if !Accounts::load()
-            .offline
-            .iter()
-            .any(|n| n.eq_ignore_ascii_case(&name))
+        let accounts = Accounts::load();
+        if accounts.find(&name).is_none()
+            && !accounts.offline.iter().any(|n| n.eq_ignore_ascii_case(&name))
         {
             return;
         }
@@ -135,7 +132,9 @@ impl Launcher {
     pub(super) fn skin_panel(&mut self, cx: &mut Context<Self>) -> Option<Div> {
         let t = self.theme;
         let name = self.skin.as_ref()?.name.clone();
-        if !self.accounts.offline.iter().any(|n| n == &name) {
+        if self.accounts.find(&name).is_none()
+            && !self.accounts.offline.iter().any(|n| n.eq_ignore_ascii_case(&name))
+        {
             self.skin = None;
             return None;
         }
