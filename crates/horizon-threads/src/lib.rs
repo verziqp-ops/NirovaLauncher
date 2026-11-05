@@ -7,6 +7,8 @@ pub mod boot_paint;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
+pub mod region;
+
 /// Ask the OS to run the calling thread ahead of the process's other
 /// threads, as vanilla's `MinecraftServer.spin` does for its server thread
 /// (`Thread.setPriority(8)` when there are more than four processors), so
