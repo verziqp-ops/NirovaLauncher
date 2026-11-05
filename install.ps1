@@ -1,28 +1,28 @@
 <#
 .SYNOPSIS
-  Installs Nirova Launcher on Windows: the launcher, a Start menu shortcut and a desktop
+  Installs NIVRORA Launcher on Windows: the launcher, a Start menu shortcut and a desktop
   shortcut. No administrator rights needed.
 
 .DESCRIPTION
   One line, in PowerShell:
-    irm https://github.com/verziqp-ops/NirovaLauncher/releases/latest/download/install.ps1 | iex
+    irm https://github.com/verziqp-ops/NIVRORALauncher/releases/latest/download/install.ps1 | iex
 
   Or with a launcher you built yourself (build.ps1 does this for you):
-    .\install.ps1 -Exe launcher\target\release\horizon-launcher.exe
+    .\install.ps1 -Exe launcher\target\release\nivrora-launcher.exe
 #>
 param(
-    # A local horizon-launcher.exe to install instead of downloading the latest release.
+    # A local nivrora-launcher.exe to install instead of downloading the latest release.
     [string]$Exe = "",
     # Don't start the launcher when it is installed.
     [switch]$NoStart
 )
 
 $ErrorActionPreference = "Stop"
-$Repo = "verziqp-ops/NirovaLauncher"
-$Asset = "horizon-launcher-windows-x64.zip"
-$Name = "Nirova Launcher"
-$Dir = Join-Path $env:LOCALAPPDATA "Programs\NirovaLauncher"
-$Target = Join-Path $Dir "nirova-launcher.exe"
+$Repo = "verziqp-ops/NIVRORALauncher"
+$Asset = "nivrora-launcher-windows-x64.zip"
+$Name = "NIVRORA Launcher"
+$Dir = Join-Path $env:LOCALAPPDATA "Programs\NIVRORALauncher"
+$Target = Join-Path $Dir "nivrora-launcher.exe"
 
 function Say($text) { Write-Host "  $text" }
 
@@ -47,14 +47,14 @@ if ($Exe) {
     $url = "https://github.com/$Repo/releases/latest/download/$Asset"
     Say "Downloading the latest release"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $work = Join-Path $env:TEMP "nirova-launcher-install"
+    $work = Join-Path $env:TEMP "nivrora-launcher-install"
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $work | Out-Null
     $zip = Join-Path $work $Asset
     Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
     Expand-Archive $zip -DestinationPath $work -Force
-    $new = Get-ChildItem $work -Recurse -Filter "horizon-launcher.exe" | Select-Object -First 1
-    if (-not $new) { throw "The download has no horizon-launcher.exe" }
+    $new = Get-ChildItem $work -Recurse -Filter "nivrora-launcher.exe" | Select-Object -First 1
+    if (-not $new) { throw "The download has no nivrora-launcher.exe" }
     Move-Item $new.FullName $Target -Force
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 }
@@ -71,7 +71,7 @@ foreach ($lnk in $places) {
     $s.TargetPath = $Target
     $s.WorkingDirectory = $Dir
     $s.IconLocation = "$Target,0"
-    $s.Description = "Launch Nirova Launcher"
+    $s.Description = "Launch NIVRORA Launcher"
     $s.Save()
 }
 Say "Shortcuts: Start menu and desktop"
