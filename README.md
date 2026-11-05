@@ -34,7 +34,7 @@
 
 ## Сборка и релизы
 
-Сборки лаунчера создаются GitHub Actions для Windows, Linux и macOS. Проверенные установщики и архивы публикуются в [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases).
+GitHub Actions собирает лаунчер для Windows, Linux и macOS. Для Windows готовится NIVRORA-Setup.exe, для macOS — NIVRORA DMG и ZIP с приложением, для Linux — архив с бинарным файлом. Артефакты и проверенные релизы публикуются в [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases).
 
 ## Лицензии и сторонние компоненты
 
