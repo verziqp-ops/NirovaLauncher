@@ -133,10 +133,10 @@ impl Perf {
                 // The window may close before the optional report details finish.
                 let _ = sender.send(Machine::detect());
             });
-        } else if self.ui_frames.len() < MAX_UI_FRAME_SAMPLES
-            && let Some(gap) = self.last_frame.map(|t| now - t).filter(|g| *g < IDLE_GAP)
-        {
-            self.ui_frames.push(gap.as_secs_f32() * 1000.0);
+        } else if self.ui_frames.len() < MAX_UI_FRAME_SAMPLES {
+            if let Some(gap) = self.last_frame.map(|t| now - t).filter(|g| *g < IDLE_GAP) {
+                self.ui_frames.push(gap.as_secs_f32() * 1000.0);
+            }
         }
         self.last_frame = Some(now);
         first
