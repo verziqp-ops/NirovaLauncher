@@ -1,4 +1,4 @@
-//! Settings' Language row (`horizon_launcher::i18n`): a dropdown of the system's language and the
+//! Settings' Language row: a dropdown of the launcher's supported languages and the
 //! ones the launcher has, each named in itself. A list rather than a segment per language: nine
 //! segments took the row's whole width and left the row's own sentence a character wide.
 use super::*;
@@ -9,7 +9,7 @@ use horizon_launcher::i18n::Language;
 /// the very entry a player looks for).
 fn choice_name(choice: Option<Language>) -> &'static str {
     match choice {
-        None => tr("System"),
+        None => tr("Russian (default)"),
         Some(language) => language.name(),
     }
 }
@@ -94,14 +94,11 @@ impl Launcher {
             }
             wrap = wrap.child(gpui::deferred(menu).with_priority(1));
         }
-        // The sentence is about following the computer's language, so it says nothing true once
-        // the player has picked one: the row keeps it only while the choice is the system's.
+        // The default language is Russian; players can select another language above.
         let said = self.settings.language.is_none().then(|| {
             div()
-                .child(trf(
-                    "System follows your computer's language: {language} here. A string not \
-                     translated yet shows in English.",
-                    &[("language", Language::system().name())],
+                .child(tr(
+                    "NIROVA starts in Russian by default. A string not translated yet shows in English.",
                 ))
                 .into_any_element()
         });

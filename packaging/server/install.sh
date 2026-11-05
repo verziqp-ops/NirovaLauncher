@@ -1,26 +1,24 @@
 #!/bin/sh
-# Installs horizon-server (docs/server.md) on Linux or macOS: the current Horizon Nightly for this computer (the
-# only build Horizon ships; GitHub's latest release while there is none), downloaded from GitHub Releases and
-# checked against the SHA-256 GitHub publishes for it. On Linux that is
-# the server build (horizon-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
+# Installs NIROVA's native server (docs/server.md) on Linux or macOS from GitHub Releases,
+# checking the published SHA-256 before extraction. The Linux server archive
+# (nirova-server-linux-x86_64.tar.gz) does not need ALSA or udev.
 #
-#   curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.sh | sh
-#   curl -fsSL .../install.sh | sh -s -- --version v0.5.0 --dir /opt/horizon --bin /usr/local/bin
-#   sh install.sh --archive horizon-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
+#   curl -fsSL https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/packaging/server/install.sh | sh
+##   curl -fsSL .../install.sh | sh -s -- --version v1.0.0 --dir /opt/nirova --bin /usr/local/bin
+#   sh install.sh --archive nirova-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
 #
 # It needs curl, tar or unzip, and sha256sum or shasum; it never asks for sudo (pick folders you can write).
-# Releases go to <dir>/releases/<version>, <dir>/current points at the one in use, and <bin>/horizon-server
-# runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
+# The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
 # Nothing of Mojang's is downloaded.
 set -eu
 
-REPO=horizon-rust/horizon
+REPO=verziqp-ops/NirovaLauncher
 VERSION=latest
-DIR="${XDG_DATA_HOME:-$HOME/.local/share}/horizon"
+DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nirova"
 BIN="$HOME/.local/bin"
 ARCHIVE=
 
-die() { echo "horizon install: $*" >&2; exit 1; }
+die() { echo "nirova install: $*" >&2; exit 1; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -38,11 +36,11 @@ MACHINE=$(uname -m)
 # A shell under Rosetta 2 says x86_64 on Apple Silicon: the native build runs faster there.
 [ "$(uname -s)" = Darwin ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ] && MACHINE=arm64
 case "$(uname -s)-$MACHINE" in
-  Linux-x86_64) ASSETS="horizon-server-linux-x86_64.tar.gz horizon-linux-x86_64.tar.gz" ;;
-  Darwin-arm64) ASSETS=horizon-macos-arm64.zip ;;
+  Linux-x86_64) ASSETS="nirova-server-linux-x86_64.tar.gz horizon-server-linux-x86_64.tar.gz horizon-linux-x86_64.tar.gz" ;;
+  Darwin-arm64) ASSETS="nirova-server-macos-arm64.zip horizon-macos-arm64.zip" ;;
   # Intel Macs: the Nightlies built since #1161.
-  Darwin-x86_64) ASSETS=horizon-macos-x64.zip ;;
-  *) die "no Horizon release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
+  Darwin-x86_64) ASSETS="nirova-server-macos-x64.zip horizon-macos-x64.zip" ;;
+  *) die "no NIROVA server release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
 esac
 
 TMP=$(mktemp -d)
@@ -68,7 +66,7 @@ else
 
   TAG=$(printf '%s\n' "$JSON" | sed -n 's/^  "tag_name": "\([^"]*\)".*/\1/p' | head -n 1)
   [ -n "$TAG" ] || die "could not read the release's tag"
-  # A Nightly installs under its date and commit, as `horizon-server update` names it:
+  # A Preview installs under its date and commit, as `nirova-server update` names it:
   # "Nightly 2026-10-28 · 0c02067" is nightly-2026-10-28-0c02067.
   case "$TAG" in
     nightly|nightly-*)
@@ -89,7 +87,7 @@ else
   [ -n "$URL" ] || die "release $TAG has none of $ASSETS"
   [ -n "$DIGEST" ] || die "release $TAG publishes no SHA-256 for $ASSET"
 
-  echo "Downloading Horizon $TAG ($ASSET)..."
+  echo "Downloading NIROVA $TAG ($ASSET)..."
   curl -fL --progress-bar -o "$TMP/$ASSET" "$URL"
   GOT=$($SHA "$TMP/$ASSET" | cut -d' ' -f1)
   [ "$GOT" = "$DIGEST" ] || die "$ASSET doesn't match its SHA-256 (got $GOT, expected $DIGEST): not installed"
@@ -112,12 +110,14 @@ mkdir -p "$RELEASE/.local"
 ln -sfn "$DIR/game-files/horizon-client" "$RELEASE/.local/horizon-client"
 ln -sfn "$RELEASE" "$DIR/current"
 # Small launchers rather than links: the programs find their release folder from where they run.
-for tool in horizon-server horizon-prepare; do
-  printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$tool" > "$BIN/$tool"
-  chmod +x "$BIN/$tool"
+for pair in "nirova-server horizon-server" "nirova-prepare horizon-prepare"; do
+  set -- $pair
+  public=$1; internal=$2
+  printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$internal" > "$BIN/$public"
+  chmod +x "$BIN/$public"
 done
 
-echo "Installed Horizon $TAG in $RELEASE; horizon-server and horizon-prepare are in $BIN."
+echo "Installed Nirova $TAG in $RELEASE; nirova-server and nirova-prepare are in $BIN."
 # The full game (releases before the server build) links ALSA and udev; minimal Linux images often lack them.
 if [ "$(uname -s)" = Linux ] && [ ! -e "$RELEASE/horizon-engine" ] && command -v ldd >/dev/null; then
   MISSING=$(ldd "$RELEASE/horizon-client" 2>/dev/null | awk '/not found/ { printf "%s ", $1 }')
@@ -137,6 +137,6 @@ esac
 if [ -z "$(ls -A "$DIR/game-files/horizon-client" 2>/dev/null)" ]; then
   echo "Next, prepare the game files from your own Minecraft 26.3 (it needs Java 25 and the game installed once"
   echo "by the official launcher; see docs/server.md):"
-  echo "  horizon-prepare --prepare --server-jar /path/to/server.jar"
+  echo "  nirova-prepare --prepare --server-jar /path/to/server.jar"
 fi
-echo "Then set up a server: mkdir my-server && cd my-server && horizon-server init"
+echo "Then set up a server: mkdir my-server && cd my-server && nirova-server init"

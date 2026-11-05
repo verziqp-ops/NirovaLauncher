@@ -1,19 +1,19 @@
-//! `horizon-prepare`: prepares Horizon's resources from your own Minecraft Java Edition.
+//! `horizon-prepare`: prepares NIROVA's resources from your own Minecraft Java Edition.
 //! Its flags are the ones tools/prepare_native_client.py took.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-/// This release's version: release.yml builds it with `HORIZON_VERSION` from the tag
+/// This release's version: release.yml builds it with `NIROVA_VERSION` from the tag
 /// (docs/versioning.md); a build from source says Cargo.toml's.
-const VERSION: &str = match option_env!("HORIZON_VERSION") {
+const VERSION: &str = match option_env!("NIROVA_VERSION") {
     Some(version) if !version.is_empty() => version,
     _ => env!("CARGO_PKG_VERSION"),
 };
 
 const HELP: &str = "\
-horizon-prepare: prepare Horizon's resources from your own Minecraft Java Edition
+horizon-prepare: prepare NIROVA's resources from your own Minecraft Java Edition
 
 Usage: horizon-prepare [--prepare] [--server-jar PATH] [--minecraft-dir PATH] [--root PATH] [--output PATH]
                        [--version-json PATH] [--client-jar PATH] [--libraries-dir PATH] [--assets-dir PATH]
@@ -39,7 +39,7 @@ Usage: horizon-prepare [--prepare] [--server-jar PATH] [--minecraft-dir PATH] [-
                         import beside --root that is still verified is reused instead)
   --java-home PATH      A Java runtime of the pinned version that your launcher manages, tried
                         after JAVA_HOME and the PATH, before the official launcher's runtimes
-  --root PATH           The Horizon folder to prepare (default: the folder this program is
+  --root PATH           The NIROVA folder to prepare (default: the folder this program is
                         in, else the nearest folder above the current one with research-lock.json)
   --output PATH         Where the resources go (default: <root>/.local/horizon-client/<version>);
                         the exporters' scratch files stay in <root>/.local

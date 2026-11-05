@@ -1,4 +1,4 @@
-//! `horizon-launcher <subcommand>`: the same steps as the window, from a terminal. Every
+//! `nirova-launcher <subcommand>`: the same steps as the window, from a terminal. Every
 //! command goes through `backend`; this file only parses arguments and prints.
 use clap::{Parser, Subcommand};
 use horizon_launcher::account::{self, Accounts};
@@ -16,7 +16,7 @@ use std::process::Command;
 
 #[derive(Parser)]
 #[command(
-    name = "horizon-launcher",
+    name = "nirova-launcher",
     version = backend::VERSION,
     about = "Installs, prepares and starts Horizon. Without a subcommand, opens the window."
 )]
@@ -1162,7 +1162,7 @@ fn execute(command: Cmd, as_json: bool) -> Result<(), String> {
             clap_complete::generate(
                 shell,
                 &mut self::command(),
-                "horizon-launcher",
+                "nirova-launcher",
                 &mut std::io::stdout(),
             );
         }
@@ -1219,7 +1219,7 @@ fn execute(command: Cmd, as_json: bool) -> Result<(), String> {
                 );
             } else {
                 println!(
-                    "Installed {tag}. Prepare it next: horizon-launcher prepare --version {tag}"
+                    "Installed {tag}. Prepare it next: nirova-launcher prepare --version {tag}"
                 );
             }
         }
@@ -1362,7 +1362,7 @@ fn execute(command: Cmd, as_json: bool) -> Result<(), String> {
                     accounts
                         .find(&who)
                         .ok_or_else(|| {
-                            format!("No signed-in account {who}. See `horizon-launcher account`.")
+                            format!("No signed-in account {who}. See `nirova-launcher account`.")
                         })?
                         .uuid
                         .clone(),
@@ -1561,7 +1561,7 @@ fn execute(command: Cmd, as_json: bool) -> Result<(), String> {
             } else {
                 println!("{}", shared.url);
                 println!(
-                    "Delete it: horizon-launcher unshare-log {}:{}",
+                    "Delete it: nirova-launcher unshare-log {}:{}",
                     shared.id, shared.token
                 );
             }
@@ -1685,7 +1685,7 @@ fn rust(action: RustCmd, as_json: bool) -> Result<(), String> {
                 match (&installed, &version) {
                     (Some(t), Some(v)) => println!("{v} in {}", t.dir.display()),
                     _ => println!(
-                        "Rust {} is not installed (`horizon-launcher rust install`).",
+                        "Rust {} is not installed (`nirova-launcher rust install`).",
                         rust::VERSION
                     ),
                 }
@@ -1760,7 +1760,7 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
         accounts
             .find(who)
             .cloned()
-            .ok_or_else(|| format!("No signed-in account {who}. See `horizon-launcher account`."))
+            .ok_or_else(|| format!("No signed-in account {who}. See `nirova-launcher account`."))
     };
     match action {
         AccountCmd::List => {
@@ -1781,7 +1781,7 @@ fn account_command(action: AccountCmd, as_json: bool) -> Result<(), String> {
             } else if accounts.accounts.is_empty() && accounts.offline.is_empty() {
                 println!(
                     "No Microsoft account signed in: Play starts offline. Online servers need \
-                     one: horizon-launcher account sign-in"
+                     one: nirova-launcher account sign-in"
                 );
             } else {
                 for a in &accounts.accounts {
@@ -2053,7 +2053,7 @@ fn servers(action: ServersCmd, as_json: bool) -> Result<(), String> {
             .into_iter()
             .find(|e| e.name == which || e.dir == std::path::Path::new(which))
             .ok_or_else(|| {
-                format!("No server called {which}: `horizon-launcher servers` lists them")
+                format!("No server called {which}: `nirova-launcher servers` lists them")
             })
     };
     match action {
@@ -2071,7 +2071,7 @@ fn servers(action: ServersCmd, as_json: bool) -> Result<(), String> {
                         .collect(),
                 ));
             } else if list.is_empty() {
-                println!("No server yet: horizon-launcher servers create --accept-eula");
+                println!("No server yet: nirova-launcher servers create --accept-eula");
             }
             for e in list.iter().filter(|_| !as_json) {
                 println!(
@@ -2199,7 +2199,7 @@ fn github_native(
         settings.native_mods_noticed = true;
         settings.save();
     }
-    println!("Build it next: horizon-launcher native-build --trust-native-code");
+    println!("Build it next: nirova-launcher native-build --trust-native-code");
     Ok(())
 }
 
@@ -2253,7 +2253,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                 json(list.iter().map(entry_json).collect());
             } else if list.is_empty() && github_mods::origins(&home).is_empty() {
                 println!(
-                    "Nothing installed from the browser yet: horizon-launcher mods search <text>"
+                    "Nothing installed from the browser yet: nirova-launcher mods search <text>"
                 );
             }
             for o in horizon_launcher::github_mods::origins(&home)
@@ -2356,9 +2356,9 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                         p.summary
                     );
                     if unchecked {
-                        println!("  horizon-launcher mods check {}", p.slug);
+                        println!("  nirova-launcher mods check {}", p.slug);
                     } else if datapack {
-                        println!("  horizon-launcher mods install {} --world <world>", p.slug);
+                        println!("  nirova-launcher mods install {} --world <world>", p.slug);
                     } else if let Some(why) = support.reason() {
                         println!("  {why}");
                     }
@@ -2460,7 +2460,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                         pack.version,
                         pack.mods.join(", ")
                     );
-                    println!("Play it: horizon-launcher modpack play {}", pack.id);
+                    println!("Play it: nirova-launcher modpack play {}", pack.id);
                 }
                 return Ok(());
             }
@@ -2475,7 +2475,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
                     .map(|t| backend::resources(&t));
                 let pack = modpacks::import_and_port(&file, resources.as_deref(), log)?;
                 println!("{} ({})", modpacks::outcome(&pack), pack.summary());
-                println!("Play it: horizon-launcher modpack play {}", pack.slug);
+                println!("Play it: nirova-launcher modpack play {}", pack.slug);
                 return Ok(());
             }
             let done = match &java {
@@ -2577,7 +2577,7 @@ fn mods(action: ModsCmd, as_json: bool) -> Result<(), String> {
             if origins.is_empty() {
                 return Err(match id {
                     Some(i) => format!("{i} wasn't installed from GitHub."),
-                    None => "No native mod was installed from GitHub: horizon-launcher mods add-github <url>".into(),
+                    None => "No native mod was installed from GitHub: nirova-launcher mods add-github <url>".into(),
                 });
             }
             for o in origins {
@@ -3036,7 +3036,7 @@ fn instance(action: InstanceCmd, as_json: bool) -> Result<(), String> {
                 [] => {
                     return Err(format!(
                         "No other launcher has an instance called {name}: \
-                         horizon-launcher instance others"
+                         nirova-launcher instance others"
                     ))
                 }
                 _ => {
@@ -3070,7 +3070,7 @@ fn instance(action: InstanceCmd, as_json: bool) -> Result<(), String> {
                         json(value(&i, false));
                     } else {
                         println!(
-                            "Made the instance {} in {}: horizon-launcher instance select \"{}\"",
+                            "Made the instance {} in {}: nirova-launcher instance select \"{}\"",
                             i.name,
                             i.home.display(),
                             i.name
@@ -3081,7 +3081,7 @@ fn instance(action: InstanceCmd, as_json: bool) -> Result<(), String> {
                     let pack = modpacks::import(&file, &|line: String| eprintln!("{line}"))?;
                     println!("{} ({})", modpacks::outcome(&pack), pack.summary());
                     println!(
-                        "Port and play it: horizon-launcher modpack port {}",
+                        "Port and play it: nirova-launcher modpack port {}",
                         pack.slug
                     );
                 }
@@ -3092,13 +3092,13 @@ fn instance(action: InstanceCmd, as_json: bool) -> Result<(), String> {
                     };
                     let p = horizon_launcher::packs::add(&i.home, &file)?;
                     println!(
-                        "Added {} to {}: turn it on with horizon-launcher packs on",
+                        "Added {} to {}: turn it on with nirova-launcher packs on",
                         p.title, i.name
                     );
                 }
                 Dropped::DataPack => {
                     return Err(format!(
-                        "{} is a data pack: put it into a world with horizon-launcher worlds \
+                        "{} is a data pack: put it into a world with nirova-launcher worlds \
                          datapack-add <world> <file>",
                         file.display()
                     ))
@@ -3484,7 +3484,7 @@ fn modpack(action: ModpackCmd, as_json: bool) -> Result<(), String> {
             let packs = modpacks::list();
             let registry = horizon::pack::list();
             if packs.is_empty() && registry.is_empty() && !as_json {
-                println!("No modpack imported yet: horizon-launcher modpack import <pack>");
+                println!("No modpack imported yet: nirova-launcher modpack import <pack>");
             }
             packs.iter().for_each(show);
             for p in &registry {
@@ -3545,18 +3545,18 @@ mod tests {
             clap_complete::Shell::PowerShell,
         ] {
             let shell_name = shell.to_string();
-            let args = ["horizon-launcher", "completions", shell_name.as_str()].map(str::to_owned);
+            let args = ["nirova-launcher", "completions", shell_name.as_str()].map(str::to_owned);
             let cli = Cli::try_parse_from(args).unwrap();
             assert!(matches!(cli.command, Some(Cmd::Completions { .. })));
             let mut output = Vec::new();
-            clap_complete::generate(shell, &mut command(), "horizon-launcher", &mut output);
+            clap_complete::generate(shell, &mut command(), "nirova-launcher", &mut output);
             let script = String::from_utf8(output).unwrap();
-            assert!(script.contains("horizon-launcher"));
+            assert!(script.contains("nirova-launcher"));
             assert!(script.contains("versions"));
             assert!(script.contains("multiplayer"));
         }
-        assert!(Cli::try_parse_from(["horizon-launcher", "completions"]).is_err());
-        assert!(Cli::try_parse_from(["horizon-launcher", "completions", "unknown"]).is_err());
+        assert!(Cli::try_parse_from(["nirova-launcher", "completions"]).is_err());
+        assert!(Cli::try_parse_from(["nirova-launcher", "completions", "unknown"]).is_err());
     }
 
     #[test]
@@ -3577,7 +3577,7 @@ mod tests {
 
     #[test]
     fn play_takes_an_account_for_one_launch() {
-        let cli = Cli::try_parse_from(["horizon-launcher", "play", "--account", "Alex"]).unwrap();
+        let cli = Cli::try_parse_from(["nirova-launcher", "play", "--account", "Alex"]).unwrap();
         match cli.command {
             Some(Cmd::Play { account, .. }) => assert_eq!(account.as_deref(), Some("Alex")),
             _ => panic!("not play"),
@@ -3587,7 +3587,7 @@ mod tests {
     #[test]
     fn play_takes_extra_arguments_that_start_with_hyphens() {
         let cli = Cli::try_parse_from([
-            "horizon-launcher",
+            "nirova-launcher",
             "play",
             "--arg",
             "--server-thread",
@@ -3604,7 +3604,7 @@ mod tests {
     #[test]
     fn game_args_takes_one_line_that_starts_with_hyphens() {
         let cli = Cli::try_parse_from([
-            "horizon-launcher",
+            "nirova-launcher",
             "game-args",
             "--server-thread --render-distance 40",
         ])
@@ -3632,7 +3632,7 @@ mod tests {
     #[test]
     fn mods_commands_name_their_instance() {
         let parse = |args: &[&str]| {
-            let cli = Cli::try_parse_from([&["horizon-launcher", "mods"], args].concat()).unwrap();
+            let cli = Cli::try_parse_from([&["nirova-launcher", "mods"], args].concat()).unwrap();
             match cli.command {
                 Some(Cmd::Mods { action }) => action,
                 _ => panic!("expected mods"),
@@ -3686,7 +3686,7 @@ mod tests {
             Some(ModsCmd::Search { instance: Some(i), .. }) if i == "A"
         ));
         assert!(
-            Cli::try_parse_from(["horizon-launcher", "mods", "check", "x", "--instance", "A"])
+            Cli::try_parse_from(["nirova-launcher", "mods", "check", "x", "--instance", "A"])
                 .is_err()
         );
     }

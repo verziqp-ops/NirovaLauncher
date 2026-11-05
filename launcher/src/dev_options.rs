@@ -1,15 +1,11 @@
-//! Developer options: a Settings section nothing in the window points to. Seven clicks on the
-//! sidebar's "Launcher x.y.z" reveal it for this run; it stays shown while one of its options is
-//! on. Its one option lets offline names play without an account that owns the game
-//! (`backend::Settings::dev_offline`). The game still comes from the player's own install: the
-//! launcher downloads Mojang's files only for an owner (`backend::download_for_owner`).
+//! Developer information shown after seven clicks on the launcher version.
+//! Local Guest profiles are launcher identities only; they never grant Minecraft ownership.
 use super::*;
 
-/// Clicks on the launcher's version that reveal the section.
 const CLICKS: u8 = 7;
 
 impl Launcher {
-    /// A click on the sidebar's launcher version; the last one opens Settings on the section.
+    /// A click on the launcher version; the last one reveals the developer information.
     pub(super) fn version_clicked(&mut self) {
         if self.dev_options {
             return;
@@ -21,40 +17,32 @@ impl Launcher {
         }
     }
 
-    /// The section, when revealed or when one of its options is on.
-    pub(super) fn dev_options_section(&self, cx: &mut Context<Self>) -> Option<Div> {
-        if !self.dev_options && !self.settings.dev_offline {
+    /// No hidden ownership bypasses: the developer section explains the Guest profile boundary.
+    pub(super) fn dev_options_section(&self, _cx: &mut Context<Self>) -> Option<Div> {
+        if !self.dev_options {
             return None;
         }
         let t = self.theme;
-        let toggle = switch("dev-offline", self.settings.dev_offline, &t).on_click(cx.listener(
-            |this, _: &ClickEvent, _, cx| {
-                this.settings.dev_offline = !this.settings.dev_offline;
-                this.settings.save();
-                cx.notify();
-            },
-        ));
         Some(
             div()
                 .flex()
                 .flex_col()
                 .child(
-                    section_title("Developer options", "terminal", &t)
+                    section_title("Developer information", "terminal", &t)
                         .mt(px(20.))
                         .mb(px(12.)),
                 )
                 .child(index_row(
                     0,
-                    tr("Offline names without an account"),
+                    tr("Guest profile"),
                     Some(
                         div()
                             .child(tr(
-                                "Offline names play without a Microsoft account that owns the game. \
-                                 Minecraft still comes from your own install.",
+                                "A Guest profile is a local launcher name. Starting Minecraft still requires a Microsoft account with Minecraft: Java Edition ownership.",
                             ))
                             .into_any_element(),
                     ),
-                    Some(toggle.into_any_element()),
+                    None,
                     &t,
                 )),
         )

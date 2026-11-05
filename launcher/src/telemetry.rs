@@ -22,7 +22,7 @@ pub const SWITCHES: [(Kind, &str, &str); 4] = [
     (
         Kind::Crash,
         "Crash reports",
-        "When the game crashes: the error, where in Horizon's code it happened, your graphics adapter and settings. No log, no world or server, no user name in paths.",
+        "When the game crashes: the error, where in NIROVA's code it happened, your graphics adapter and settings. No log, no world or server, no user name in paths.",
     ),
     (
         Kind::Bug,
@@ -32,7 +32,7 @@ pub const SWITCHES: [(Kind, &str, &str); 4] = [
     (
         Kind::Benchmark,
         "Benchmark uploads",
-        "The results of benchmarks you run, for the community results on playhorizon.dev.",
+        "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.",
     ),
 ];
 
@@ -42,8 +42,8 @@ pub const NEVER: &str = "Never sent: your account name or UUID, world names, ser
 /// The anonymous "I'm playing" ping the game sends whatever the switches say (Ludovic's
 /// decision, 2026-10-22: count everyone, and tell them). Shown on the first-run question, in
 /// Settings, and once on the Play page to players who answered before it existed.
-pub const PING_NAME: &str = "\"I'm playing\" ping";
-pub const PING: &str = "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is sent whatever the switches say.";
+pub const PING_NAME: &str = "Live player count (currently unavailable)";
+pub const PING: &str = "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.";
 
 /// How many play Horizon now (exact), if the server says.
 pub fn playing_now() -> Option<u64> {

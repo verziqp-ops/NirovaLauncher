@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Packages the macOS launcher: Horizon.app (the binary, Info.plist, the icon), signed, then the
-# two release assets, horizon-launcher-macos-ARCH.zip (what the launcher updates itself from;
-# older launchers find the binary inside it) and horizon-launcher-macos-ARCH.dmg (the installer:
+# Packages the macOS launcher: NIROVA.app (the binary, Info.plist, the icon), signed, then the
+# two release assets, nirova-launcher-macos-ARCH.zip (what the launcher updates itself from;
+# older launchers find the binary inside it) and nirova-launcher-macos-ARCH.dmg (the installer:
 # the app and an Applications link over a background, to drag one onto the other). ARCH is the
 # binary's: arm64 (Apple Silicon, the default) or x64 (Intel).
 #
@@ -26,15 +26,28 @@ case "$arch" in
 esac
 # The asset names say which Macs the binary runs on: it must be built for that processor.
 [[ "$(lipo -archs "$binary")" == "$cpu" ]] || { echo "$binary is $(lipo -archs "$binary"), not $cpu" >&2; exit 1; }
-zip=horizon-launcher-macos-$arch.zip
-dmg=$out/horizon-launcher-macos-$arch.dmg
-app=$out/Horizon.app
+zip=nirova-launcher-macos-$arch.zip
+dmg=$out/nirova-launcher-macos-$arch.dmg
+app=$out/NIROVA.app
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-cp "$binary" "$app/Contents/MacOS/horizon-launcher"
-chmod 755 "$app/Contents/MacOS/horizon-launcher"
-cp "$here/../icons/horizon.icns" "$app/Contents/Resources/horizon.icns"
+cp "$binary" "$app/Contents/MacOS/nirova-launcher"
+chmod 755 "$app/Contents/MacOS/nirova-launcher"
+# Build the macOS icon from NIROVA's own 512px app mark; no upstream Horizon icon is used.
+iconset="$out/nirova.iconset"
+mkdir -p "$iconset"
+source_icon="$here/../icons/hicolor/512x512/apps/nirova.png"
+for size in 16 32 64 128 256 512; do
+  sips -z "$size" "$size" "$source_icon" --out "$iconset/icon_${size}x${size}.png" >/dev/null
+done
+for size in 16 32 128 256; do
+  double=$((size * 2))
+  sips -z "$double" "$double" "$source_icon" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+done
+sips -z 1024 1024 "$source_icon" --out "$iconset/icon_512x512@2x.png" >/dev/null
+iconutil -c icns "$iconset" -o "$app/Contents/Resources/nirova.icns"
+rm -rf "$iconset"
 sed "s/@VERSION@/$version/g" "$here/Info.plist" > "$app/Contents/Info.plist"
 printf 'APPL????' > "$app/Contents/PkgInfo"
 plutil -lint "$app/Contents/Info.plist"
@@ -49,18 +62,18 @@ else
 fi
 codesign --verify --strict --verbose=2 "$app"
 # Still starts under the hardened runtime.
-"$app/Contents/MacOS/horizon-launcher" --version
+"$app/Contents/MacOS/nirova-launcher" --version
 notarize=$([[ "$identity" != "-" && -n "${MACOS_NOTARY_PROFILE:-}" ]] && echo yes || true)
 # The app first, so the zip and the .dmg both carry it stapled.
 [[ -z "$notarize" ]] || "$here/notarize.sh" "$app"
 
 rm -f "$out/$zip" "$dmg"
 # No resource forks or extended attributes: they would land as ._ files inside the bundle.
-(cd "$out" && ditto -c -k --norsrc --noextattr --noqtn --keepParent Horizon.app "$zip")
+(cd "$out" && ditto -c -k --norsrc --noextattr --noqtn --keepParent NIROVA.app "$zip")
 
 cat > "$out/dmg.json" <<JSON
 {
-  "title": "Horizon",
+  "title": "NIROVA",
   "icon-size": 128,
   "background": "$here/background.png",
   "window": { "position": { "x": 200, "y": 160 }, "size": { "width": 660, "height": 420 } },
@@ -71,7 +84,7 @@ cat > "$out/dmg.json" <<JSON
   ]
 }
 JSON
-"${DMGBUILD:-dmgbuild}" -s "$out/dmg.json" Horizon "$dmg"
+"${DMGBUILD:-dmgbuild}" -s "$out/dmg.json" NIROVA "$dmg"
 rm "$out/dmg.json"
 if [[ "$identity" != "-" ]]; then
   codesign --force --timestamp ${keychain[@]+"${keychain[@]}"} --sign "$identity" "$dmg"

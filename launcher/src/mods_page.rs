@@ -1,7 +1,7 @@
-//! The Mods page: search Horizon's own registry for mods and shader packs made for Horizon, or
+//! The Mods page: search NIROVA's own registry for mods and shader packs supported by NIROVA, or
 //! Modrinth for resource packs (a Java instance's mods too), see where each comes
-//! from and how well it runs (a Java mod's jar is checked first; a Horizon mod says whether it is
-//! signed and what it may do), install it with its checksum checked, turn Horizon mods on and
+//! from and how well it runs (a Java mod's jar is checked first; a NIROVA mod says whether it is
+//! signed and what it may do), install it with its checksum checked, turn NIROVA mods on and
 //! off, and update or remove what was installed (`horizon_launcher::browser`). Imported modpacks
 //! are listed on its Modpacks tab.
 use super::line_edit::{self, Key, LineEdit};
@@ -25,7 +25,7 @@ const KINDS: [(PackKind, &str, &str); 5] = [
     (PackKind::Shader, "Shader packs", "zap"),
     (PackKind::DataPack, "Data packs", "notes"),
 ];
-/// The kinds with a tab: Horizon's registry's, and Modrinth's resource packs. Modrinth's mods and
+/// The kinds with a tab: external community registry's, and Modrinth's resource packs. Modrinth's mods and
 /// data packs aren't usable yet; the Modpacks tab shows while the sidebar has it open.
 const SHOWN: [PackKind; 3] = [PackKind::Mod, PackKind::ResourcePack, PackKind::Shader];
 /// Java mods checked at once.
@@ -33,7 +33,7 @@ const CHECKING: usize = 2;
 /// The sources to pick from on the Resource packs and Modpacks tabs; CurseForge is shown beside them as coming soon.
 const SOURCES: [(SourceId, &str); 2] = [
     (SourceId::Modrinth, "Modrinth"),
-    (SourceId::Horizon, "Horizon"),
+    (SourceId::Horizon, "External Catalog"),
 ];
 const PAGE: usize = 20;
 
@@ -45,7 +45,7 @@ pub(super) enum Event {
     Updates(HashMap<(SourceId, String), String>),
     /// A Java mod's check: its jar read, or why it couldn't be.
     Checked((SourceId, String), Result<Box<Check>, String>),
-    /// What a Horizon registry project says before install: signed or not, what it may do.
+    /// What an external catalog project says before install: signed or not, what it may do.
     About(HashMap<String, Vec<String>>),
     /// Registry files taken down that the launcher turned off.
     TakenDown(Vec<String>),
@@ -102,7 +102,7 @@ pub(super) struct Mods {
     native_files: std::cell::RefCell<Option<(String, Vec<native_status::Installed>)>>,
     /// Java mods' checks, by source and project.
     pub(super) checks: HashMap<(SourceId, String), Checking>,
-    /// Horizon registry projects' trust and capabilities, by id ([`horizon::trust_and_capabilities`]).
+    /// NIROVA catalog projects' trust and capabilities, by id ([`horizon::trust_and_capabilities`]).
     pub(super) about: HashMap<String, Vec<String>>,
     /// The project page, filters and images.
     pub(super) browse: super::mods_project::Browse,
@@ -145,7 +145,7 @@ impl Mods {
 
     pub(super) fn new(cx: &mut App) -> Self {
         let (tx, rx) = channel();
-        let page = std::env::var("HORIZON_LAUNCHER_PAGE");
+        let page = std::env::var("NIROVA_LAUNCHER_PAGE");
         let kind = match page.as_deref() {
             Ok("modpacks") => PackKind::Modpack,
             Ok("resourcepacks") => PackKind::ResourcePack,
@@ -366,10 +366,10 @@ impl Launcher {
                 }
             }
         }
-        // `HORIZON_LAUNCHER_PROJECT=<slug>` (with `HORIZON_LAUNCHER_PAGE=mods`): opens that
+        // `NIROVA_LAUNCHER_PROJECT=<slug>` (with `NIROVA_LAUNCHER_PAGE=mods`): opens that
         // project's page once a search finds it, for screenshots.
         if self.mods.browse.open.is_none() {
-            if let Ok(want) = std::env::var("HORIZON_LAUNCHER_PROJECT") {
+            if let Ok(want) = std::env::var("NIROVA_LAUNCHER_PROJECT") {
                 if let Some(p) = self
                     .mods
                     .results
@@ -377,7 +377,7 @@ impl Launcher {
                     .find(|p| p.id == want || p.slug == want)
                     .cloned()
                 {
-                    std::env::remove_var("HORIZON_LAUNCHER_PROJECT");
+                    std::env::remove_var("NIROVA_LAUNCHER_PROJECT");
                     self.mods_open(p);
                 }
             }
@@ -417,7 +417,7 @@ impl Launcher {
                 ..Query::new(m.text.text(), m.kind)
             },
         };
-        // A Java instance's files are Modrinth's; Horizon's registry is for Horizon.
+        // A Java instance's files are Modrinth's; NIROVA's registry is for NIROVA.
         let source = match m.java_for(m.kind) {
             Some(_) => SourceId::Modrinth,
             None => m.source,
@@ -465,7 +465,7 @@ impl Launcher {
         });
     }
 
-    /// Turns a Horizon mod the browser installed on or off, as the game's Options > Mods does;
+    /// Turns a NIROVA mod the browser installed on or off, as the game's Options > Mods does;
     /// in a Java instance, renames its file.
     pub(super) fn mods_switch(&mut self, e: &installed::Entry) {
         let home = self.mods.home();
@@ -679,7 +679,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| "Horizon".to_string(), |i| i.name.clone());
+            .map_or_else(|| "External Catalog".to_string(), |i| i.name.clone());
         let world = self.mods.world.clone().and_then(|path| {
             let (_, name) = self.mods.worlds.iter().find(|(p, _)| *p == path)?;
             Some((path, name.clone()))
@@ -883,7 +883,7 @@ impl Launcher {
         }
         let header = page_header(
             "Mods",
-            "Mods and shader packs made for Horizon from its own reviewed registry, and \
+            "Mods and shader packs supported by NIROVA from its own reviewed registry, and \
              resource packs from Modrinth. Each file is checked against its source's checksum \
              before it reaches your game folder.",
             &t,
@@ -934,7 +934,7 @@ impl Launcher {
         let java = self.mods.java_for(self.mods.kind).is_some();
         let source_note = (source_for(self.mods.kind) == SourceId::Modrinth && !java)
             .then(|| div().flex().child(self.mods_source_switch(cx)));
-        // The registry lists only what was made for Horizon: no "everything", no Modrinth filters.
+        // The registry lists only what was supported by NIROVA: no "everything", no Modrinth filters.
         let registry = self.mods.source == SourceId::Horizon && !java;
         let filters = (!registry).then(|| self.mods_filters(cx));
         let controls = div()
@@ -975,7 +975,7 @@ impl Launcher {
                 .child(section_title("Browse modpacks", "search", &t));
         }
         body = body.child(controls);
-        // Native mods from a GitHub link: Horizon instances, on the Mods tab.
+        // Native mods from a GitHub link: NIROVA instances, on the Mods tab.
         if self.mods.kind == PackKind::Mod && self.mods.java.is_none() {
             body = body.child(self.github_panel(cx));
         }
@@ -1385,8 +1385,8 @@ impl Launcher {
     }
 
     /// The selected instance's native build (docs/native-mods.md): which build it plays, the
-    /// Horizon it was built on, and whether it holds the native mods turned on (Up to date,
-    /// Needs rebuild, Not built), with Build, and Update when a newer Horizon is installed. Both
+    /// NIROVA it was built on, and whether it holds the native mods turned on (Up to date,
+    /// Needs rebuild, Not built), with Build, and Update when a newer NIROVA is installed. Both
     /// open the trust warning first (`native_warning`). A build under way, or its error, shows
     /// only on the instance it is for.
     pub(super) fn native_build(&self, cx: &mut Context<Self>) -> Option<Div> {
@@ -1454,7 +1454,7 @@ impl Launcher {
         }
         if let (Some(tag), Some(build)) = (&version, &build) {
             detail = detail.child(div().text_color(t.muted).child(trf(
-                "Plays {build}, built on Horizon {version}.",
+                "Plays {build}, built on NIROVA {version}.",
                 &[("build", tag), ("version", &build.horizon())],
             )));
         }
@@ -1487,7 +1487,7 @@ impl Launcher {
                 button(
                     "native-update",
                     trf(
-                        "Rebuild on Horizon {version}",
+                        "Rebuild on NIROVA {version}",
                         &[("version", &native_status::horizon_label(&newer))],
                     ),
                     Kind::Secondary,
@@ -1559,11 +1559,11 @@ impl Launcher {
                     &t,
                 );
             } else if m.source == SourceId::Horizon {
-                tr("Nothing in Horizon's registry matches yet.")
+                tr("Nothing in NIROVA's registry matches yet.")
             } else if m.everything {
                 tr("Nothing found.")
             } else {
-                tr("Nothing found that runs in Horizon. Show everything lists the rest.")
+                tr("Nothing found that runs in NIROVA. Show everything lists the rest.")
             };
             return centered(line, &t);
         }
@@ -1700,7 +1700,7 @@ impl Launcher {
     }
 }
 
-/// Where a kind's tab searches first: Horizon's registry, but Modrinth for resource packs and
+/// Where a kind's tab searches first: NIROVA's registry, but Modrinth for resource packs and
 /// modpacks.
 fn source_for(kind: PackKind) -> SourceId {
     match kind {
@@ -1710,7 +1710,7 @@ fn source_for(kind: PackKind) -> SourceId {
 }
 
 impl Launcher {
-    /// The source switch: Modrinth or Horizon's registry, CurseForge shown as coming soon and not
+    /// The source switch: Modrinth or NIROVA's registry, CurseForge shown as coming soon and not
     /// clickable, like the Microsoft account's "Coming soon".
     fn mods_source_switch(&self, cx: &mut Context<Self>) -> Stateful<Div> {
         let this = cx.entity().downgrade();

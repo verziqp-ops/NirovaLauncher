@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Nirova
+Comment=Nirova Minecraft game window
+Exec=horizon-client
+Icon=nirova
+Terminal=false
+Categories=Game;
+StartupWMClass=nirova
+NoDisplay=true

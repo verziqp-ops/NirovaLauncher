@@ -28,14 +28,14 @@ impl Launcher {
             if tag.is_empty() {
                 "Minecraft"
             } else {
-                "Horizon"
+                "NIROVA"
             },
             |i| i.name.as_str(),
         );
         let mut what = vec![format!("Minecraft: Java Edition {game}")];
         if !tag.is_empty() {
             what.push(format!(
-                "Horizon {}",
+                "NIROVA {}",
                 horizon_launcher::nightly::label(tag)
                     .unwrap_or_else(|| tag.trim_start_matches('v').to_string())
             ));
@@ -114,7 +114,7 @@ impl Launcher {
             .children(instance.map(|i| {
                 shell::text(night::UI, c(n.ink_soft)).child(instances_page::played_line(i))
             }));
-        // A Java instance (no Horizon tag) isn't offered Horizon's updates.
+        // A Java instance (no NIROVA tag) isn't offered NIROVA's updates.
         if let Some(release) = self.updates.horizon.as_ref().filter(|_| !tag.is_empty()) {
             let installing = self.installing.as_ref().filter(|(t, _)| *t == release.tag);
             let line = shell::text(night::CAPTION, c(n.muted))
@@ -191,7 +191,7 @@ impl Launcher {
         hero
     }
 
-    /// Play, then what else the instance offers: its version (Horizon), its mods, its folder.
+    /// Play, then what else the instance offers: its version (NIROVA), its mods, its folder.
     /// `ready`: prepared, or a Java instance (its game comes with Play).
     pub(super) fn home_actions(&self, ready: bool, java: bool, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -261,7 +261,7 @@ impl Launcher {
             .items_center()
             .gap(px(10.))
             .child(play)
-            // Horizon's versions don't apply to a Java instance.
+            // NIROVA versions don't apply to a Java instance.
             .children((!java).then(|| self.picker(cx)))
             .child(
                 action("home-mods", Action::Quiet, &t)
@@ -281,7 +281,7 @@ impl Launcher {
             }))
     }
 
-    /// The card beside the hero, for a Horizon version: a line from a release's notes, and
+    /// The card beside the hero, for a NIROVA version: a line from a release's notes, and
     /// joining a friend with their invite code.
     pub(super) fn home_card(&self, tag: &str, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -533,12 +533,12 @@ impl Launcher {
     }
 }
 
-/// `HORIZON_LAUNCHER_PAGE=getting-ready` opens Home as if Play had been pressed on a version that
+/// `NIROVA_LAUNCHER_PAGE=getting-ready` opens Home as if Play had been pressed on a version that
 /// downloads from Mojang, a third of the way through: for screenshots, nothing runs.
 pub(super) fn getting_ready_preview() -> bool {
     static PREVIEW: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *PREVIEW
-        .get_or_init(|| std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
+        .get_or_init(|| std::env::var("NIROVA_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
 }
 
 /// The download under way, files done of how many.

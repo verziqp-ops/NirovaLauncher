@@ -1,4 +1,4 @@
-# Nirova Launcher: tests on every push and pull request; a tag `launcher@1.2.3` builds the
+# NIROVA Launcher: tests on every push and pull request; a tag `launcher@1.2.3` builds the
 # launcher for Windows (with its installer), Linux and macOS, signs the checksums and publishes them
 # as a GitHub release, which launchers already installed update themselves from.
 name: launcher
@@ -17,6 +17,27 @@ env:
   HORIZON_TELEMETRY_URL: "off"
 
 jobs:
+  brand-assets:
+    name: Render NIROVA platform icons
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install SVG renderer
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+      - name: Generate icons from the NIROVA master artwork
+        run: cargo run --locked -p xtask -- icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nirova-brand-assets
+          path: |
+            packaging/icons/
+            crates/horizon-theme/icons/nirova-64.png
+            docs/media/brand/icon-1024.png
+            docs/media/brand/icon-macos-1024.png
+            docs/media/brand/social/github-avatar-500.png
+            docs/media/brand/web/
+
   # The tests run once, on Linux: some of upstream's tests depend on the machine (the trash on
   # Windows, macOS on a hosted runner), and a build never waits for them.
   test:
@@ -33,6 +54,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: launcher
+      - name: Verify the committed launcher lockfile
+        run: cargo metadata --locked --format-version 1 > /dev/null
       - name: Libraries GPUI links to
         run: |
           sudo apt-get update
@@ -40,6 +63,7 @@ jobs:
       - run: cargo test --release --locked
 
   build:
+    needs: [brand-assets]
     name: ${{ matrix.name }}
     strategy:
       fail-fast: false
@@ -47,23 +71,23 @@ jobs:
         include:
           - name: windows
             os: windows-latest
-            binary: horizon-launcher.exe
-            asset: horizon-launcher-windows-x64.zip
+            binary: nirova-launcher.exe
+            asset: nirova-launcher-windows-x64.zip
             rustflags: -C target-feature=+crt-static
           - name: linux
             os: ubuntu-22.04
-            binary: horizon-launcher
-            asset: horizon-launcher-linux-x86_64.tar.gz
+            binary: nirova-launcher
+            asset: nirova-launcher-linux-x86_64.tar.gz
           - name: macos
             os: macos-15
-            binary: horizon-launcher
-            asset: horizon-launcher-macos-arm64.zip
+            binary: nirova-launcher
+            asset: nirova-launcher-macos-arm64.zip
           # Intel Macs: the same runner, another target.
           - name: macos-x64
             os: macos-15
             target: x86_64-apple-darwin
-            binary: horizon-launcher
-            asset: horizon-launcher-macos-x64.zip
+            binary: nirova-launcher
+            asset: nirova-launcher-macos-x64.zip
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
@@ -74,6 +98,10 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: nirova-brand-assets
+          path: .
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -81,6 +109,8 @@ jobs:
         with:
           workspaces: launcher
           key: ${{ matrix.name }}
+      - name: Verify the committed launcher lockfile
+        run: cargo metadata --locked --format-version 1 > /dev/null
       - name: Linux libraries GPUI links to
         if: runner.os == 'Linux'
         run: |
@@ -96,8 +126,8 @@ jobs:
       - name: Version from the tag
         if: startsWith(github.ref, 'refs/tags/launcher@')
         run: |
-          echo "HORIZON_LAUNCHER_VERSION=${GITHUB_REF_NAME#launcher@}" >> "$GITHUB_ENV"
-          echo "HORIZON_LAUNCHER_TAG=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+          echo "NIROVA_LAUNCHER_VERSION=${GITHUB_REF_NAME#launcher@}" >> "$GITHUB_ENV"
+          echo "NIROVA_LAUNCHER_TAG=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
       - run: cargo build --release --locked ${LAUNCHER_FEATURES:+--features "$LAUNCHER_FEATURES"} ${{ matrix.target && format('--target {0}', matrix.target) || '' }}
       - name: Package
         run: |
@@ -106,8 +136,24 @@ jobs:
           case "${{ matrix.name }}" in
             windows) 7z a -tzip ../dist/${{ matrix.asset }} "./$out/${{ matrix.binary }}" > /dev/null ;;
             linux) tar -czf ../dist/${{ matrix.asset }} -C "$out" ${{ matrix.binary }} ;;
-            macos*) (cd "$out" && zip -q "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" ${{ matrix.binary }}) ;;
+            macos*) echo "macOS app bundle is packaged in the next step" ;;
           esac
+      - name: Build the NIROVA macOS app and disk image
+        if: runner.os == 'macOS'
+        run: |
+          python3 -m pip install --disable-pip-version-check dmgbuild==1.6.5
+          out=target/release
+          [[ -n "${{ matrix.target }}" ]] && out="target/${{ matrix.target }}/release"
+          version="${NIROVA_LAUNCHER_VERSION:-$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)}"
+          arch=arm64
+          [[ "${{ matrix.name }}" == "macos-x64" ]] && arch=x64
+          ../packaging/macos/package.sh "$PWD/$out/${{ matrix.binary }}" "$version" "$GITHUB_WORKSPACE/dist" "$arch"
+      - name: Upload the NIROVA macOS disk image
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nirova-launcher-macos-${{ matrix.name == 'macos-x64' && 'x64' || 'arm64' }}.dmg
+          path: dist/nirova-launcher-macos-${{ matrix.name == 'macos-x64' && 'x64' || 'arm64' }}.dmg
       # The installer most people download (packaging/windows/setup.iss); the zip stays what
       # launchers update themselves from.
       - name: Windows installer
@@ -119,8 +165,14 @@ jobs:
             choco install innosetup -y --no-progress
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
-          $version = if ($env:HORIZON_LAUNCHER_VERSION) { $env:HORIZON_LAUNCHER_VERSION } else { "0.0.0" }
-          & $iscc /Q "/DAppVersion=$version" "/DSource=$PWD\target\release\horizon-launcher.exe" "/O$PWD\..\dist" ..\packaging\windows\setup.iss
+          if ($env:NIROVA_LAUNCHER_VERSION) {
+            $version = $env:NIROVA_LAUNCHER_VERSION
+          } else {
+            $match = Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"' | Select-Object -First 1
+            if (-not $match) { throw "Could not read launcher version from Cargo.toml" }
+            $version = $match.Matches[0].Groups[1].Value
+          }
+          & $iscc /Q "/DAppVersion=$version" "/DSource=$PWD\target\release\nirova-launcher.exe" "/O$PWD\..\dist" ..\packaging\windows\setup.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Get-ChildItem ..\dist
       - uses: actions/upload-artifact@v4
@@ -130,8 +182,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Windows'
         with:
-          name: Nirova-Setup.exe
-          path: dist/Nirova-Setup.exe
+          name: NIROVA-Setup.exe
+          path: dist/NIROVA-Setup.exe
 
   release:
     needs: [test, build]
@@ -156,7 +208,7 @@ jobs:
         run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag "$GITHUB_REF_NAME" dist
       - uses: softprops/action-gh-release@v2
         with:
-          name: Nirova Launcher ${{ github.ref_name }}
+          name: NIROVA Launcher ${{ github.ref_name }}
           files: |
             dist/*
             install.ps1

@@ -72,7 +72,7 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Horizon's violet by default. Every colour keeps text as easy to read.",
+                        "NIROVA's rose-pink by default. Every colour keeps text easy to read.",
                     ))
                     .into_any_element(),
             ),
@@ -251,7 +251,7 @@ impl Launcher {
         let said = if custom {
             tr("Your picture, behind Home, cropped to fill it.")
         } else {
-            tr("Horizon's landscape. Pick a PNG, JPEG or WebP picture of your own.")
+            tr("NIROVA's landscape. Pick a PNG, JPEG or WebP picture of your own.")
         };
         let detail = div().flex().flex_col().child(said.to_string()).children(
             self.background_error

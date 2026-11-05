@@ -1,44 +1,112 @@
-# NIVRORA region-threading architecture plan
+# Региональная многопоточность NIROVA
 
-Status: design proposal only. The game simulation remains single-threaded until each phase has implementation, differential tests, and measured results.
+**Статус: исследование и проектирование. Игровая симуляция пока выполняет основной тик последовательно.**
+Планировщик задач в `horizon-threads::region` — только инфраструктура: он ещё не управляет живым тиком мира.
 
-## Invariants
+## Вывод по видео и исследованиям
 
-- A region has one simulation owner during a tick; no worker mutates another region's state directly.
-- Within a region, entity AI, block entities, scheduled ticks, redstone, fluids and block updates retain a deterministic sequential order.
-- Cross-region interactions are explicit messages, not shared mutable references.
-- Save/load boundaries and crash recovery must never observe a half-applied region tick.
-- Vanilla parity is a release gate, not an optional benchmark.
+В видео показана проблема одного главного потока и идея разнести работу мира по нескольким ядрам. Важный вывод — нельзя просто запустить редстоун, мобов, блоки и чанки каждый на отдельном потоке: эти подсистемы читают и меняют одно состояние мира.
 
-## Staged migration
+Наиболее полезные проверенные направления:
 
-### 0. Establish the baseline
-Capture deterministic fixtures and event traces for redstone clocks, observers, pistons, comparators, hoppers, fluids, mob AI, collisions, projectiles, portals, chunk borders and save/reload. Compare against the current engine and the relevant vanilla reference.
+- **Folia** использует регионы с единственным потоком-владельцем. Соседние активные области не тикают одновременно; регионы сливаются и разделяются, а взаимодействия между ними проходят через очереди и планировщики. Это масштабирует мир, когда игроки далеко друг от друга, но требует строгих правил владения данными и не является drop-in заменой обычного сервера.
+- **Leaf** переносит в фон отдельные операции: поиск пути и целей мобов, entity tracking, отправку чанков, часть вычислений спавна. Действия, которые должны менять мир, возвращаются на поток-владелец. В Leaf параллельное тиканье миров отдельно отмечено как экспериментальное.
+- **Paper/Folia** прямо предупреждают: два региона не должны одновременно читать/менять чужое изменяемое состояние. Для перемещения сущности нужен планировщик сущности, для блока — планировщик региона.
+- **C2ME** показывает, что генерацию чанков можно существенно распараллелить отдельно от симуляции уже загруженного мира. Это отдельная безопаснее изолируемая задача.
 
-### 1. Model ownership
-Introduce region identifiers, ownership metadata, read-only snapshots and APIs that make cross-region writes impossible. Keep all simulation on the current main tick loop.
+Источники:
+- Folia overview: https://docs.papermc.io/folia/reference/overview/
+- Folia region logic: https://docs.papermc.io/folia/reference/region-logic/
+- Folia repository and compatibility rules: https://github.com/PaperMC/Folia
+- Leaf async options: https://www.leafmc.one/en/docs/how-to/optimize-leaf-server
+- Leaf configuration: https://www.leafmc.one/en/docs/config/leaf-global
+- C2ME: https://github.com/RelativityMC/C2ME
 
-### 2. Extract region tick transactions
-Make one region tick an explicit transaction with stable phases: inbound events, scheduled block work, block entities, entities, outbound events and commit. Do not reorder existing vanilla work within a region.
+## Главное архитектурное решение
 
-### 3. Message passing at boundaries
-Use per-destination queues with deterministic ordering keys (simulation tick, source region, event sequence). Define when inbound events become visible. Never synchronously wait on a neighbour worker while holding region state.
+Нужно сохранить **два режима**, а не менять поведение игры одним большим переключением.
 
-### 4. Parallel region scheduler
-Only after steps 0–3 pass, schedule independent regions on a bounded worker pool. A region must have exactly one writer at a time. Add back-pressure and deterministic fallback when a dependency cannot be resolved in the current tick.
+### Режим 1 — vanilla-exact (обязательный режим по умолчанию)
 
-### 5. Dimension scheduling
-Do not simply give Overworld, Nether and End independent clocks. First map every cross-dimension dependency: portals, player transfer, global time/weather, scheduled tasks, sleep, server tick and persistence. Parallelize dimension work only where dependencies and vanilla timing are explicitly preserved.
+Цель — использовать дополнительные ядра, не менять порядок игровых эффектов и не менять последовательность случайных чисел.
 
-## Required correctness tests
+1. Основной поток по-прежнему владеет изменяемым состоянием мира.
+2. До последовательной фазы сущностей рабочие потоки рассчитывают только чистые результаты на неизменяемом снимке: поиск пути, сенсорные запросы ИИ, ближайшие цели/предметы, видимость и сбор геометрии столкновений.
+3. Каждый расчёт возвращает также набор прочитанных блоков/секций и их версии.
+4. Главный поток проходит сущности в исходном vanilla-порядке. Если прочитанные данные не менялись, он применяет подготовленный результат; если менялись — пересчитывает его синхронно.
+5. Решения ИИ, перемещение, столкновения, запись в мир и расход случайных чисел остаются в исходном порядке.
+6. Отправка пакетов, entity tracking, кодирование чанков и сжатие сохранений могут работать на фоновых потоках после публикации неизменяемого снимка. Изменение игрового состояния оттуда запрещено.
+7. Генерация и освещение ещё не готовых чанков выполняются в worker pool с уже существующими границами данных.
 
-- Same seed and input trace produce identical block/entity state hashes in single-threaded and region-scheduled modes.
-- Repeat tests with different worker counts and randomized worker scheduling.
-- Boundary tests cover redstone, piston structures, fluids, entities, projectiles and chunk load/unload.
-- Save/reload during heavy cross-region traffic yields the same state as uninterrupted execution.
-- No deadlocks, data races, lost messages, duplicate events or unbounded queues.
-- Benchmark tick time, p50/p95/p99 latency, CPU utilization and memory against the single-threaded baseline.
+**Редстоун в этом режиме не переносится на отдельный поток.** Очереди scheduled block/fluid ticks, neighbour updates, block events, pistons и block entities исполняются в текущем порядке. Так мы не ломаем однокадровые импульсы, цепи повторителей, наблюдатели, компараторы, поршни и воронки.
 
-## Rollout
+Это наиболее реалистичный путь ускорить ИИ и обслуживание игроков без изменения игрового поведения. Реальный выигрыш сначала нужно измерить профилировщиком: если узкое место не в AI/pathfinding или сетевой обработке, эти работы не дадут ожидаемого ускорения.
 
-Keep the existing single-threaded scheduler as the reference and safe fallback. Enable region scheduling behind a developer feature flag first. Do not make it the default until parity suites pass on CI and long-running stress tests.
+### Режим 2 — regionized (экспериментальный, выключен по умолчанию)
+
+После exact-режима можно отдельно исследовать Folia-подобное владение регионами:
+
+- регион состоит из набора загруженных чанков, а не просто фиксированного квадрата;
+- у каждого региона один владелец записи на время тика;
+- соседние регионы с опасными зависимостями не тикают одновременно;
+- перенос сущности между регионами — протокол передачи владения, а не запись в чужой список сущностей;
+- сообщения между регионами получают стабильный порядок и определённую tick-boundary;
+- регионы сливаются/разделяются только на барьере между тиками;
+- глобальные правила, время, погода, scoreboard, команды, игроки и межизмеренческие операции остаются у координатора.
+
+Этот режим может менять последовательность RNG и порядок независимых событий относительно vanilla. Поэтому нельзя обещать побитовую идентичность мира. Он должен быть отдельной экспериментальной настройкой, с предупреждением и возможностью вернуться к vanilla-exact.
+
+## Что нельзя разносить по потокам напрямую
+
+| Система | Безопасное решение |
+| --- | --- |
+| Редстоун и scheduled block/fluid ticks | Сохранять одну очередь и точный порядок; параллелить только подготовительные чтения без изменения результата |
+| Мобы и AI | Параллелить read-only сенсоры/поиск пути; применять решения в исходном порядке с проверкой версии прочитанных данных |
+| Движение и столкновения | Сначала только подготовка collision shapes; фактическое движение и разрешение столкновений — владелец региона |
+| Сущности | Один владелец записи; перенос через очередь передачи владения |
+| Чанки | Генерация, освещение, кодирование и компрессия — worker pool при чётком разделении immutable input/output |
+| Сохранения | Снимок на границе тика; сериализация и компрессия снимка в фоне, атомарная публикация файла |
+| Порталы и измерения | Координатор и барьер; нельзя разрешать двум измерениям одновременно менять общие player/entity state |
+
+## План реализации
+
+### Этап 0 — измерить, не угадывать
+- Снять профили CPU для 1, 10, 50 и 100 игроков/ботов.
+- Отдельно измерить AI/pathfinding, collision, random ticks, block entities, redstone, chunk work, entity tracking и packet encoding.
+- Зафиксировать p50/p95/p99 MSPT, TPS, загрузку каждого ядра, ожидание очередей и число fallback-пересчётов.
+
+### Этап 1 — доказать точность до потоков
+- Добавить воспроизводимые интеграционные сценарии с одним seed и одинаковой последовательностью входов.
+- Сохранять digest каждого тика: блоки, block entities, scheduled ticks, entity state/NBT, позиции, здоровье, инвентари и RNG state.
+- Сравнивать vanilla-exact с текущей последовательной реализацией и с vanilla oracle там, где доступен harness.
+- Добавить специальные сценарии: redstone pulse 1 tick, repeater/comparator/observer, piston chains, hopper loops, fluids, villager brain, pathfinding, mob collisions, portals, cross-chunk and cross-region boundaries, save/reload.
+
+### Этап 2 — безопасная фоновая работа
+- Вынести entity tracking, chunk packet encoding, compression и независимые chunk jobs.
+- Для каждого задания документировать immutable inputs и единственное место commit.
+- Не допускать фоновой записи в live world.
+
+### Этап 3 — read-only AI workers
+- Снимок мира и версия секций.
+- Параллельный pathfinding/sensor queries.
+- Commit в прежнем порядке сущностей.
+- Если read-set изменился — синхронный пересчёт.
+- Сравнение digest на каждом тике при 1, 2, 4 и 8 worker threads.
+
+### Этап 4 — только затем экспериментальные регионы
+- Regionizer с merge/split, owner checks, handoff сущностей и global coordinator.
+- Отдельные тесты redstone и cross-boundary events.
+- Флаг выключен по умолчанию; никаких обещаний vanilla-exact для regionized режима до доказательства.
+
+## Критерии принятия
+
+- Vanilla-exact выдаёт тот же digest, что последовательный эталон, на каждом тике тестовых сценариев.
+- Порядок редстоун-событий и число/состояние RNG draws не меняются.
+- Никакая worker task не записывает в live world.
+- Ошибка или переполнение очереди приводит к безопасному синхронному fallback, а не к потере события.
+- Производительность измеряется на одинаковом железе и одинаковой нагрузке; ускорение публикуется только с исходными данными.
+- При выключенном многопоточном режиме текущая логика остаётся доступной как контрольный эталон.
+
+## Текущий статус
+
+Реализованный `horizon-threads::region` — исполнитель задач со снимками и детерминированным порядком сообщений. Он пока не подключён к `Game::tick_world`. Следующий правильный шаг — профилирование и exact read-only worker jobs, а не перенос всего тика в регионы.

@@ -1,10 +1,10 @@
 //! The launcher's languages: English (the strings in the code), French, Russian, German and
-//! Spanish, the languages Horizon's own game menus have, Simplified Chinese, Ukrainian,
+//! Spanish, the languages available in the game menus, Simplified Chinese, Ukrainian,
 //! Polish, Brazilian Portuguese, Japanese and Turkish. A table per language (`launcher/lang/<code>.json`) maps each English string to its
 //! translation; a string the table lacks shows in English.
 //!
-//! The language follows the system's unless the player picks one in Settings
-//! (`Settings::language`). Translations are maintained for Nivrora Launcher.
+//! The first-run language defaults to Russian; the player can pick another language in Settings
+//! (`Settings::language`). Translations are maintained for Nirova Launcher.
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -16,6 +16,7 @@ pub enum Language {
     English,
     #[serde(rename = "fr")]
     French,
+    #[default]
     #[serde(rename = "ru")]
     Russian,
     #[serde(rename = "de")]
@@ -24,7 +25,6 @@ pub enum Language {
     Chinese,
     #[serde(rename = "es")]
     Spanish,
-    #[default]
     #[serde(rename = "uk")]
     Ukrainian,
     #[serde(rename = "pl")]
@@ -109,17 +109,17 @@ impl Language {
             .find(|language| language.code() == base)
     }
 
-    /// The first of the system's preferred languages the launcher has, else Ukrainian.
+    /// The first supported language, or Russian as the launcher default.
     pub fn pick<'a>(preferred: impl IntoIterator<Item = &'a str>) -> Self {
         preferred
             .into_iter()
             .find_map(Self::parse)
-            .unwrap_or(Language::Ukrainian)
+            .unwrap_or(Language::Russian)
     }
 
     /// The launcher's first-run language. Players can choose another language in Settings.
     pub fn system() -> Self {
-        Self::Ukrainian
+        Self::Russian
     }
 
     /// The table, as shipped: English text to this language's.
@@ -140,7 +140,7 @@ impl Language {
     }
 }
 
-static CURRENT: AtomicU8 = AtomicU8::new(6);
+static CURRENT: AtomicU8 = AtomicU8::new(2);
 
 /// Shows the launcher in `language` from now on.
 pub fn set(language: Language) {

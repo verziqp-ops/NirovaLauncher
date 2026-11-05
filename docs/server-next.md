@@ -1,12 +1,11 @@
-# The next server: design
+# Server architecture reference: parallel tick design
 
-This page is the design of Horizon's next server: the fastest server we can build for Horizon players, with
-vanilla Java clients welcome and vanilla's rules kept exactly. Two bars:
+This page preserves an upstream server-design reference that informed NIROVA's multithreading research. The benchmark tables and measured results below describe the upstream engine snapshot named in each run; they are not NIROVA benchmark results. Treat the proposed architecture as research input, not as proof that the current NIROVA engine already implements it. The compatibility target is vanilla Java behavior. Two bars:
 
 1. **Better than Pumpkin on every number we can measure**: players at 20 TPS, MSPT p99, memory, bandwidth and
    join time, with Pumpkin's released binary run as a black box against the same bots.
-2. **Vanilla-exact where Pumpkin isn't.** Gameplay is Horizon's engine, checked by its 324 vanilla parity
-   harnesses (each one runs the real 26.3 jars and Horizon on the same inputs and compares the results).
+2. **Vanilla-exact where Pumpkin isn't.** Gameplay is the upstream engine's engine, checked by its 324 vanilla parity
+   harnesses (each one runs the real 26.3 jars and the upstream engine on the same inputs and compares the results).
 
 All of it lives in this repo. Single player's integrated server, LAN, `--dedicated` and the
 `horizon-server` supervisor run the same server code (section 3). horizon-rust/horizon-server is only a
@@ -22,12 +21,12 @@ the supervisor, `server.toml`, the panel, backups and the control API.
 **Originality.** Nothing here comes from Pumpkin's, Paper's, Folia's or any other server's code; none of it
 was read. About other servers we use only what a user can see: their documentation, their generated config
 file, and black-box runs of their released binaries. Vanilla's behaviour comes from the 26.3 jars, as for the
-rest of Horizon.
+rest of the upstream engine.
 
 ## 1. Baseline (measured 2026-10-29, Mac mini M4 Pro, 14 cores, 64 GB)
 
 **Servers.**
-- Horizon: `horizon-client --dedicated` at horizon `668419b92`, `fast` profile. This is main *before* the three
+- the upstream engine: `horizon-client --dedicated` at horizon `668419b92`, `fast` profile. This is main *before* the three
   tick fixes still in review (#3815, #3834, #3847).
 - Vanilla: 26.3 `server.jar` on Temurin 25, `-Xms4G -Xmx4G`.
 - Pumpkin: release `0.2.1+26.3-26.51`, `pumpkin-ARM64-macOS`, SHA-256 checked against the release's
@@ -55,45 +54,45 @@ The driver, `sn_run.py`, comes into `tools/server_bench.py` with issue S-2 (#397
 **Caveat.** The Mac mini is shared. Its load average was 57 to 132 on 14 cores during the runs (other agents' builds), and
 the bots ran on the same machine. So a tick can include waiting for a core, and the numbers carry more noise
 than a dedicated machine's would. All three servers ran interleaved under the same load (10, then 50, then
-100 bots, each in the order Horizon, vanilla, Pumpkin). Treat differences under about 20 % as noise.
+100 bots, each in the order the upstream engine, vanilla, Pumpkin). Treat differences under about 20 % as noise.
 
 | Bots | Server | TPS | MSPT avg | p50 | p99 (median / worst 5 s) | CPU cores | RSS MB | KB/s per player | KB per chunk | Chunks sent | Join ms p50 / max | Pulled back |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 10 | Horizon | **20.0** | **11.3** | 10.9 | **17.7 / 23.6** | 1.01 | 1165 | 87.9 | **3.55** | **15 272** | 74 / **103** | 1 469 |
+| 10 | the upstream engine | **20.0** | **11.3** | 10.9 | **17.7 / 23.6** | 1.01 | 1165 | 87.9 | **3.55** | **15 272** | 74 / **103** | 1 469 |
 | 10 | vanilla | 16.7 | 41.1 | 7.8 | 243 / 352 | 0.79 | 3334 | 61.4 | 6.75 | 5 646 | 3 730 / 5 550 | 1 366 |
 | 10 | Pumpkin | 20.0 | 23.0 | 16.6 | 87 / 143 | 1.20 | **538** | 46.3 | 4.50 | 6 397 | **55** / 1 980 | 0 |
-| 50 | Horizon | **20.0** | **28.7** | 27.4 | **38.5 / 51.7** | 2.11 | 1535 | 76.5 | **3.64** | **65 431** | 93 / **249** | 12 141 |
+| 50 | the upstream engine | **20.0** | **28.7** | 27.4 | **38.5 / 51.7** | 2.11 | 1535 | 76.5 | **3.64** | **65 431** | 93 / **249** | 12 141 |
 | 50 | vanilla | 5.3 | 58.8 | 7.8 | 416 / 537 | 0.70 | 3466 | 38.4 | 7.43 | 16 115 | 4 791 / 15 082 | 2 577 |
 | 50 | Pumpkin | 20.0 | 45.8 | 40.2 | 151 / 283 | 1.08 | **869** | 34.5 | 3.77 | 28 427 | **54** / 4 075 | 0 |
-| 100 | Horizon | **14.3** | 79.2 | 83.8 | **108 / 138** | 4.42 | 2054 | 95.4 | 3.70 | **160 042** | 83 / **244** | 14 638 |
+| 100 | the upstream engine | **14.3** | 79.2 | 83.8 | **108 / 138** | 4.42 | 2054 | 95.4 | 3.70 | **160 042** | 83 / **244** | 14 638 |
 | 100 | vanilla | 2.2 | 108.3 | 63.5 | 539 / 556 | 1.37 | 3699 | 45.0 | 5.18 | 53 786 | 933 / 10 524 | 14 790 |
 | 100 | Pumpkin | 13.6 | **78.6** | 73.3 | 231 / 348 | 2.54 | **1421** | 51.6 | **3.61** | 88 625 | **43** / 494 | 0 |
 
-Idle RSS after start (fresh world, nobody on): Horizon 760–780 MB, vanilla 1 550–1 630 MB, **Pumpkin 32–35 MB**.
-Start to ready, fresh world: Horizon 9.2–14.1 s, vanilla 25–34 s, **Pumpkin 0.1–0.2 s** (it generates no spawn
+Idle RSS after start (fresh world, nobody on): the upstream engine 760–780 MB, vanilla 1 550–1 630 MB, **Pumpkin 32–35 MB**.
+Start to ready, fresh world: the upstream engine 9.2–14.1 s, vanilla 25–34 s, **Pumpkin 0.1–0.2 s** (it generates no spawn
 area before it accepts players). The raw JSON comes with S-2.
 
 **What it says.**
-- **Up to 50 players**, Horizon and Pumpkin both hold 20 TPS. Horizon's tick is about 40 % shorter (28.7 against
+- **Up to 50 players**, the upstream engine and Pumpkin both hold 20 TPS. the upstream engine's tick is about 40 % shorter (28.7 against
   45.8 ms at 50) and its p99 is 4 to 5 times lower (51.7 against 283 ms at worst). Over the same window it also
   sent 2.3 times the chunks. Vanilla falls to 5.3 TPS at 50.
-- **At 100 players nobody holds 20 TPS.** Horizon runs at 14.3, Pumpkin at 13.6, vanilla at 2.2. Horizon still has the
-  lowest p99 (138 against 348 and 556 ms) and sends 1.8 times Pumpkin's chunks. Two of the Horizon fixes in review
+- **At 100 players nobody holds 20 TPS.** the upstream engine runs at 14.3, Pumpkin at 13.6, vanilla at 2.2. the upstream engine still has the
+  lowest p99 (138 against 348 and 556 ms) and sends 1.8 times Pumpkin's chunks. Two of the the upstream engine fixes in review
   (#3815, #3834) took a 100-bot run from 14.5 to 17.8 TPS (different mob counts, so read it as a direction).
-- **Memory is Pumpkin's clear lead.** It idles at 32 MB against Horizon's 760 MB, and uses 1.4 GB against 2.05 GB
+- **Memory is Pumpkin's clear lead.** It idles at 32 MB against the upstream engine's 760 MB, and uses 1.4 GB against 2.05 GB
   at 100. Vanilla's heap alone is 4 GB.
-- **Bandwidth per chunk is the same** for Horizon and Pumpkin (3.6–3.7 KB), and 5–7 KB for vanilla. Horizon's
-  higher KB/s per player is the extra chunks. So bandwidth can't drop much further on vanilla's format. The Horizon
+- **Bandwidth per chunk is the same** for the upstream engine and Pumpkin (3.6–3.7 KB), and 5–7 KB for vanilla. the upstream engine's
+  higher KB/s per player is the extra chunks. So bandwidth can't drop much further on vanilla's format. The the upstream engine
   fast path (section 8) is where it can.
-- **Join.** Pumpkin's median is lowest (43–55 ms), but its worst reached 4.1 s at 50 bots. Horizon's stays at
+- **Join.** Pumpkin's median is lowest (43–55 ms), but its worst reached 4.1 s at 50 bots. the upstream engine's stays at
   74–93 ms with a worst of 249 ms. Vanilla takes 0.9 to 4.8 s.
-- **The work isn't fully equal.** Pumpkin never pulled a bot back (0 against ~14 600 for Horizon and vanilla at
+- **The work isn't fully equal.** Pumpkin never pulled a bot back (0 against ~14 600 for the upstream engine and vanilla at
   100): it doesn't run vanilla's "moved too quickly" check, so its explore bots never wait for it. The mob counts
-  of vanilla and Pumpkin can't be seen from outside; Horizon had 1 834 mobs at the end of the 100-bot window.
+  of vanilla and Pumpkin can't be seen from outside; the upstream engine had 1 834 mobs at the end of the 100-bot window.
   Vanilla's self-reported MSPT leaves out the chunk work it runs between ticks, which is why its TPS (from game
   time) is the number to read, not its MSPT.
 
-**Where Horizon's tick goes at 100 bots** (macOS `sample` of the tick thread, from the profiling behind #3815, #3834 and #3847, same machine):
+**Where the upstream engine's tick goes at 100 bots** (macOS `sample` of the tick thread, from the profiling behind #3815, #3834 and #3847, same machine):
 
 | Cost | Share of the tick thread | Status |
 |---|---|---|
@@ -124,7 +123,7 @@ machine), with `mixed` bots, view distance 10, and a pre-generated world plus a 
 | RSS idle, fresh world | 32 MB | **< 32 MB** | nothing loaded while empty, lazy data (7) |
 | RSS at 100 players | 1.42 GB | **< 1.0 GB** | per-player state measured and capped (7) |
 | Bandwidth, walking vanilla client | 3.6 KB per chunk | **≤ vanilla's bytes per chunk**, compression level picked by measurement | 5.3 |
-| Bandwidth, walking Horizon client | — | **−50 %** against vanilla clients on the same server | the fast path (8) |
+| Bandwidth, walking the upstream engine client | — | **−50 %** against vanilla clients on the same server | the fast path (8) |
 | Join to spawn, p99 | 43 ms p50, 494 ms max (4.1 s at 50) | **< 300 ms** on loopback, **< 2 s** for a full view | 5.2 |
 | Start to ready (status ping answered) | 0.1–0.2 s | **< 0.1 s**, fresh or existing world | nothing heavy before the listener opens (7) |
 | Vanilla parity | not checked | **every harness that covers server code passes** on every server PR | 4.3 |
@@ -148,7 +147,7 @@ drift. Gameplay is about 420 000 lines (`game/` 133 k, `mobs/` 62 k, `lan/` 15 k
 | Parallel tick (section 4) | `game/levels.rs`, `game/integrated.rs`, `game/dedicated.rs`, and the scheduler as a new module beside them | integrated server, LAN, dedicated |
 | Network front (5) | the hub, `lan/` (`conn.rs`, `hub.rs`, `chunks.rs`, `tracking.rs`); framing in `horizon-protocol` | LAN, Play with Friends, dedicated, the integrated server's memory connection where it applies |
 | Saving and light off the tick thread (5.5) | `game/saving.rs`, `save.rs`, `horizon-world` | everyone |
-| Fast path (8) | `horizon-protocol` (the `horizon:hello` payloads), `lan/conn.rs` (server), `net.rs` and `game/remote*.rs` (client) | every Horizon client against every Horizon server |
+| Fast path (8) | `horizon-protocol` (the `horizon:hello` payloads), `lan/conn.rs` (server), `net.rs` and `game/remote*.rs` (client) | every the upstream engine client against every the upstream engine server |
 | Operations (9.2) | `crates/horizon-server` (supervisor, panel, control API, MCP), `crates/horizon-server-files` | dedicated |
 | Plugin API (W9) | `crates/horizon-mods` and the server hooks from #3706 and #3878 | integrated server, LAN, dedicated |
 | Bench (W0) | `tools/server_bench.py`, `crates/horizon-bots`, `benchmarks/` | — |
@@ -182,7 +181,7 @@ connections). Inside a level it ticks in a fixed order:
 6. entities, in list order;
 7. block entities, in list order.
 
-Horizon follows the same order (`game/levels.rs` `tick_server`, which swaps each level into the one `Game`).
+the upstream engine follows the same order (`game/levels.rs` `tick_server`, which swaps each level into the one `Game`).
 
 ### 4.1 Levels in parallel (exact)
 
@@ -238,7 +237,7 @@ with vanilla. Two modes:
     range and scheduled-tick queue. Groups merge and split at the barrier as players move.
   - Every rule stays vanilla's (the harnesses that compare outcomes still pass). What changes is only which
     random number a given chunk draws. The config says it in those words.
-  - Off by default, like every Horizon change to vanilla behaviour ([design-system.md](design-system.md)).
+  - Off by default, like every the upstream engine change to vanilla behaviour ([design-system.md](design-system.md)).
 - **What stays serial in both modes:** cross-level effects (4.1), commands and functions, the player list, chat
   order, advancements, the scoreboard, raids (one per village, but their spawning draws the level random),
   block events (vanilla runs them to a fixed point in one queue), and the order of packets to one player.
@@ -272,7 +271,7 @@ disconnects stay unchanged. **Removes:** thread switches and lock traffic per pa
 
 Login and configuration (registries, tags, known packs) are the same for every player. They are encoded once
 per server start and sent as prepared frames. The first chunks around the spawn come from the chunk cache
-(5.3), not the generator. **Removes:** Horizon already joins in 74–93 ms p50 on loopback, worst 249 ms. Pumpkin's median is lower (43–55 ms) but its worst reached 4.1 s at 50 bots. Prepared frames bring the median under Pumpkin's and keep the worst flat.
+(5.3), not the generator. **Removes:** the upstream engine already joins in 74–93 ms p50 on loopback, worst 249 ms. Pumpkin's median is lower (43–55 ms) but its worst reached 4.1 s at 50 bots. Prepared frames bring the median under Pumpkin's and keep the worst flat.
 
 ### 5.3 Chunk cache and compression level
 
@@ -280,8 +279,8 @@ per server start and sent as prepared frames. The first chunks around the spawn 
   holding it as vanilla's section updates, and drop the cached frame. Walking players who re-enter chunks then
   cost a memcpy, not an encode.
 - Compression uses vanilla's threshold (256) and the level that gives the best bytes per core-ms on the bench.
-  zlib 6 is what Horizon uses today; Pumpkin's config defaults to 4. Both are vanilla's wire format.
-- **Removes:** the hub's encode cost for re-sent chunks. In section 1, Horizon's walking bots received
+  zlib 6 is what the upstream engine uses today; Pumpkin's config defaults to 4. Both are vanilla's wire format.
+- **Removes:** the hub's encode cost for re-sent chunks. In section 1, the upstream engine's walking bots received
   each chunk several times, and those re-sends are where most of the bandwidth went.
 
 ### 5.4 Entity tracking as deltas
@@ -313,23 +312,23 @@ per server start and sent as prepared frames. The first chunks around the spawn 
 ```toml
 online_mode = true   # the default: every player's account is checked
 [clients]
-allow = "any"        # "any" (vanilla Java and Horizon) or "horizon" (Horizon clients only)
+allow = "any"        # "any" (vanilla Java and the upstream engine) or "horizon" (the upstream engine clients only)
 ```
 
 - **Online mode is on by default**, as on every server, vanilla's included. With it on, each player's
   account is checked by the session service, and the whitelist and bans apply on top.
   - `online_mode` stays the owner's setting. hosting.md's warnings about offline mode stay as they are: an
     offline server checks no accounts, so keep it on a LAN or a tailnet.
-  - No other auth providers. Horizon's own sign-in: [microsoft-account.md](microsoft-account.md).
+  - No other auth providers. the upstream engine's own sign-in: [microsoft-account.md](microsoft-account.md).
 - With `allow = "horizon"`, the server refuses a client that didn't send brand `horizon` and the fast-path
-  hello (section 8) in configuration. The refusal message names the Horizon launcher.
-  - **Be honest about what this is:** a convenience filter, not security. Horizon's client is open source, so
-    a modified client can claim to be Horizon. It keeps vanilla players off a server they can't play fully,
+  hello (section 8) in configuration. The refusal message names the the upstream engine launcher.
+  - **Be honest about what this is:** a convenience filter, not security. the upstream engine's client is open source, so
+    a modified client can claim to be the upstream engine. It keeps vanilla players off a server they can't play fully,
     nothing more. Accounts (online mode), the whitelist and bans are the real gate.
 
 ## 7. Memory and start: below Pumpkin's 32 MB and 0.1 s
 
-Today Horizon idles at 760 MB, and a fresh world is ready in 9–14 s. Pumpkin idles at 32 MB and is ready in
+Today the upstream engine idles at 760 MB, and a fresh world is ready in 9–14 s. Pumpkin idles at 32 MB and is ready in
 0.1–0.2 s. The targets are **idle RSS < 32 MB** and **ready < 0.1 s**, on a fresh world and on an existing one.
 
 Each step below is one or more PRs. Each one is measured with the bench on three numbers:
@@ -370,28 +369,28 @@ structure gets a measured size in the bench report: bytes per loaded chunk, per 
 Chunk lighting and heightmaps are kept packed, on #3253's storage primitives (hectoreccles), and #3489 shares
 uniform sections.
 
-## 8. The Horizon fast path
+## 8. The the upstream engine fast path
 
-Vanilla's protocol stays the default and is never changed for a vanilla client. Horizon clients ask for more,
+Vanilla's protocol stays the default and is never changed for a vanilla client. the upstream engine clients ask for more,
 in configuration:
 
 1. The client sends brand `horizon` (it does today, `net.rs`), then a `horizon:hello` custom payload:
    protocol revision plus a capability bit set.
-2. The server answers `horizon:hello` with the subset it accepts. Horizon's server already answers a Horizon
+2. The server answers `horizon:hello` with the subset it accepts. the upstream engine's server already answers a the upstream engine
    brand with `horizon:quiet_commands` (`lan/conn.rs`), and this is the same mechanism.
 3. A client that sends no hello, or a capability the server doesn't know, gets vanilla. The fast path is
    always negotiated, never assumed.
 
 | Capability | What it changes | Measured cost it removes |
 |---|---|---|
-| `chunk-zstd` | chunk packets in Horizon's own section encoding with a shared zstd dictionary, as one `horizon:chunk` payload | bytes per chunk (section 1: 3.6–3.7 KB for Horizon and Pumpkin alike with vanilla's format) |
+| `chunk-zstd` | chunk packets in the upstream engine's own section encoding with a shared zstd dictionary, as one `horizon:chunk` payload | bytes per chunk (section 1: 3.6–3.7 KB for the upstream engine and Pumpkin alike with vanilla's format) |
 | `far-terrain` | the server sends LOD tiles beyond view distance from the saved world, at low priority under the send budget. The client's `lod.rs` draws them today from its own generator | the client generating far terrain itself. Players see the server's real world, builds included |
 | `entity-batch` | one packet per tick with every tracked entity's change, quantized as vanilla's deltas are | per-packet overhead: dozens of small moves per tick per player |
 | `server-stats` | TPS, MSPT and the player's own ping, for the client's debug overlay | none (a feature) |
 
-Each capability has its own harness. A Horizon client with the capability, and one without, must end up with
+Each capability has its own harness. A the upstream engine client with the capability, and one without, must end up with
 identical client state (`horizon-ctl state` digests). The client half lands in horizon behind the same
-negotiation, so a Horizon client still plays on every vanilla server.
+negotiation, so a the upstream engine client still plays on every vanilla server.
 
 ## 9. Plan
 
@@ -405,7 +404,7 @@ negotiation, so a Horizon client still plays on every vanilla server.
 | W3 | **Parallel levels**, then the exact entity phase (4.2.1), then `tick = "regions"` | 200 players at 20 TPS on 8 cores | bench, the serial-against-parallel digest harness (4.3) |
 | W4 | **Memory and start** (section 7, steps 1–7, with #2608) | idle RSS < 32 MB, ready < 0.1 s, RSS back under 32 MB 60 s after the last player leaves | bench: idle RSS, time to first status ping, per-component table |
 | W5 | **Saving off the tick thread** | no autosave spike in p99 | bench with an autosave window |
-| W6 | **Fast path**: hello, `chunk-zstd`, `entity-batch`, `far-terrain` | −50 % bytes for Horizon clients | per-capability harness |
+| W6 | **Fast path**: hello, `chunk-zstd`, `entity-batch`, `far-terrain` | −50 % bytes for the upstream engine clients | per-capability harness |
 | W7 | **Operations**: metrics endpoint (Prometheus text, loopback/tailnet only), scheduled restarts | the official server's checklist (9.2) | an hour-long soak with 100 bots |
 | W8 | **Downloads**: a workflow in horizon-rust/horizon-server repacks the engine and supervisor from this repo's release tags | one archive per OS, the same checksums as horizon's release | the release |
 | W9 | **Plugin API**: server-side mods on `horizon-mods`, with events, commands, permissions and a scheduler, on the server hooks (#3706, #3878). Led by levzzz5154, who leads modding; roadmap item `server-mods` | a plugin can do what bunchy7s asks for, measured per-tick cost under 0.1 ms with no plugin loaded | mod harness on the integrated server and `--dedicated` |
@@ -415,10 +414,10 @@ side by side. W3 waits for W0. W9 follows levzzz5154's plan.
 
 ### 9.2 The official server
 
-horizon.bunchy7s.dev already runs Horizon's own server, hosted by bunchy7s: `horizon-client --dedicated` from the
+horizon.bunchy7s.dev already runs the upstream engine's own server, hosted by bunchy7s: `horizon-client --dedicated` from the
 current release, in online mode, without the `horizon-server` supervisor. It runs no plugins, and
 kira-pumpkin was never used on it (his answers, 2026-10-29). So each improvement above reaches it with a
-release, and its baseline is the Horizon row of section 1. What he asked for is a plugin API, which is W9.
+release, and its baseline is the the upstream engine row of section 1. What he asked for is a plugin API, which is W9.
 
 Still to settle with him: his backups, his restarts, how he deploys (systemd, Docker), and why he runs without
 the supervisor (a missing feature, or no need), so that the supervisor covers what he does by hand.

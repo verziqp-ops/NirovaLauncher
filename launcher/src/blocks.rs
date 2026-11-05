@@ -72,10 +72,10 @@ pub fn edges(top: Hsla, bottom: Hsla, lip: f32) -> [AnyElement; 2] {
 pub fn panel(t: &Theme) -> Div {
     div()
         .relative()
-        .bg(t.panel)
-        .border_2()
-        .border_color(t.outline)
-        .children(edges(t.bevel, t.lip, theme::BEVEL))
+        .bg(t.surface)
+        .border_1()
+        .border_color(t.rule)
+        .rounded(px(theme::RADIUS_PLATE))
 }
 
 /// A small label in a block of its colour: "Runs", "Partly", a version.
@@ -89,11 +89,9 @@ pub fn badge(label: impl Into<SharedString>, color: Hsla, t: &Theme) -> Div {
         .items_center()
         .gap(px(6.))
         .h(px(22.))
-        .px(px(8.))
+        .px(px(10.))
         .bg(color.opacity(tint))
-        .border_2()
-        .border_color(t.outline)
-        .child(div().size(px(6.)).bg(color))
+        .rounded(px(999.))
         .child(
             pixel(12., FontWeight::MEDIUM)
                 .text_color(color)
@@ -112,8 +110,11 @@ pub fn tabs<T: Copy + PartialEq + 'static>(
     let t = *t;
     div()
         .flex()
-        .items_end()
+        .items_center()
         .gap(px(4.))
+        .p(px(4.))
+        .bg(t.plate_soft)
+        .rounded(px(999.))
         .children(options.iter().map(|&(value, label, icon_name)| {
             let open = current == value;
             let pick = on_pick.clone();
@@ -123,31 +124,18 @@ pub fn tabs<T: Copy + PartialEq + 'static>(
                 .flex()
                 .items_center()
                 .gap(px(8.))
-                .h(px(if open { 42. } else { 38. }))
-                .px(px(14.))
-                .border_2()
-                .border_b_0()
-                .border_color(t.outline)
+                .h(px(32.))
+                .px(px(12.))
+                .rounded(px(999.))
                 .cursor_pointer()
-                .bg(if open { t.panel } else { t.side })
+                .when(open, |d| d.bg(t.ink))
+                .child(icon(icon_name, 16., if open { t.page } else { t.muted }))
                 .child(
-                    div()
-                        .absolute()
-                        .top_0()
-                        .left_0()
-                        .right_0()
-                        .h(px(theme::BEVEL))
-                        .bg(if open { t.bevel } else { t.raised }),
-                )
-                .child(icon(icon_name, 18., if open { t.accent } else { t.muted }))
-                .child(
-                    pixel(15., FontWeight::MEDIUM)
-                        .text_color(if open { t.ink } else { t.muted })
+                    pixel(14., FontWeight::MEDIUM)
+                        .text_color(if open { t.page } else { t.ink_soft })
                         .child(crate::i18n::tr(label)),
                 )
-                .when(!open, |d| d.hover(move |s| s.bg(t.raised)))
-                // The open tab covers the panel's outline under it.
-                .when(open, |d| d.mb(px(-2.)))
+                .when(!open, |d| d.hover(move |s| s.bg(t.plate)))
                 .on_click(move |_: &ClickEvent, window, cx| pick(value, window, cx));
             crate::keyboard(tab, &t)
         }))
@@ -163,12 +151,11 @@ pub fn slot(source: Option<ImageSource>, name: &str, size: f32, t: &Theme) -> Di
         .justify_center()
         .size(px(size))
         .overflow_hidden()
-        .border_2()
-        .border_color(t.outline)
-        .bg(t.well);
+        .rounded(px(theme::RADIUS))
+        .bg(t.plate_soft);
     match source {
         Some(source) => frame.child(img(source).size(px(size - 4.)).object_fit(ObjectFit::Cover)),
-        None => frame.bg(t.raised).child(
+        None => frame.bg(t.plate).child(
             pixel((size * 0.42).round(), FontWeight::BOLD)
                 .text_color(t.muted)
                 .child(

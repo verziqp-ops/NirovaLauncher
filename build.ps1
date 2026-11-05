@@ -61,7 +61,7 @@ try {
 } finally {
     Pop-Location
 }
-$exe = Join-Path $Root "launcher\target\release\horizon-launcher.exe"
+$exe = Join-Path $Root "launcher\target\release\nirova-launcher.exe"
 Say "Built $exe"
 
 if (-not $NoInstall) {

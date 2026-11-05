@@ -1497,3 +1497,39 @@ fn a_launch_as_another_account_leaves_the_selected_one() {
     assert_eq!(gone.unwrap_err(), "That account isn't signed in.");
     assert_eq!(accounts.player(), Player::Microsoft(UUID.into()));
 }
+
+#[test]
+fn fresh_install_has_a_guest_profile_but_guest_never_skips_ownership() {
+    let path = std::env::temp_dir().join(format!(
+        "nivrora-guest-profile-{}.json",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&path);
+    let mut accounts = Accounts::load_from(&path);
+    assert_eq!(accounts.offline_selected.as_deref(), Some("Player"));
+    assert!(accounts.offline.iter().any(|name| name == "Player"));
+
+    // Even the old hidden developer flag cannot turn a local name into game ownership.
+    let store = MemoryStore::default();
+    let result = accounts.play_as_with(&store, Player::Offline("Player".into()), true);
+    assert_eq!(result, Err(OFFLINE_NEEDS_OWNER.into()));
+    let _ = std::fs::remove_file(path);
+}
+
+
+#[test]
+fn licensed_account_keeps_the_guest_profile_available_in_the_picker() {
+    let store = MemoryStore::default();
+    let accounts = signed_in(&store, &secrets("minecraft-token", true));
+    let path = std::env::temp_dir().join(format!(
+        "nivrora-guest-picker-{}.json",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&path);
+    accounts.save_to(&path).unwrap();
+    let loaded = Accounts::load_from(&path);
+    assert_eq!(loaded.player(), Player::Microsoft(UUID.into()));
+    assert!(loaded.offline.iter().any(|name| name == "Player"));
+    let _ = std::fs::remove_file(path);
+}
+

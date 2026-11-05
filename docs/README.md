@@ -1,6 +1,6 @@
-# Horizon documentation
+# NIROVA developer documentation
 
-To play, use [the launcher](../launcher/README.md); the project site is [playhorizon.dev](https://playhorizon.dev). These pages are for developers. What is being done now and next, the work board and how to help: [the hub](https://playhorizon.dev/hub) ([ROADMAP.md](../ROADMAP.md), [roadmap/README.md](../roadmap/README.md) for keeping it current).
+To play, use the [NIROVA launcher](../launcher/README.md). These pages document the NIROVA fork for developers; `horizon-*` crate names and some tool identifiers remain historical technical names. Current goals and work tracking: [ROADMAP.md](../ROADMAP.md) and [roadmap/README.md](../roadmap/README.md).
 
 ## Build and run
 

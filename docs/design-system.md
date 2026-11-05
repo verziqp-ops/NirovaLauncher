@@ -1,9 +1,9 @@
-# Horizon's design system
+# NIROVA's design system
 
 One design language for the launcher, the website and the few overlays the game draws that
 vanilla has no screen for (the on-screen keyboard a controller types with). Every game screen
 and the HUD are not part of it: they are vanilla's, because parity is the point of the game, and
-Horizon's own settings are pages built from vanilla's widgets, the way mods add theirs.
+NIROVA's own settings are pages built from vanilla's widgets, the way mods add theirs.
 
 The tokens live in one place, `crates/horizon-theme`. The launcher (`launcher/src/theme.rs`)
 and the game (`crates/horizon-client/src/ui_theme.rs`) read them as Rust constants, and the
@@ -22,7 +22,7 @@ almost nothing but type. What we take from it is its restraint rather than its c
 2. **Lists, not cards.** Content is a numbered list: a small mono index on the left (`01`,
    `02`…), the name large, a mono detail on the right, and a 1 px rule between rows. Versions,
    settings, worlds, servers, release notes and the parity table are all this one component.
-3. **One accent, used once.** Neutrals do the work. The violet marks the single main action on a
+3. **One accent, used once.** Neutrals do the work. The rose-pink marks the single main action on a
    screen (Play, Download), focus, links and progress; selection is shown in ink, not in colour.
 4. **Space instead of borders.** Generous margins (64 px on wide screens, 16 px on phones), no
    shadows, no gradients, no outlines around groups. A surface tint appears only under the
@@ -36,24 +36,24 @@ almost nothing but type. What we take from it is its restraint rather than its c
 
 ### Colour
 
-Cool, slightly blue neutrals in two appearances with the same restraint, and Horizon's violet.
+Graphite and blue-gray neutrals in dark mode, cool mist surfaces in light mode, and NIROVA's rose-pink.
 Every text colour passes WCAG AA (4.5:1) on every background it is used on; the tests in
 `horizon-theme` check each pair in both palettes.
 
 | Token        | Light     | Dark      | Use |
 |--------------|-----------|-----------|-----|
-| `page`       | `#fafafc` | `#0d0e13` | the background |
-| `plate_soft` | `#f3f3f8` | `#181a22` | hover plate, fields, segmented track, console |
-| `plate`      | `#ebecf4` | `#20222c` | pressed plate, switch off, the faint wordmark |
-| `surface`    | `#ffffff` | `#16181f` | dialogs and menus that sit above the page |
-| `rule`       | `#e2e3ea` | `#24262f` | 1 px rules between rows, tracks |
-| `ink`        | `#16181f` | `#ecedf3` | text, selection, slider fill, the inverted segment |
-| `ink_soft`   | `#3b3e49` | `#c5c7d1` | secondary text, values |
-| `muted`      | `#646875` | `#8b8f9c` | labels, descriptions, mono indices and details |
-| `accent`     | `#5b3fd6` | `#9a86ff` | the main action, links, focus, progress |
-| `on_accent`  | `#ffffff` | `#0d0e13` | text on the accent |
-| `danger`     | `#b4372a` | `#f07a68` | errors, the crash notice's dot |
-| `success`    | `#1d7a48` | `#45c27a` | "Matches vanilla", "Ready" |
+| `page`       | `#e9f0f4` | `#151c25` | the background |
+| `plate_soft` | `#dfe8ee` | `#1c2834` | hover plate, fields, segmented track, console |
+| `plate`      | `#f7fafc` | `#253442` | pressed plate, switch off, the faint wordmark |
+| `surface`    | `#f7fafc` | `#253442` | dialogs and menus that sit above the page |
+| `rule`       | `#d5e1e8` | `#35495a` | 1 px rules between rows, tracks |
+| `ink`        | `#182a36` | `#f0f6fa` | text, selection, slider fill, the inverted segment |
+| `ink_soft`   | `#3e5665` | `#c7d7e2` | secondary text, values |
+| `muted`      | `#4b6271` | `#b9cbd6` | labels, descriptions, mono indices and details |
+| `accent`     | `#a53d70` | `#f09bc3` | the main action, links, focus, progress |
+| `on_accent`  | `#ffffff` | `#17232c` | text on the accent |
+| `danger`     | `#a3301d` | `#ffb3a8` | errors, the crash notice's dot |
+| `success`    | `#136336` | `#7ae2a9` | "Matches vanilla", "Ready" |
 
 The game's menus draw over the live title backdrop, always in the dark palette, with the page
 colour as a flat veil so text keeps its contrast whatever the world shows: `VEIL` (0.90) on
@@ -118,7 +118,7 @@ Geist (400, 500, 600) and Geist Mono (400), bundled under the SIL Open Font Lice
   written in mono beside the label, not on the track.
 - **Segmented control / tabs**: a `plate_soft` pill; the selected segment is an `ink` pill with
   `page` text that slides over `move`.
-- **Navigation**: text only. Launcher: a top bar with the mark and "Horizon" on the left and
+- **Navigation**: text only. Launcher: a top bar with the mark and "NIROVA" on the left and
   the pages on the right, `label` size, `muted`, the current one `ink` on a soft pill. Game
   menus keep their sidebar layout (it suits a controller), but as a plain column of text items
   under the mark, with no panel tint and no border: the current one `ink` on a soft pill that
@@ -134,16 +134,15 @@ Geist (400, 500, 600) and Geist Mono (400), bundled under the SIL Open Font Lice
 
 ## Surfaces
 
-- **Launcher** (`launcher/`): moving to the Night look below, screen by screen; screens not rebuilt
-  yet draw the Blocks parts in the night's colours (`Night::blocks`). A top bar (wordmark, the pages as
-  tabs, the account chip, Settings), a sidebar (the instances, the hosted servers, the launcher's
-  own version and channel at its foot), and the page over a stone texture. Home opens on a pixel
-  landscape banner with the hero, the version picker and Play; Mods holds the mod, resource pack
-  and modpack tabs; Versions and Patch notes are lists of panels; Settings is
-  grouped panels of rows. Dark by default, Light or System in Settings (Appearance).
+- **Launcher** (`launcher/`): the same Night/Dawn token set across the primary pages, secondary tabs,
+  dialogs and window chrome. The left navigation holds Home, Versions, Instances, Worlds and Settings;
+  Mods, Servers, Notes and import/export tools open from their relevant pages. Shared page primitives
+  use the same rounded surfaces, pill badges, segmented tabs, typography and rose-pink action colour.
+  Dark is the default; Light or System can be selected in Settings (Appearance). Russian is the
+  first-run language, with the other shipped translations selectable in Settings.
 - **Website** (horizon-rust/horizon-site): the Blocks look below. The same page structure as before (what it
   is, screenshots, parity, launcher, patch notes, community), headings in Pixelify Sans, lists as
-  stacks of panels, the stone texture behind the page and Horizon's pixel landscape (a dawn or a
+  stacks of panels, the stone texture behind the page and NIROVA's pixel landscape (a dawn or a
   sunset) behind the hero. Light and dark follow the system, with a toggle. A giant wordmark in
   pixels sits in the footer.
 - **Game**: vanilla's screens. The on-screen keyboard is a rounded plate of keys in the page
@@ -151,7 +150,7 @@ Geist (400, 500, 600) and Geist Mono (400), bundled under the SIL Open Font Lice
 
 ## Blocks
 
-A blocky, Minecraft-like look in Horizon's purple, for the website and the redesigned launcher:
+A blocky, Minecraft-like look in NIROVA's blue-gray, retained by the website. The launcher keeps the icon assets but maps its legacy page helper API to the rounded Night/Dawn controls above:
 Minecraft's inventory rather than a document. Its colours are `horizon_theme::Blocks`
 (`BLOCKS_LIGHT`, `BLOCKS_DARK`), which `tokens.css` carries under the same names as before plus
 `--panel`, `--raised`, `--button`, `--well`, `--bevel`, `--lip`, `--outline` and the `--face`
@@ -163,17 +162,17 @@ of the main action. The game's menus keep `LIGHT` and `DARK`.
   letters upstream leaves out, О, П and І: the Latin O's glyph, the lowercase п lifted to that
   weight's cap height, and the Latin I's glyph, so a Russian or Ukrainian heading stays in the
   pixel face.
-- **Blocks, not rounded cards.** Every surface is square: a 2 px dark outline, a 2 px light bevel
-  along the top and a darker lip along the bottom. The main action is the violet face with its own
+- **Blocks, not rounded cards (website only).** Every website surface is square: a 2 px dark outline, a 2 px light bevel
+  along the top and a darker lip along the bottom. The main action is the rose-pink face with its own
   bevel and a 4 px lip; it sinks a pixel when pressed. Code and fields are sunk wells.
 - **Inventory tabs** switch the kinds in Mods: the open tab joins the panel under it.
 - **Slots** hold pictures: a mod's or pack's own icon and gallery images from its source,
   downloaded when first shown and kept on disk (`launcher/src/browser/images.rs`); the launcher
-  ships no third-party pictures. The Horizon instance shows a grass block drawn from the player's
+  ships no third-party pictures. The NIROVA instance shows a grass block drawn from the player's
   own prepared Minecraft textures. Sources are named in text ("from Modrinth"): Modrinth's logo is
   all rights reserved, so it is not shown.
 - **Partner banner**: the one exception to shipping no third-party pictures. Sculk, a server host,
-  sponsors Horizon: its banner (`launcher/assets/sculk-banner.webp`, `launcher/src/partner.rs`) sits
+  sponsors NIROVA: its banner (`launcher/assets/sculk-banner.webp`, `launcher/src/partner.rs`) sits
   under a muted mono "Partner" label at the end of the Servers page and opens Sculk's page in the
   browser. The sidebar of the other pages shows a card made for its width instead: Sculk's characters
   and logo cropped from the same banner, and the text drawn by the launcher in its language, so it
@@ -230,16 +229,16 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
 
 | Token       | Night     | Dawn      | Use |
 |-------------|-----------|-----------|-----|
-| `sky-0…5`   | `#07061a` `#140f38` `#2a1656` `#5b2a78` `#b0477d` `#f08a5d` | `#c9d3f2` `#dcd8f3` `#ead5ec` `#f5d3d8` `#f9d6bd` `#fbe4c6` | the sky, top to horizon |
-| `card`      | `#15112e` at 84 % | `#fdfcff` at 86 % | plates |
-| `card-hi`   | `#231c4a` at 90 % | `#ffffff` at 94 % | a selected or raised plate |
-| `stroke`, `rule` | `#b9acff` at 12 %, 10 % | `#3b2f78` at 12 %, 10 % | a plate's inner stroke, rules between rows |
-| `ink`       | `#f4f2ff` | `#1b1530` | text |
-| `ink-soft`  | `#cfc9ea` | `#3b3354` | secondary text |
-| `muted`     | `#a59fc6` | `#585071` | labels, details |
-| `accent`    | `#7656fa` | `#5b3fd6` | the main action, progress |
-| `accent-hi` | `#a08cff` | `#5333c9` | accent text, focus ring |
-| `success`, `warn`, `danger` | `#5fd39a` `#f5b45a` `#ff8a78` | `#136336` `#7a4f00` `#a3301d` | Ready, updates, errors |
+| `sky-0…5`   | `#111923` `#172331` `#1b2b3a` `#202f3e` `#243445` `#293a4a` | `#e2eaf0` `#e6edf2` `#ebf0f4` `#e5edf2` `#dfe9ef` `#d7e3eb` | the sky, top to horizon |
+| `card`      | `#1c2a38` at 84 % | `#f6f9fb` at 86 % | plates |
+| `card-hi`   | `#28394a` at 90 % | `#ffffff` at 94 % | a selected or raised plate |
+| `stroke`, `rule` | `#7892a7` at 12 %, 10 % | `#7892a7` at 12 %, 10 % | a plate's inner stroke, rules between rows |
+| `ink`       | `#edf5fa` | `#1b2a36` | text |
+| `ink-soft`  | `#c9d9e5` | `#405363` | secondary text |
+| `muted`     | `#b9cbd6` | `#506776` | labels, details |
+| `accent`    | `#f09bc3` | `#a53d70` | the main action, progress |
+| `accent-hi` | `#f7c2d9` | `#a53d70` | accent text, focus ring |
+| `success`, `warn`, `danger` | `#7ae2a9` `#f5c66e` `#ffb3a8` | `#136336` `#7a4f00` `#a3301d` | Ready, updates, errors |
 
 - **Motion that means something**: the sky drifts slowly and stops when the window is hidden or
   unfocused; the interface moves only to show cause and effect (a row arrives where it was added,
@@ -257,7 +256,7 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
 - **Home** (`launcher/src/home.rs`): the selected instance's name in the display cut over the bare
   sky, a caption above it naming what it plays and its state (the same square), and when it was
   played below. Play is the main action (`night::PLAY` tall, cut in one step); the version picker
-  is a raised control of the same height; Mods and Folder are quiet buttons. A Horizon instance
+  is a raised control of the same height; Mods and Folder are quiet buttons. A NIROVA instance
   gets a plate on the right: a release's notes in one line (not a Nightly's) and Join a friend.
   While it gets ready, Play names it ("Getting ready… 34%") beside Cancel, and below sit the
   bar, what is happening with the time left, and the steps (game files, Java, sounds, prepare,
@@ -268,7 +267,7 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
   game folder: one the player chose with Choose image…, scaled to 128 pixels, or its modpack's
   icon from where it was installed), else the block or colour chosen in the dialog, else its
   mark: the loader's logo (Fabric, Quilt, Forge, NeoForge), the grass block for plain Minecraft,
-  Horizon's for Horizon. The letter tile is the last resort. The New instance dialog's loader
+  NIROVA's for NIROVA. The letter tile is the last resort. The New instance dialog's loader
   cards show the same logos. Pixel-art logos are scaled by whole
   pixels; each is decoded once per size.
 - **The instance's tabs** (`launcher/src/home_tabs.rs`): under Home's hero, one tab at a time
@@ -278,7 +277,7 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
   strip's end, where a list's header would put them (`HORIZON_LAUNCHER_PAGE=worlds`, `packs`...
   opens one for screenshots).
 - **The Mods tab** (`launcher/src/instance_mods.rs`): the instance's mods on one nearly opaque
-  card, its loader in the header ("Fabric mods", "Horizon mods") beside a filter. A row is the
+  card, its loader in the header ("Fabric mods", "NIROVA mods") beside a filter. A row is the
   mod's own icon (Modrinth's, else its jar's, else a glyph), its name and version, where it comes from (Modrinth,
   "needed by another mod", or a local file by name), an update as an amber pill when the browser
   found one, and a switch (a Java jar turned off is renamed `.disabled`). Update all and Add mods
@@ -294,14 +293,14 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
   goes on by itself once Microsoft answers (`HORIZON_LAUNCHER_PAGE=sign-in` shows it with a made-up
   code for screenshots).
 - **New instance** (`launcher/src/new_instance.rs`): an opaque plate over the dimmed launcher,
-  tabs for the kind (Horizon, Vanilla, Modded). A Java kind lists Mojang's versions (search,
+  tabs for the kind (NIROVA, Vanilla, Modded). A Java kind lists Mojang's versions (search,
   Snapshots, Old; the newest release chosen), Modded adds the loader (Fabric or Quilt, at its newest
   stable version), and the name follows the choice ("Fabric 1.21.4") until the player types one.
   Create is the main action.
 
 ## The mark
 
-**Horizon line.** A sun half set below a horizon, drawn as three horizontal bars of 4, 8 and
+**NIROVA line.** A sun half set below a horizon, drawn as three horizontal bars of 4, 8 and
 10 units over a 12 unit line, on a 16 unit grid. The bars are the sun cut by the horizon into
 slices, which also reads as layers of terrain and as a nod to voxels without drawing a block. It
 is built on whole units of the 16 px grid so it stays sharp at 16 px, and it scales without

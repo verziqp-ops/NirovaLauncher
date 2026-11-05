@@ -1,27 +1,27 @@
 <#
 .SYNOPSIS
-  Installs Nirova Launcher on Windows: the launcher, a Start menu shortcut and a desktop
+  Installs NIROVA Launcher on Windows: the launcher, a Start menu shortcut and a desktop
   shortcut. No administrator rights needed.
 
 .DESCRIPTION
   One line, in PowerShell:
-    irm https://github.com/verziqp-ops/NirovaLauncher/releases/latest/download/install.ps1 | iex
+    irm https://github.com/verziqp-ops/NIROVALauncher/releases/latest/download/install.ps1 | iex
 
   Or with a launcher you built yourself (build.ps1 does this for you):
-    .\install.ps1 -Exe launcher\target\release\horizon-launcher.exe
+    .\install.ps1 -Exe launcher\target\release\nirova-launcher.exe
 #>
 param(
-    # A local horizon-launcher.exe to install instead of downloading the latest release.
+    # A local nirova-launcher.exe to install instead of downloading the latest release.
     [string]$Exe = "",
     # Don't start the launcher when it is installed.
     [switch]$NoStart
 )
 
 $ErrorActionPreference = "Stop"
-$Repo = "verziqp-ops/NirovaLauncher"
-$Asset = "horizon-launcher-windows-x64.zip"
-$Name = "Nirova Launcher"
-$Dir = Join-Path $env:LOCALAPPDATA "Programs\NirovaLauncher"
+$Repo = "verziqp-ops/NIROVALauncher"
+$Asset = "nirova-launcher-windows-x64.zip"
+$Name = "NIROVA Launcher"
+$Dir = Join-Path $env:LOCALAPPDATA "Programs\NIROVA"
 $Target = Join-Path $Dir "nirova-launcher.exe"
 
 function Say($text) { Write-Host "  $text" }
@@ -44,8 +44,13 @@ if ($Exe) {
     Say "Installing $Exe"
     Copy-Item $Exe $Target -Force
 } else {
-    $url = "https://github.com/$Repo/releases/latest/download/$Asset"
-    Say "Downloading the latest release"
+    $api = "https://api.github.com/repos/$Repo/releases?per_page=100"
+    Say "Finding the latest NIROVA Launcher release"
+    $releases = Invoke-RestMethod -Uri $api -Headers @{ "Accept" = "application/vnd.github+json" }
+    $release = $releases | Where-Object { $_.tag_name -like "launcher@*" -and -not $_.draft -and -not $_.prerelease } | Select-Object -First 1
+    if (-not $release) { throw "No published NIROVA Launcher release was found. Download it from GitHub Releases." }
+    $url = "https://github.com/$Repo/releases/download/$($release.tag_name)/$Asset"
+    Say "Downloading $($release.tag_name)"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $work = Join-Path $env:TEMP "nirova-launcher-install"
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
@@ -53,8 +58,8 @@ if ($Exe) {
     $zip = Join-Path $work $Asset
     Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
     Expand-Archive $zip -DestinationPath $work -Force
-    $new = Get-ChildItem $work -Recurse -Filter "horizon-launcher.exe" | Select-Object -First 1
-    if (-not $new) { throw "The download has no horizon-launcher.exe" }
+    $new = Get-ChildItem $work -Recurse -Filter "nirova-launcher.exe" | Select-Object -First 1
+    if (-not $new) { throw "The download has no nirova-launcher.exe" }
     Move-Item $new.FullName $Target -Force
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
 }
@@ -71,7 +76,7 @@ foreach ($lnk in $places) {
     $s.TargetPath = $Target
     $s.WorkingDirectory = $Dir
     $s.IconLocation = "$Target,0"
-    $s.Description = "Launch Nirova Launcher"
+    $s.Description = "Launch NIROVA Launcher"
     $s.Save()
 }
 Say "Shortcuts: Start menu and desktop"

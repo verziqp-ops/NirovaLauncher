@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Nirova Launcher
+Name[en]=Nirova Launcher
+Name[uk]=Лаунчер Nirova
+GenericName=Игровой лаунчер
+GenericName[en]=Game launcher
+GenericName[uk]=Ігровий лаунчер
+Comment=Установка и запуск Minecraft: Java Edition
+Comment[en]=Install and play Minecraft: Java Edition
+Comment[uk]=Встановлення та запуск Minecraft: Java Edition
+Exec=nirova-launcher
+Icon=nirova
+Terminal=false
+Categories=Game;
+StartupWMClass=nirova-launcher

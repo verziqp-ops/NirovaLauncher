@@ -1,9 +1,9 @@
-//! Horizon's design tokens, the one source of truth for the launcher (`launcher/src/theme.rs`),
+//! NIROVA's design tokens, the one source of truth for the launcher (`launcher/src/theme.rs`),
 //! the game's on-screen keyboard (`horizon-client`'s `ui_theme`) and the website (`tokens.css` in this crate,
 //! generated from [`css`] by `cargo run -p xtask -- tokens`, which the site's build reads from main). Change a value here and all three
 //! follow. The system is described in `docs/design-system.md`.
 //!
-//! Cool neutrals in two appearances and one violet accent; Geist and Geist Mono, bundled here
+//! Cool neutrals in two appearances and one rose-pink accent; Geist and Geist Mono, bundled here
 //! under the SIL Open Font License (`fonts/OFL-Geist.txt`). The launcher's night look and its
 //! Bricolage Grotesque are in [`night`]. Colours are `0xRRGGBB`; sizes
 //! are in logical pixels.
@@ -27,7 +27,7 @@ pub mod fonts {
     pub const PIXEL_MEDIUM: &[u8] = include_bytes!("../fonts/PixelifySans-Medium.ttf");
     pub const PIXEL_SEMIBOLD: &[u8] = include_bytes!("../fonts/PixelifySans-SemiBold.ttf");
     pub const PIXEL_BOLD: &[u8] = include_bytes!("../fonts/PixelifySans-Bold.ttf");
-    /// [`crate::night`]'s faces, cut from upstream's variable font by `tools/bake_bricolage.py`.
+    /// [`crate::night`]'s faces, cut from the bundled variable font by `tools/bake_bricolage.py`.
     pub const BRICOLAGE_REGULAR: &[u8] = include_bytes!("../fonts/BricolageGrotesque-Regular.ttf");
     pub const BRICOLAGE_MEDIUM: &[u8] = include_bytes!("../fonts/BricolageGrotesque-Medium.ttf");
     pub const BRICOLAGE_SEMIBOLD: &[u8] =
@@ -78,7 +78,7 @@ pub mod icons {
         "search",
         "server",
         "sliders",
-        // Not Pixelarticons': drawn for Horizon's ratings, in the same 2-unit grid.
+        // Not Pixelarticons': drawn for NIROVA's ratings, in the same 2-unit grid.
         "star",
         "terminal",
         "trash",
@@ -92,9 +92,9 @@ pub mod icons {
     }
 }
 
-/// Horizon's icon at 64 px (PNG), for window title bars and task bars at run time. Rendered from
+/// NIROVA's icon at 64 px (PNG), for window title bars and task bars at run time. Rendered from
 /// `docs/media/brand/icon.svg` by `cargo run -p xtask -- icons`.
-pub const ICON_PNG: &[u8] = include_bytes!("../icons/horizon-64.png");
+pub const ICON_PNG: &[u8] = include_bytes!("../icons/nirova-64.png");
 
 /// How a type step sizes on the web.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -324,7 +324,7 @@ pub const LIGHT: Palette = Palette {
     ink: 0x16181f,
     ink_soft: 0x3b3e49,
     muted: 0x646875,
-    accent: 0x5b3fd6,
+    accent: 0xa53d70,
     on_accent: 0xffffff,
     danger: 0xb4372a,
     success: 0x1d7a48,
@@ -340,17 +340,15 @@ pub const DARK: Palette = Palette {
     ink: 0xecedf3,
     ink_soft: 0xc5c7d1,
     muted: 0x8b8f9c,
-    accent: 0x9a86ff,
-    on_accent: 0x0d0e13,
+    accent: 0xf09bc3,
+    on_accent: 0x17232c,
     danger: 0xf07a68,
     success: 0x45c27a,
     dark: true,
 };
 
-/// The launcher's and the website's blocky look ("Blocks" in `docs/design-system.md`): stone-dark
-/// (or lavender-light) neutrals with a violet cast, panels with a dark outline, a light bevel on top
-/// and a darker lip below, and the violet `face` of the one big action. The game's menus keep
-/// [`LIGHT`] and [`DARK`].
+/// NIROVA's launcher surfaces: graphite and blue-gray in dark mode, cool mist in light mode,
+/// with a restrained pink primary action. The game's menus keep [`LIGHT`] and [`DARK`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Blocks {
     /// The window behind everything, tiled with a faint stone texture.
@@ -393,50 +391,50 @@ pub struct Blocks {
 }
 
 pub const BLOCKS_DARK: Blocks = Blocks {
-    page: 0x0f0d17,
-    side: 0x0b0a11,
-    panel: 0x1a1727,
-    raised: 0x221e34,
-    button: 0x2b2641,
-    button_bevel: 0x3d3560,
-    well: 0x0c0b12,
-    bevel: 0x342d52,
-    lip: 0x07060b,
-    outline: 0x05040a,
-    rule: 0x120f1c,
-    ink: 0xecedf3,
-    ink_soft: 0xc5c7d1,
-    muted: 0xa29cb8,
-    accent: 0x9a86ff,
-    face: 0x5b3fd6,
-    face_bevel: 0x8a74ff,
-    face_lip: 0x3a2694,
-    on_face: 0xffffff,
-    danger: 0xf07a68,
-    success: 0x45c27a,
-    warn: 0xf0b84f,
+    page: 0x151c25,
+    side: 0x1c2834,
+    panel: 0x253442,
+    raised: 0x304456,
+    button: 0x3a5264,
+    button_bevel: 0x4c687a,
+    well: 0x111922,
+    bevel: 0x3c5364,
+    lip: 0x0c131b,
+    outline: 0x080d12,
+    rule: 0x35495a,
+    ink: 0xf0f6fa,
+    ink_soft: 0xc7d7e2,
+    muted: 0xb9cbd6,
+    accent: 0xa8d8e8,
+    face: 0xa8d8e8,
+    face_bevel: 0xc6e8f1,
+    face_lip: 0x6e9eb1,
+    on_face: 0x142630,
+    danger: 0xffb3a8,
+    success: 0x7ae2a9,
+    warn: 0xf5c66e,
     dark: true,
 };
 
 pub const BLOCKS_LIGHT: Blocks = Blocks {
-    page: 0xece7f7,
-    side: 0xe2dbf2,
-    panel: 0xf8f6fd,
-    raised: 0xe9e3f8,
-    button: 0xddd4f3,
-    button_bevel: 0xf4f0fe,
-    well: 0xf3f0fb,
+    page: 0xe9f0f4,
+    side: 0xdfe8ee,
+    panel: 0xf7fafc,
+    raised: 0xe6eff4,
+    button: 0xd4e4ec,
+    button_bevel: 0xffffff,
+    well: 0xf0f5f8,
     bevel: 0xffffff,
-    lip: 0xc3b8e2,
-    outline: 0x2b2244,
-    rule: 0xe4ddf4,
-    ink: 0x1b1530,
-    ink_soft: 0x3b3354,
-    muted: 0x585071,
-    accent: 0x5333c9,
-    face: 0x5b3fd6,
-    face_bevel: 0x8069ef,
-    face_lip: 0x3a2694,
+    lip: 0xc4d5df,
+    outline: 0x344c5c,
+    rule: 0xd5e1e8,
+    ink: 0x182a36,
+    ink_soft: 0x3e5665,
+    muted: 0x4b6271,
+    accent: 0x28647a,
+    face: 0x347b95,
+    face_bevel: 0x5c9fb6,
+    face_lip: 0x23566b,
     on_face: 0xffffff,
     danger: 0xa3301d,
     success: 0x136336,

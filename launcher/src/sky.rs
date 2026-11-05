@@ -165,22 +165,22 @@ struct Colors {
 }
 
 const NIGHT_ART: Colors = Colors {
-    sun: [0xffe28c, 0xffbf66, 0xff944f],
-    far: 0x3a1f5e,
-    near: 0x150f2e,
-    cloud: [0x3b2869, 0x6e3a7e, 0xc96a86],
-    lit: [0x5a3f8a, 0x9c5a92, 0xf7a98a],
-    shade: 0x2a1a4c,
-    star: 0xf4f2ff,
+    sun: [0x748c9e, 0x6e8799, 0x647d90],
+    far: 0x1b2936,
+    near: 0x141f2a,
+    cloud: [0x253545, 0x2b3b4a, 0x324353],
+    lit: [0x2b3b4a, 0x344757, 0x3d5061],
+    shade: 0x1a2835,
+    star: 0x8da7b8,
 };
 
 const DAWN_ART: Colors = Colors {
-    sun: [0xfffbea, 0xffeac2, 0xffd3a1],
-    far: 0xbaa8de,
-    near: 0x8c79c6,
-    cloud: [0xeef0fb, 0xfbeef3, 0xfff1e4],
-    lit: [0xffffff; 3],
-    shade: 0xd9cbe8,
+    sun: [0xe8f1f5, 0xddeaf0, 0xcadbe4],
+    far: 0xc4d3dd,
+    near: 0xafc1cd,
+    cloud: [0xd4e0e7, 0xdce7ed, 0xe5edf2],
+    lit: [0xe8f0f4, 0xf1f5f8, 0xffffff],
+    shade: 0xbccdd7,
     star: 0xffffff,
 };
 
@@ -191,9 +191,8 @@ const STAR_LEVELS: [f32; 4] = [0.95, 0.6, 0.3, 0.6];
 /// different layers share frames: two a second at most.
 const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
-/// How the sky moves: not at all under the system's reduced motion (macOS) or with
-/// `HORIZON_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
-/// `HORIZON_LAUNCHER_MOTION=always`, for recordings.
+/// The sky is static by default. Set `NIROVA_LAUNCHER_MOTION=full` to animate while focused,
+/// or `NIROVA_LAUNCHER_MOTION=always` for recordings.
 #[derive(Clone, Copy, PartialEq)]
 enum Motion {
     Still,
@@ -203,7 +202,7 @@ enum Motion {
 
 fn motion() -> Motion {
     static MOTION: LazyLock<Motion> = LazyLock::new(|| {
-        match std::env::var("HORIZON_LAUNCHER_MOTION").as_deref() {
+        match std::env::var("NIROVA_LAUNCHER_MOTION").as_deref() {
             Ok("off" | "reduced") => return Motion::Still,
             Ok("always") => return Motion::Always,
             Ok("full") => return Motion::InFront,
@@ -213,7 +212,7 @@ fn motion() -> Motion {
         if objc2_app_kit::NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion() {
             return Motion::Still;
         }
-        Motion::InFront
+        Motion::Still
     });
     *MOTION
 }

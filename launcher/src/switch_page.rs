@@ -12,12 +12,12 @@ impl Launcher {
                 self.accounts
                     .selected()
                     .map_or_else(String::new, |a| a.name.clone()),
-                tr("Microsoft account"),
+                tr("Licensed account"),
             ),
-            Player::Offline(name) => (name, tr("Offline")),
+            Player::Offline(name) => (name, tr("Guest profile")),
             Player::GameName => (
                 self.offline_name.clone().unwrap_or_else(|| "Player".into()),
-                tr("Offline"),
+                tr("Guest profile"),
             ),
         }
     }
@@ -25,7 +25,7 @@ impl Launcher {
     pub(super) fn play_as(&mut self, who: Player) {
         let mut accounts = Accounts::load();
         let done = accounts
-            .play_as_with(account::store(), who, self.settings.dev_offline)
+            .play_as_with(account::store(), who, false)
             .and_then(|()| accounts.save());
         match done {
             Ok(()) => self.accounts = accounts,
@@ -44,7 +44,7 @@ impl Launcher {
                 (
                     Player::Microsoft(a.uuid.clone()),
                     a.name.clone(),
-                    tr("Microsoft"),
+                    tr("Licensed account"),
                 )
             })
             .collect();
@@ -52,12 +52,12 @@ impl Launcher {
             self.accounts
                 .offline
                 .iter()
-                .map(|n| (Player::Offline(n.clone()), n.clone(), tr("Offline"))),
+                .map(|n| (Player::Offline(n.clone()), n.clone(), tr("Guest profile"))),
         );
         out.push((
             Player::GameName,
             self.offline_name.clone().unwrap_or_else(|| "Player".into()),
-            tr("Offline, the game's name"),
+            tr("Guest profile"),
         ));
         out
     }
@@ -218,9 +218,9 @@ impl Launcher {
                 Some(
                     div()
                         .child(tr(if plays {
-                            "Offline name · plays"
+                            "Guest profile · active"
                         } else {
-                            "Offline name"
+                            "Guest profile"
                         }))
                         .into_any_element(),
                 ),
@@ -240,9 +240,9 @@ impl Launcher {
                 Some(
                     div()
                         .child(tr(if plays {
-                            "Offline name · the game's own · plays"
+                            "Guest profile · game generated · active"
                         } else {
-                            "Offline name · the game's own"
+                            "Guest profile · game generated"
                         }))
                         .into_any_element(),
                 ),
@@ -276,7 +276,7 @@ impl Launcher {
             );
         rows = rows.child(index_row(
             n,
-            tr("Offline name"),
+            tr("Guest profile"),
             Some(
                 div()
                     .child(tr(

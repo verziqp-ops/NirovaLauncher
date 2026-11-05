@@ -17,10 +17,10 @@ pub const UPSTREAM_REPO: &str = "horizon-rust/horizon";
 pub const README_URL: &str =
     "https://github.com/verziqp-ops/NirovaLauncher/blob/main/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
-pub const AGENT_DOCS_URL: &str = "https://playhorizon.dev/docs/agents";
-/// This launcher's version: the release workflow sets `HORIZON_LAUNCHER_VERSION` from the
+pub const AGENT_DOCS_URL: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/docs";
+/// This launcher's version: the release workflow sets `NIROVA_LAUNCHER_VERSION` from the
 /// tag it builds (no version-bump commits); other builds say Cargo.toml's.
-pub const VERSION: &str = version_or(option_env!("HORIZON_LAUNCHER_VERSION"));
+pub const VERSION: &str = version_or(option_env!("NIROVA_LAUNCHER_VERSION"));
 /// Launcher releases are tagged `launcher@X.Y.Z` from 0.2 on (docs/versioning.md), and Horizon's
 /// own `vX.Y.Z`. Before 0.2 they were `launcher-vX.Y.Z` and `vYYYY.MM.DD[.N]`: every 0.2 tag is
 /// newer than every one of those ([`release_order`]).
@@ -51,34 +51,34 @@ pub struct Release {
     pub nightly: Option<String>,
 }
 
-/// The release assets of each system Horizon ships for: (`std::env::consts::OS`, `ARCH`, the game,
+/// The release assets Nirova builds for each supported system: (`std::env::consts::OS`, `ARCH`, the game,
 /// the launcher). game-build.yml builds the game's, nightly-build.yml signs and publishes them, and
 /// launcher.yml builds the launcher's (`platform_assets_are_published`).
 pub const PLATFORMS: [(&str, &str, &str, &str); 4] = [
     (
         "linux",
         "x86_64",
-        "horizon-linux-x86_64.tar.gz",
-        "horizon-launcher-linux-x86_64.tar.gz",
+        "nirova-game-linux-x86_64.tar.gz",
+        "nirova-launcher-linux-x86_64.tar.gz",
     ),
     (
         "macos",
         "aarch64",
-        "horizon-macos-arm64.zip",
-        "horizon-launcher-macos-arm64.zip",
+        "nirova-game-macos-arm64.zip",
+        "nirova-launcher-macos-arm64.zip",
     ),
     // Intel Macs (#1161).
     (
         "macos",
         "x86_64",
-        "horizon-macos-x64.zip",
-        "horizon-launcher-macos-x64.zip",
+        "nirova-game-macos-x64.zip",
+        "nirova-launcher-macos-x64.zip",
     ),
     (
         "windows",
         "x86_64",
-        "horizon-windows-x64.zip",
-        "horizon-launcher-windows-x64.zip",
+        "nirova-game-windows-x64.zip",
+        "nirova-launcher-windows-x64.zip",
     ),
 ];
 
@@ -113,7 +113,7 @@ const fn platform_assets(os: &str, arch: &str) -> Option<(&'static str, &'static
 
 const OWN_ASSETS: Option<(&str, &str)> =
     platform_assets(std::env::consts::OS, std::env::consts::ARCH);
-/// The game build this launcher installs, None where Horizon has none.
+/// The Nirova game build this launcher installs, None where there is no supported package.
 pub const ASSET: Option<&str> = match OWN_ASSETS {
     Some((game, _)) => Some(game),
     None => None,
@@ -128,14 +128,14 @@ pub const LAUNCHER_ASSET: Option<&str> = match OWN_ASSETS {
 /// one file. A launcher running from one updates by replacing that file ([`appimage_path`]), so it
 /// needs this archive rather than the platform's `.tar.gz`.
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = Some("horizon-launcher-linux-x86_64.AppImage");
+pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = Some("nirova-launcher-linux-x86_64.AppImage");
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = None;
 
 const LAUNCHER_BINARY: &str = if cfg!(windows) {
-    "horizon-launcher.exe"
+    "nirova-launcher.exe"
 } else {
-    "horizon-launcher"
+    "nirova-launcher"
 };
 
 pub(crate) const CLIENT: &str = if cfg!(windows) {
@@ -149,7 +149,7 @@ pub(crate) const CLIENT: &str = if cfg!(windows) {
 fn agent(url: &str) -> ureq::Agent {
     crate::proxy::agent(
         ureq::AgentBuilder::new()
-            .user_agent(&format!("horizon-launcher/{VERSION}"))
+            .user_agent(&format!("nirova-launcher/{VERSION}"))
             // A connection that goes quiet fails instead of waiting for ever.
             .timeout_connect(std::time::Duration::from_secs(15))
             .timeout_read(std::time::Duration::from_secs(60)),
@@ -206,13 +206,13 @@ pub fn launcher_version(tag: &str) -> Option<&str> {
         .filter(|v| v.starts_with(|c: char| c.is_ascii_digit()))
 }
 
-/// The tag this launcher was released as. launcher.yml gives it (`HORIZON_LAUNCHER_TAG`); a release
+/// The tag this launcher was released as. launcher.yml gives it (`NIROVA_LAUNCHER_TAG`); a release
 /// built before it did gave only the version, of a `launcher-v` tag; a build from source is
 /// Cargo.toml's version on the 0.2 line.
 pub fn own_tag() -> String {
     own_tag_of(
-        option_env!("HORIZON_LAUNCHER_TAG"),
-        option_env!("HORIZON_LAUNCHER_VERSION"),
+        option_env!("NIROVA_LAUNCHER_TAG"),
+        option_env!("NIROVA_LAUNCHER_VERSION"),
     )
 }
 
@@ -343,8 +343,10 @@ pub(crate) fn parse_releases(
         if r["draft"].as_bool().unwrap_or(false) || !keep(tag) {
             continue;
         }
+        let legacy_asset = asset.and_then(legacy_game_asset);
         let found = r["assets"].as_array().into_iter().flatten().find_map(|a| {
-            (Some(a["name"].as_str()?) == asset).then(|| {
+            let name = a["name"].as_str()?;
+            (Some(name) == asset || Some(name) == legacy_asset).then(|| {
                 Some((
                     a["browser_download_url"].as_str()?.to_string(),
                     a["size"].as_u64()?,
@@ -490,14 +492,11 @@ impl Default for Links {
     /// What the launcher uses until (or unless) it can read links.json.
     fn default() -> Self {
         Self {
-            discord: "https://discord.gg/playhorizon".into(),
-            sponsor: "https://github.com/sponsors/ludovic111".into(),
-            website: "https://playhorizon.dev".into(),
-            official_server: crate::server_list::OFFICIAL_ADDRESS.into(),
-            official_server_previous: crate::server_list::OFFICIAL_PREVIOUS
-                .iter()
-                .map(|a| a.to_string())
-                .collect(),
+            discord: String::new(),
+            sponsor: String::new(),
+            website: String::new(),
+            official_server: String::new(),
+            official_server_previous: Vec::new(),
         }
     }
 }
@@ -763,16 +762,22 @@ fn unpack(archive: &Path, url: &str, to: &Path) -> Result<(), String> {
 /// the fraction done.
 pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> {
     let tag = release.tag.as_str();
+    let asset = release
+        .asset
+        .as_ref()
+        .and_then(|(url, _)| url.rsplit('/').next())
+        .or(ASSET)
+        .unwrap_or_default();
     let sha256 = match &release.nightly {
-        // Signed for the Nightly channel, served under its own GitHub tag.
+        // Signed for the Preview channel, served under its own GitHub tag.
         Some(published) => crate::signed::nightly_digest(
             published,
-            ASSET.unwrap_or_default(),
+            asset,
             &horizon_release_sign::trusted_keys(),
             fetch_small,
         )?,
-        None if is_game_tag(tag) => signed_digest(tag, ASSET.unwrap_or_default())?,
-        None => return Err(format!("{tag} is not a Horizon release.")),
+        None if is_game_tag(tag) => signed_digest(tag, asset)?,
+        None => return Err(format!("{tag} is not a NIROVA release.")),
     };
     install_as(release, tag, &sha256, progress)
 }
@@ -798,7 +803,7 @@ pub(crate) fn install_as(
     let unpacked = partial.join("unpacked");
     unpack(&archive, &url, &unpacked)?;
     progress(0.97);
-    // The archives hold one top folder (horizon-linux-x86_64/...); the version folder is its contents.
+    // The archives hold one top folder (nirova-game-linux/...); the version folder is its contents.
     let entries: Vec<_> = fs::read_dir(&unpacked)
         .map_err(|e| e.to_string())?
         .flatten()
@@ -908,7 +913,7 @@ pub fn resources_summary(prepared: bool, sounds: bool, version: &str) -> String 
     use crate::i18n::trf;
     match (prepared, sounds) {
         (false, _) => trf(
-            "Not prepared. Horizon needs the files of your own Minecraft {version}.",
+            "Not prepared. NIROVA needs the files of your own Minecraft {version}.",
             &[("version", version)],
         ),
         (true, true) => trf("Prepared for Minecraft {version}", &[("version", version)]),
@@ -1285,7 +1290,7 @@ pub fn complete_assets(tag: &str) {
     });
 }
 
-/// Horizon's own download (an owner's) may have stopped before the sounds and the languages,
+/// NIROVA's own download (an owner's) may have stopped before the sounds and the languages,
 /// and the copies of `complete_assets` read them from its store: asked again, once per run, through
 /// the same owner gate as any download from Mojang (`download_for_owner`), which keeps the files
 /// already whole. Called where a download is expected (`reuse_prepared_everywhere`), never on Play.
@@ -1500,7 +1505,7 @@ pub fn java_game(
 ) -> Result<Command, String> {
     let game = instance.java.as_ref().ok_or_else(|| {
         format!(
-            "{} plays Horizon, not Minecraft: Java Edition",
+            "{} plays NIROVA, not Minecraft: Java Edition",
             instance.name
         )
     })?;
@@ -1597,7 +1602,7 @@ fn download_for(
                 sources::Os::Windows => "windows",
             };
             mojang::download(pins, dir, os, 8, fetch, &mojang::CANCEL, log).map_err(|e| {
-                format!("\n  • Horizon tried to download {v} from Mojang for {name}, but: {e}")
+                format!("\n  • NIROVA tried to download {v} from Mojang for {name}, but: {e}")
             })
         }
         // An owner by its last answer, who can't be asked now.
@@ -1607,11 +1612,11 @@ fn download_for(
             pass.offline.unwrap_or_default()
         )),
         Err(_) if signed_in => Err(
-            "\n  • No signed-in account owns Minecraft: Java Edition, so Horizon can't download it."
+            "\n  • No signed-in account owns Minecraft: Java Edition, so NIROVA can't download it."
                 .into(),
         ),
         Err(_) => Err(format!(
-            "\n  • Or sign in with the Microsoft account that owns Minecraft: Horizon then \
+            "\n  • Or sign in with the Microsoft account that owns Minecraft: NIROVA then \
              downloads {v} from Mojang itself."
         )),
     }
@@ -1670,7 +1675,7 @@ fn java(
     let runtime = data_dir().join("minecraft").join("runtime");
     let home = mojang::java_runtime(&component, &runtime, 8, &fetch, &mojang::CANCEL, log)
         .map_err(|e| {
-        format!("{missing}\n  • Horizon also tried to download Minecraft's own Java from Mojang, but: {e}")
+        format!("{missing}\n  • NIROVA also tried to download Minecraft's own Java from Mojang, but: {e}")
     })?;
     find(major, &[home]).map(|jdk| jdk.home())
 }
@@ -1991,12 +1996,16 @@ pub fn prepare_in_process(
 /// data folder (~/.local/share/horizon on Linux, as the release folders' horizon.sh uses). It is
 /// never inside a version folder, so installing, updating or removing a version keeps the saves.
 pub fn game_home() -> PathBuf {
+    if let Some(home) = std::env::var_os("NIROVA_HOME").filter(|h| !h.is_empty()) {
+        return PathBuf::from(home);
+    }
     if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
-    dirs::data_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join("horizon")
+    let data = dirs::data_dir().unwrap_or_else(std::env::temp_dir);
+    let nirova = data.join("nirova");
+    let legacy = data.join("horizon");
+    if nirova.exists() || !legacy.exists() { nirova } else { legacy }
 }
 
 /// Whether No AI is on: every AI feature hidden and off (`horizon_core::no_ai`, kept in the
@@ -2231,7 +2240,7 @@ pub fn client_command(tag: &str) -> Command {
     }
     // PipeWire remembers volume and mute per application name. The game's own name is
     // "PipeWire ALSA [horizon-client]", shared with development and test runs, where
-    // muting it once left every later game silent: played from here it is "Horizon".
+    // muting it once left every later game silent: played from here it is "NIROVA".
     if std::env::var_os("PIPEWIRE_PROPS").is_none() {
         cmd.env(
             "PIPEWIRE_PROPS",
@@ -2401,7 +2410,7 @@ pub fn need_prepared(tag: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "{tag} is not prepared yet. Prepare it first: `horizon-launcher prepare --version {tag}` \
+            "{tag} is not prepared yet. Prepare it first: `nirova-launcher prepare --version {tag}` \
              uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account \
              that owns it.",
             v = game_version(tag)
@@ -2421,7 +2430,7 @@ pub fn client_as(tag: &str, who: Option<&account::Player>) -> Result<Command, St
         None => account::session_for_game(&game_home(), false).map_err(|e| e.to_string()),
         Some(who) => account::session_for_game_as(&game_home(), who),
     }
-    .map_err(|refused| format!("{refused} Sign in with `horizon-launcher account sign-in`."))?;
+    .map_err(|refused| format!("{refused} Sign in with `nirova-launcher account sign-in`."))?;
     need_prepared(tag)?;
     complete_assets(tag);
     crate::browser::horizon::before_play(&game_home());
@@ -2468,7 +2477,7 @@ pub fn release_notes(tag: Option<&str>) -> Result<Release, String> {
         Some(tag) => releases
             .into_iter()
             .find(|r| r.tag == tag)
-            .ok_or_else(|| format!("No Horizon release is tagged {tag}.")),
+            .ok_or_else(|| format!("No NIROVA release is tagged {tag}.")),
         None => releases
             .into_iter()
             .next()
@@ -2725,10 +2734,10 @@ pub fn self_update_allowed() -> bool {
         && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none_or(|v| v.is_empty() || v == "0")
 }
 
-/// The version in `horizon-launcher --version`'s output (`horizon-launcher 0.1.5`).
+/// The version in `nirova-launcher --version`'s output (`nirova-launcher 0.1.5`).
 fn parse_version_output(out: &str) -> Option<&str> {
     out.trim()
-        .strip_prefix("horizon-launcher ")
+        .strip_prefix("nirova-launcher ")
         .map(str::trim)
         .filter(|v| !v.is_empty())
 }
@@ -2935,7 +2944,7 @@ pub fn self_update(release: &Release, progress: impl Fn(f32)) -> Result<(), Stri
     unpack(&archive, &url, &unpacked)?;
     // A launcher inside Horizon.app replaces the whole bundle (its Info.plist, icon and
     // signature belong with the binary); a bare binary, as older launchers are, only the binary,
-    // which the macOS archive also holds (Horizon.app/Contents/MacOS/horizon-launcher).
+    // which the macOS archive also holds (NIROVA.app/Contents/MacOS/nirova-launcher).
     if let Some(app) = app_bundle(exe_path()) {
         if let Some(new) = find_app(&unpacked) {
             replace_bundle(&new, app)?;
@@ -3304,14 +3313,14 @@ pub struct Settings {
     /// What the window does while the game runs. Stays by default.
     #[serde(default)]
     pub while_playing: WhilePlaying,
-    /// The accent colour on top of the appearance (`themes::Accent`). Horizon's violet by default.
+    /// The accent colour on top of the appearance (`themes::Accent`). NIROVA's milk-blue by default.
     #[serde(default)]
     pub accent: crate::themes::Accent,
     /// Home's background: a picture the player picked, kept in the data folder under this name
-    /// (`themes::keep_background`). Unset shows Horizon's landscape.
+    /// (`themes::keep_background`). Unset shows the NIROVA graphite-blue background.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub background: Option<String>,
-    /// The window's language. Unset follows the system's (`i18n::Language::system`).
+    /// The window's language. Unset uses Russian as the NIROVA default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<crate::i18n::Language>,
     /// The player has read the notice before the first native mod (`native_status::NOTICE`).
@@ -3322,12 +3331,6 @@ pub struct Settings {
     /// slower to build, slightly faster game.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub native_release: bool,
-    /// Developer options (hidden: seven clicks on the sidebar's launcher version reveal them):
-    /// offline names play without an account that owns the game, in the window only
-    /// (`account::Accounts::play_as_with`, `account::launch_for_game`). Never a download: the game still
-    /// comes from the player's own install. Off by default, and absent from the file while off.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub dev_offline: bool,
 }
 
 impl Settings {
@@ -3370,9 +3373,9 @@ impl Settings {
     pub fn desktop_entry(&self) -> bool {
         self.desktop_entry.unwrap_or(true)
     }
-    /// The window's language: the one picked, else the system's.
+    /// The window's language: the one picked, else NIROVA's Russian default.
     pub fn language(&self) -> crate::i18n::Language {
-        self.language.unwrap_or_else(crate::i18n::Language::system)
+        self.language.unwrap_or(crate::i18n::Language::Russian)
     }
     /// Whether new Horizon versions are installed automatically.
     pub fn auto_install(&self) -> bool {
@@ -3688,17 +3691,17 @@ pub fn {f}("
         assert_eq!(
             platform_assets("macos", "aarch64"),
             Some((
-                "horizon-macos-arm64.zip",
-                "horizon-launcher-macos-arm64.zip"
+                "nirova-game-macos-arm64.zip",
+                "nirova-launcher-macos-arm64.zip"
             ))
         );
         assert_eq!(
             platform_assets("macos", "x86_64"),
-            Some(("horizon-macos-x64.zip", "horizon-launcher-macos-x64.zip"))
+            Some(("nirova-game-macos-x64.zip", "nirova-launcher-macos-x64.zip"))
         );
         assert_eq!(
             platform_assets("windows", "x86_64").map(|(game, _)| game),
-            Some("horizon-windows-x64.zip")
+            Some("nirova-game-windows-x64.zip")
         );
         assert_eq!(platform_assets("linux", "aarch64"), None);
         assert_eq!(platform_assets("macos", "x86"), None);
@@ -3752,12 +3755,12 @@ pub fn {f}("
     #[test]
     fn a_crash_after_the_vulkan_adapter_line_and_before_the_first_frame_is_a_start_crash() {
         let start = [
-            "Horizon: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
+            "NIROVA: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
             "Horizon renderer: Intel(R) HD Graphics 530 (Vulkan, IntegratedGpu)",
         ];
         assert!(vulkan_start_crashed(start));
         // A step line after the adapter keeps it a start crash.
-        let step = [start[1], "Horizon renderer: creating the pipelines"];
+        let step = [start[1], "NIROVA renderer: creating the pipelines"];
         assert!(vulkan_start_crashed(step));
         // A crash after the first frame is the game's, not the renderer start's.
         let later = [start[1], "Horizon: first frame after 812 ms"];
@@ -3853,7 +3856,7 @@ pub fn {f}("
         assert_eq!(launcher_version("launcher-vx"), None);
         let list = serde_json::json!([
             {"tag_name": "v2026.10.12", "assets": [{"name": "horizon-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
-            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "horizon-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
+            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "nirova-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
             {"tag_name": "v2026.10.13", "assets": []},
             {"tag_name": "launcher-v0.0.1", "draft": true, "assets": []},
         ]);
@@ -3951,15 +3954,16 @@ pub fn {f}("
     }
 
     #[test]
-    fn the_language_follows_the_system_unless_picked() {
+    fn the_language_defaults_to_russian_unless_picked() {
         use crate::i18n::Language;
         assert_eq!(Settings::parse("{}").language, None);
+        assert_eq!(Settings::parse("{}").language(), Language::Russian);
         let fr = Settings::parse(r#"{"language": "fr"}"#);
         assert_eq!(fr.language(), Language::French);
         let future = Settings::parse(r#"{"language": "eo", "game_args": "--x"}"#);
         assert_eq!((future.language, future.game_args.as_str()), (None, "--x"));
         let saved = serde_json::to_value(Settings::default()).unwrap();
-        assert!(saved.get("language").is_none(), "unset is left out");
+        assert!(saved.get("language").is_none(), "unset is left out; runtime default is Russian");
     }
 
     #[test]
@@ -4021,7 +4025,7 @@ pub fn {f}("
         assert_eq!(version_or(None), env!("CARGO_PKG_VERSION"));
         assert_eq!(
             VERSION,
-            option_env!("HORIZON_LAUNCHER_VERSION")
+            option_env!("NIROVA_LAUNCHER_VERSION")
                 .filter(|v| !v.is_empty())
                 .unwrap_or(env!("CARGO_PKG_VERSION"))
         );
@@ -4038,7 +4042,7 @@ pub fn {f}("
         assert!(launcher_update(&[r(own_tag())]).is_none());
         assert_eq!(launcher_version(&own_tag()), Some(VERSION));
         assert_eq!(
-            parse_version_output(&format!("horizon-launcher {VERSION}\n")),
+            parse_version_output(&format!("nirova-launcher {VERSION}\n")),
             Some(VERSION)
         );
     }
@@ -4120,7 +4124,7 @@ pub fn {f}("
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         assert_eq!(
             launcher_asset_running_from(true),
-            Some("horizon-launcher-linux-x86_64.AppImage")
+            Some("nirova-launcher-linux-x86_64.AppImage")
         );
     }
 
@@ -4133,7 +4137,7 @@ pub fn {f}("
     fn only_an_appimage_file_counts() {
         use std::ffi::OsStr;
         let mount = OsStr::new("/tmp/.mount_Horizon123");
-        let exe = Path::new("/tmp/.mount_Horizon123/usr/bin/horizon-launcher");
+        let exe = Path::new("/tmp/.mount_NIROVA123/usr/bin/nirova-launcher");
         assert_eq!(appimage_path_in(None, Some(mount), exe), None);
         assert_eq!(
             appimage_path_in(Some(OsStr::new("Horizon.AppImage")), Some(mount), exe),
@@ -4155,7 +4159,7 @@ pub fn {f}("
             Some(file.clone())
         );
         // Inherited from another AppImage: this launcher is installed elsewhere.
-        let elsewhere = Path::new("/home/a/.local/bin/horizon-launcher");
+        let elsewhere = Path::new("/home/a/.local/bin/nirova-launcher");
         assert_eq!(
             appimage_path_in(Some(file.as_os_str()), Some(mount), elsewhere),
             None
@@ -4420,9 +4424,9 @@ pub fn {f}("
     #[test]
     fn links_fall_back_to_the_built_in_ones() {
         let defaults = Links::default();
-        assert_eq!(defaults.discord, "https://discord.gg/playhorizon");
-        assert_eq!(defaults.sponsor, "https://github.com/sponsors/ludovic111");
-        assert_eq!(defaults.website, "https://playhorizon.dev");
+        assert_eq!(defaults.discord, "");
+        assert_eq!(defaults.sponsor, "");
+        assert_eq!(defaults.website, "");
         // The file on main says the same thing as the defaults.
         assert_eq!(Links::parse(include_str!("../links.json")), defaults);
         // Unreadable or missing, offline included: the defaults.
@@ -4871,14 +4875,14 @@ pub fn {f}("
 
     #[test]
     fn finds_the_app_bundle_around_the_binary() {
-        let exe = Path::new("/Applications/Horizon.app/Contents/MacOS/horizon-launcher");
+        let exe = Path::new("/Applications/NIROVA.app/Contents/MacOS/nirova-launcher");
         assert_eq!(
             app_bundle(exe),
             Some(Path::new("/Applications/Horizon.app"))
         );
         assert_eq!(app_bundle(Path::new("/Users/me/horizon-launcher")), None);
         assert_eq!(
-            app_bundle(Path::new("/x/Contents/MacOS/horizon-launcher")),
+            app_bundle(Path::new("/x/Contents/MacOS/nirova-launcher")),
             None
         );
         let work = std::env::temp_dir().join(format!("horizon-find-app-{}", std::process::id()));
@@ -4900,14 +4904,14 @@ pub fn {f}("
             let app = dir.join("Horizon.app");
             fs::create_dir_all(app.join("Contents/MacOS")).unwrap();
             fs::create_dir_all(app.join("Contents/Resources")).unwrap();
-            let bin = app.join("Contents/MacOS/horizon-launcher");
+            let bin = app.join("Contents/MacOS/nirova-launcher");
             fs::copy("/usr/bin/true", &bin).unwrap();
             fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
             fs::write(app.join("Contents/Resources/version"), version).unwrap();
             fs::write(
                 app.join("Contents/Info.plist"),
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><dict>\
-                 <key>CFBundleExecutable</key><string>horizon-launcher</string>\
+                 <key>CFBundleExecutable</key><string>nirova-launcher</string>\
                  <key>CFBundleIdentifier</key><string>dev.horizon.test</string>\
                  <key>CFBundlePackageType</key><string>APPL</string></dict></plist>\n",
             )
@@ -4935,7 +4939,7 @@ pub fn {f}("
         replace_bundle(&new, &installed).unwrap();
         let version = fs::read_to_string(installed.join("Contents/Resources/version")).unwrap();
         assert_eq!(version, "2.0.0");
-        let bin = installed.join("Contents/MacOS/horizon-launcher");
+        let bin = installed.join("Contents/MacOS/nirova-launcher");
         assert!(
             Command::new(&bin).status().unwrap().success(),
             "still executable"
@@ -4971,7 +4975,7 @@ pub fn {f}("
     #[test]
     fn launcher_versions_read_from_the_binary() {
         assert_eq!(
-            parse_version_output("horizon-launcher 0.1.5\n"),
+            parse_version_output("nirova-launcher 0.1.5\n"),
             Some("0.1.5")
         );
         assert_eq!(parse_version_output("something else"), None);
@@ -4982,7 +4986,7 @@ pub fn {f}("
             None
         );
         assert_eq!(
-            installed_launcher_version(Path::new("/nonexistent/horizon-launcher")),
+            installed_launcher_version(Path::new("/nonexistent/nirova-launcher")),
             None
         );
     }

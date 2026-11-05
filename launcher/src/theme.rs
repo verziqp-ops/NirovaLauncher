@@ -1,7 +1,7 @@
-//! The launcher's view of Nivrora's design tokens (`crates/horizon-theme`, described in
+//! The launcher's view of Nirova's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Nivrora's blue) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
-//! Open Font License). Screens not rebuilt yet draw the Blocks parts in the night's colours.
+//! Nirova's rose-pink) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
+//! Open Font License). Every screen uses the same Nirova palette and type scale, including the legacy page components.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
 use horizon_launcher::themes::Accent;
@@ -22,8 +22,8 @@ pub use tokens::{BLOCK_BEVEL as BEVEL, BLOCK_LIP as LIP};
 pub use tokens::{CONTROL_LARGE, DISABLED, FIELD, PRESSED, RISE, ROW, SEGMENT};
 
 /// Blocks have square corners: these stay for the places that ask for a radius.
-pub const RADIUS: f32 = 0.;
-pub const RADIUS_PLATE: f32 = 0.;
+pub const RADIUS: f32 = 8.;
+pub const RADIUS_PLATE: f32 = 12.;
 /// Buttons are a little taller than the quiet look's, for their lip.
 pub const CONTROL: f32 = 34.;
 /// The top bar, and the sidebar of instances and servers.
@@ -80,10 +80,10 @@ fn c(hex: u32) -> Hsla {
 }
 
 /// Whether the launcher is pinned dark (`Some(true)`) or light, or follows the system (`None`):
-/// `NIVRORA_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
+/// `NIROVA_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
 /// choice in Settings.
 pub fn pinned_dark(choice: Appearance) -> Option<bool> {
-    match std::env::var("NIVRORA_LAUNCHER_APPEARANCE").as_deref() {
+    match std::env::var("NIROVA_LAUNCHER_APPEARANCE").as_deref() {
         Ok("light") => Some(false),
         Ok("dark") => Some(true),
         _ => match choice {
@@ -103,24 +103,53 @@ impl Theme {
             WindowAppearance::Light | WindowAppearance::VibrantLight
         );
         let dark = pinned_dark(choice).unwrap_or(system_dark);
-        let night = if dark { night::NIGHT } else { night::DAWN };
+        let mut night = if dark { night::NIGHT } else { night::DAWN };
+        if dark {
+            night.sky = [0x111923, 0x172331, 0x1b2b3a, 0x202f3e, 0x243445, 0x293a4a];
+            night.page = 0x121b25;
+            night.side = 0x182432;
+            night.card = 0x1c2a38;
+            night.card_hi = 0x28394a;
+            night.stroke = 0x7892a7;
+            night.stroke_alpha = 0.20;
+            night.rule_alpha = 0.13;
+            night.ink = 0xedf5fa;
+            night.ink_soft = 0xc9d9e5;
+            night.muted = 0xb9cbd6;
+            night.accent = 0xf09bc3;
+            night.accent_hi = 0xf7c2d9;
+            night.on_accent = 0x17232c;
+        } else {
+            night.sky = [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb];
+            night.page = 0xe7edf2;
+            night.side = 0xdfe7ed;
+            night.card = 0xf6f9fb;
+            night.card_hi = 0xffffff;
+            night.stroke = 0x7892a7;
+            night.stroke_alpha = 0.18;
+            night.rule_alpha = 0.12;
+            night.ink = 0x1b2a36;
+            night.ink_soft = 0x405363;
+            night.muted = 0x506776;
+            night.accent = 0xa53d70;
+            night.accent_hi = 0xa53d70;
+            night.on_accent = 0xffffff;
+        }
         Self::from(accent.apply(night.blocks()), night)
     }
 
     fn from(p: tokens::Blocks, night: Night) -> Self {
-        // Nivrora palette: graphite surfaces, misty blue-gray panels and a milk-blue primary accent.
+        // Nirova palette: graphite surfaces, misty blue-gray panels and a rose-pink primary accent.
         // Keep the upstream Night data for its artwork and motion, but use one coherent
         // palette for every launcher control and panel.
         let dark = p.dark;
         let (page, side, panel, raised, button, well, outline, rule,
-             ink, ink_soft, muted, accent, on_accent) = if dark {
+             ink, ink_soft, muted) = if dark {
             (0x101720, 0x172230, 0x1D2B3A, 0x26384A, 0x30465A, 0x121D29,
-             0x40576B, 0x314457, 0xEDF5FA, 0xC9D9E5, 0x9FB4C5,
-             0xB8E1EF, 0x14232D)
+             0x40576B, 0x314457, 0xEDF5FA, 0xC9D9E5, 0x9FB4C5)
         } else {
             (0xF1F5F8, 0xE7EEF3, 0xFAFCFD, 0xE1EAF0, 0xD4E1E9, 0xF5F8FA,
-             0xC2D1DC, 0xD2DEE6, 0x1B2A36, 0x405363, 0x687D8D,
-             0x77BBD2, 0x10232D)
+             0xC2D1DC, 0xD2DEE6, 0x1B2A36, 0x405363, 0x687D8D)
         };
         let page = c(page);
         let side = c(side);
@@ -133,8 +162,11 @@ impl Theme {
         let ink = c(ink);
         let ink_soft = c(ink_soft);
         let muted = c(muted);
-        let accent = c(accent);
-        let on_accent = c(on_accent);
+        let accent = c(p.accent);
+        let on_accent = c(p.on_face);
+        let face = c(p.face);
+        let face_bevel = c(p.face_bevel);
+        let face_lip = c(p.face_lip);
         Self {
             page,
             plate_soft: raised,
@@ -158,9 +190,9 @@ impl Theme {
             bevel: outline,
             lip: rule,
             outline,
-            face: accent,
-            face_bevel: outline,
-            face_lip: rule,
+            face,
+            face_bevel,
+            face_lip,
             on_face: on_accent,
             night,
             dark,
