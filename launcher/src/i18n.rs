@@ -4,7 +4,7 @@
 //! translation; a string the table lacks shows in English.
 //!
 //! The first-run language defaults to Russian; the player can pick another language in Settings
-//! (`Settings::language`). Translations are maintained for Nivrora Launcher.
+//! (`Settings::language`). Translations are maintained for Nirova Launcher.
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering};
