@@ -1,39 +1,47 @@
 # Nirova Launcher
 
-A community launcher for the Rust-based Minecraft 26.3 client. This repository is in active development; public release builds are not available yet.
+**An independent Rust launcher and experimental Minecraft Java Edition client project.**
 
-## Current target
+[![Latest CI preview](https://img.shields.io/badge/preview-GitHub_Actions-blue?logo=github)](https://github.com/verziqp-ops/NirovaLauncher/actions/runs/42054977083)
+[![Releases](https://img.shields.io/github/v/release/verziqp-ops/NirovaLauncher?include_prereleases)](https://github.com/verziqp-ops/NirovaLauncher/releases)
 
-- One supported game version: **26.3**.
-- Windows, Linux and macOS build pipelines.
-- Local game-file discovery and manual selection.
-- Guest/offline profile support.
-- Microsoft account sign-in where configured.
-- Ely.by integration is planned; it is not yet available in this build.
-- Local skin and cape PNG selection is available for offline profiles; remote skin-provider integration is still being developed.
+## Download
 
-## Before the first public release
+**Preview builds are available now** from the [latest GitHub Actions run](https://github.com/verziqp-ops/NirovaLauncher/actions/runs/42054977083). Open the run, scroll to **Artifacts**, and download the platform package. GitHub may ask you to sign in. Extract the downloaded ZIP before running its contents.
 
-The launcher needs a compatible local copy of the game's 26.3 files to prepare resources. It does not bundle Minecraft assets or promise compatibility with other game versions. Guest mode does not grant access to servers that require Microsoft account ownership checks.
+| Platform | Artifact | Status |
+|---|---|---|
+| Windows x64 | `Nirova-Setup.exe` | Preview installer |
+| Windows x64 | `horizon-launcher-windows-x64.zip` | Preview portable archive |
+| Linux x86_64 | `horizon-launcher-linux-x86_64.tar.gz` | Preview archive |
+| macOS | — | No successful package published yet |
 
-## Downloads
+These are temporary CI artifacts, not permanent releases. GitHub currently expires them after 90 days. They may contain bugs and are **not verified as a complete playable Minecraft experience**. Do not use them with important worlds or accounts.
 
-Downloads will appear under [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases) after the first successful, tested release. Do not install unofficial binaries from third-party mirrors.
+Permanent downloads will appear on the [GitHub Releases page](https://github.com/verziqp-ops/NirovaLauncher/releases) after the release checks are complete. If that page has no release, there is no stable release yet.
 
-## Modding
+## Project status
 
-A Ukrainian beginner guide for creating content mods and native Rust mods is available in [docs/modding-uk.md](docs/modding-uk.md). The visual in-launcher mod creator is planned and is not implemented yet.
+- **Target:** Minecraft Java Edition 26.3.
+- **Launcher:** Rust desktop application; Windows and Linux preview packages have been built by CI.
+- **Accounts:** Microsoft sign-in where configured; guest/offline profiles do not bypass server ownership requirements.
+- **Mod loaders:** Fabric and Quilt support is under development.
+- **Skins and capes:** local PNG selection is available for offline profiles; remote provider integration is in progress.
+- **Ely.by:** planned, not available in this preview.
+- **Compatibility:** a version selector and version-porting tools exist; this does not mean every Minecraft version is fully implemented or tested.
+
+## Requirements and game files
+
+Nirova does not bundle Minecraft assets. Provide game files from a copy you are entitled to use. A compatible local Minecraft Java Edition 26.3 installation and suitable Java runtime may be required. See [packaging/PLAY.txt](packaging/PLAY.txt).
 
 ## Build from source
 
-See the workflow files in the .github/workflows directory for supported CI targets and required build dependencies.
+See [the launcher CI workflow](.github/workflows/launcher.yml) for supported targets and build steps. Rust/Cargo and platform-specific native dependencies are required.
 
-## Security and privacy
+## Security
 
-- Never share your Microsoft or Ely.by password with anyone.
-- Account tokens must be stored using the operating system's secure credential store.
-- Report security issues privately to the repository owner rather than publishing exploit details.
+Never share account passwords or access tokens. Remove secrets and personal data from logs before reporting issues. Report security vulnerabilities privately to the repository owner.
 
-## Licensing
+## Licensing and trademarks
 
-This project includes third-party components. Their original copyright notices and license terms are retained in LICENSE and THIRD_PARTY_NOTICES.md.
+See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Minecraft is a trademark of Microsoft/Mojang. Nirova is an independent community project and is not affiliated with or endorsed by Microsoft or Mojang. Minecraft assets are not included.

@@ -114,13 +114,15 @@ impl Theme {
         let dark = p.dark;
         let (page, side, panel, raised, button, well, outline, rule,
              ink, ink_soft, muted, accent, on_accent) = if dark {
-            (0x0B1420, 0x101D2B, 0x172638, 0x203246, 0x26394D, 0x0E1B29,
-             0x344B62, 0x2A3D51, 0xEAF1F8, 0xC4D2E0, 0x9AAEC2,
-             0xF09BC3, 0x20202A)
+            // Soft blue-charcoal surfaces; the pink accent stays bright against them.
+            (0x111B24, 0x1A2731, 0x22323D, 0x2D404C, 0x354A57, 0x172630,
+             0x4B6270, 0x344A57, 0xEAF2F7, 0xC6D6E0, 0xA0B4BF,
+             0xF09BC3, 0x202B33)
         } else {
-            (0xF2F6FC, 0xEAF0F8, 0xFFFFFF, 0xE7EEF7, 0xDDE7F2, 0xF7F9FC,
-             0xCBD6E4, 0xD9E2EC, 0x18283B, 0x3C4D63, 0x65768C,
-             0xD96F9F, 0xFFFFFF)
+            // Milky blue surfaces; a deeper rose keeps white action text readable.
+            (0xEEF6F8, 0xE3EFF3, 0xFCFEFF, 0xE4F0F4, 0xD8E8EE, 0xF5FAFB,
+             0xC2D5DC, 0xD8E6EA, 0x1C303A, 0x405864, 0x6F8791,
+             0xB84F7D, 0xFFFFFF)
         };
         let page = c(page);
         let side = c(side);
