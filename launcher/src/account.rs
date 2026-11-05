@@ -1434,8 +1434,8 @@ pub fn launch(
     }
 }
 
-/// The owner gate before the game starts. Local guest names do not bypass Minecraft ownership.
-/// Downloads and launches both pass through the same ownership check.
+/// The owner gate before the game starts. The legacy `offline_without_owner` argument is ignored;
+/// local guest names do not bypass Minecraft ownership. Downloads and launches use the same gate.
 pub fn launch_for_game(
     ep: &Endpoints,
     client_id: Option<&str>,
@@ -1598,9 +1598,8 @@ impl SignIn {
     }
 }
 
-/// The owner gate for the game about to start, then the selected account's session in a file
-/// for it: the file (none: offline) and why the account plays offline this time, if it does.
-/// `offline_without_owner`: see [`launch_for_game`].
+/// The owner gate for the game about to start, then the selected account's session in a file.
+/// Legacy compatibility argument; it no longer bypasses the ownership check.
 pub fn session_for_game(
     game_home: &Path,
     offline_without_owner: bool,
