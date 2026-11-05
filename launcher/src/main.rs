@@ -2319,17 +2319,6 @@ impl Launcher {
             .relative()
             .child(account)
             .children(self.account_menu(cx));
-        let settings = shell::icon_button(
-            "nav-Settings",
-            "sliders",
-            40.,
-            self.page == Page::Settings,
-            &t,
-        )
-        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-            this.go(Page::Settings);
-            cx.notify();
-        }));
         div()
             .flex()
             .flex_none()
@@ -2346,8 +2335,7 @@ impl Launcher {
                     .flex_none()
                     .items_center()
                     .gap(px(8.))
-                    .child(account)
-                    .child(settings),
+                    .child(account),
             )
     }
 
@@ -2378,63 +2366,6 @@ impl Launcher {
                     })),
             );
         }
-        let heading = |label: String| shell::heading(label, &t);
-        let add = shell::icon_button("add-instance", "plus", 24., false, &t).on_click(cx.listener(
-            |this, _: &ClickEvent, _, cx| {
-                this.open_instance_dialog(None);
-                cx.notify();
-            },
-        ));
-        let items = self.instance_items(heading, cx);
-        let mut rows = items.len();
-        let list = div()
-            .flex()
-            .flex_col()
-            .gap(px(2.))
-            .child(heading(tr("INSTANCES").into()).child(add))
-            .children(items);
-        let servers: Vec<_> = self
-            .servers
-            .sidebar_list()
-            .map(<[_]>::to_vec)
-            .unwrap_or_else(|| self.side_servers.clone());
-        let mut list = list;
-        if !servers.is_empty() {
-            list = list.child(heading(tr("SERVERS").into()));
-        }
-        rows += servers.len();
-        let headings = 1 + usize::from(!servers.is_empty());
-        for e in servers {
-            let up = self.servers.is_up(&e.dir);
-            let open = self.page == Page::Servers && self.servers.open.as_ref() == Some(&e.dir);
-            let dir = e.dir.clone();
-            list = list.child(
-                shell::row(format!("side-server-{}", e.dir.display()), open, &t)
-                    .child(
-                        div()
-                            .relative()
-                            .flex()
-                            .flex_none()
-                            .items_center()
-                            .justify_center()
-                            .size(px(36.))
-                            .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
-                            .child(blocks::icon("server", 18., shell::c(n.ink_soft))),
-                    )
-                    .child(shell::row_text(
-                        e.name.clone(),
-                        tr(if up { "Running" } else { "Stopped" }).into(),
-                        Some(shell::c(if up { n.success } else { n.muted })),
-                        &t,
-                    ))
-                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                        this.open_server(dir.clone());
-                        this.go(Page::Servers);
-                        cx.notify();
-                    })),
-            );
-        }
-        let _ = (rows, headings, list);
         let mut foot = div().mt_auto().flex().flex_col().gap(px(2.)).pt(px(12.));
         let update = |line: String| {
             plate::plate(&n)
