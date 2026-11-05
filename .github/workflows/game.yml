@@ -1,63 +1,66 @@
-# The game, as the launcher installs it. Horizon ships only Nightlies now (docs/release-flow.md), and
-# so does this fork: a run builds this fork's horizon-client for Linux, Windows and macOS (Apple
-# Silicon and Intel) and puts it into Horizon's own Nightly files (their exporters, horizon-prepare
-# and the rest are built from Mojang's jars on Horizon's private runner), then signs the checksums
-# for the nightly channel and publishes them as this repository's `nightly` pre-release, titled
-# "Nightly <date> · <this fork's commit>". The one before stays a week as nightly-<its date>.
-# The launcher's own release stays GitHub's "latest", where install.ps1 and install.sh download
-# from.
+# Nirova game builds are produced from this repository's source. No Horizon release
+# archives or prebuilt upstream binaries are downloaded or used as package inputs.
 name: game
 
 on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - '.github/workflows/game.yml'
+      - 'crates/**'
+      - 'mods/horizon/src/test/java/**'
+      - 'research-lock.json'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   workflow_dispatch:
-    inputs:
-      upstream:
-        description: Horizon's release whose files the client goes into (nightly = Horizon's current Nightly)
-        default: nightly
-        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: game-nightly
-
-env:
-  UPSTREAM: ${{ inputs.upstream }}
-  HORIZON_TELEMETRY_URL: "off"
+  group: nirova-game-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   pick:
     runs-on: ubuntu-latest
     outputs:
-      date: ${{ steps.pick.outputs.date }}
-      short: ${{ steps.pick.outputs.short }}
-      upstream_name: ${{ steps.pick.outputs.upstream_name }}
+      date: ${{ steps.meta.outputs.date }}
+      short: ${{ steps.meta.outputs.short }}
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      nightly: ${{ steps.meta.outputs.nightly }}
+      channel: ${{ steps.meta.outputs.channel }}
     steps:
-      - id: pick
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - id: meta
+        shell: bash
         run: |
           set -euo pipefail
-          name=$(gh api "repos/horizon-rust/horizon/releases/tags/$UPSTREAM" --jq .name)
-          echo "Horizon's $UPSTREAM: $name"
-          # Every platform takes the files of this one Nightly, even if Horizon publishes the next
-          # while the clients build.
-          mkdir upstream
-          for asset in horizon-linux-x86_64.tar.gz horizon-windows-x64.zip horizon-macos-arm64.zip                        horizon-macos-x64.zip horizon-server-linux-x86_64.tar.gz; do
-            gh release download "$UPSTREAM" -R horizon-rust/horizon -D upstream -p "$asset"
-          done
-          [[ "$(gh api "repos/horizon-rust/horizon/releases/tags/$UPSTREAM" --jq .name)" == "$name" ]]             || { echo "::error::Horizon's $UPSTREAM changed while downloading; run again"; exit 1; }
+          date=$(date -u +%F)
+          short="${GITHUB_SHA:0:7}"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            tag=nightly
+            version="nightly-$date-$short"
+            nightly="$date $short"
+            channel=preview
+          elif [[ "$GITHUB_REF_NAME" == v* ]]; then
+            tag="$GITHUB_REF_NAME"
+            version="${GITHUB_REF_NAME#v}"
+            nightly=
+            channel=stable
+          else
+            echo "::error::Unsupported release trigger"
+            exit 1
+          fi
           {
-            echo "date=$(date -u +%F)"
-            echo "short=${GITHUB_SHA:0:7}"
-            echo "upstream_name=$name"
+            echo "date=$date"
+            echo "short=$short"
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "nightly=$nightly"
+            echo "channel=$channel"
           } >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: upstream
-          path: upstream/*
-          retention-days: 3
 
   build:
     name: build ${{ matrix.name }}
@@ -68,33 +71,38 @@ jobs:
         include:
           - name: linux
             os: ubuntu-22.04
-            asset: horizon-linux-x86_64.tar.gz
-            client: horizon-client
-            # Horizon's server build, unchanged: packaging/server/install.sh installs it on Linux.
-            server_asset: horizon-server-linux-x86_64.tar.gz
+            target: ''
+            asset: nirova-game-linux-x86_64.tar.gz
+            binary: horizon-client
+            prepare: horizon-prepare
+            rustflags: ''
           - name: windows
             os: windows-latest
-            asset: horizon-windows-x64.zip
-            client: horizon-client.exe
-            # The C runtime linked in, so the game runs without the Visual C++ redistributable.
+            target: ''
+            asset: nirova-game-windows-x64.zip
+            binary: horizon-client.exe
+            prepare: horizon-prepare.exe
             rustflags: -C target-feature=+crt-static
           - name: macos
             os: macos-15
-            asset: horizon-macos-arm64.zip
-            client: horizon-client
-          # Intel Macs: the same runner, another target.
+            target: ''
+            asset: nirova-game-macos-arm64.zip
+            binary: horizon-client
+            prepare: horizon-prepare
+            rustflags: ''
           - name: macos-x64
             os: macos-15
             target: x86_64-apple-darwin
-            asset: horizon-macos-x64.zip
-            client: horizon-client
+            asset: nirova-game-macos-x64.zip
+            binary: horizon-client
+            prepare: horizon-prepare
+            rustflags: ''
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     env:
       RUSTFLAGS: ${{ matrix.rustflags }}
-      # What the game says it is (--version, crash reports) and shows: as Horizon's Nightlies.
-      HORIZON_VERSION: nightly-${{ needs.pick.outputs.date }}
-      HORIZON_NIGHTLY: ${{ needs.pick.outputs.date }} ${{ needs.pick.outputs.short }}
+      NIROVA_VERSION: ${{ needs.pick.outputs.version }}
+      NIROVA_NIGHTLY: ${{ needs.pick.outputs.nightly }}
     defaults:
       run:
         shell: bash
@@ -107,58 +115,101 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: game-${{ matrix.name }}
+          shared-key: nirova-game-${{ matrix.name }}
       - name: ALSA and udev headers
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev
-      - name: Build the client
-        run: |
-          target=(); [[ -n "${{ matrix.target }}" ]] && target=(--target "${{ matrix.target }}")
-          cargo build --release --locked -p horizon-client --bin horizon-client "${target[@]}"
-          out=target/release; [[ -n "${{ matrix.target }}" ]] && out="target/${{ matrix.target }}/release"
-          echo "CLIENT=$out/${{ matrix.client }}" >> "$GITHUB_ENV"
-      - uses: actions/download-artifact@v4
-        with:
-          name: upstream
-          path: horizon-files
-      - name: Horizon's files of that Nightly
-        run: |
-          mkdir -p upstream dist
-          mv "horizon-files/${{ matrix.asset }}" upstream/
-          if [[ -n "${{ matrix.server_asset }}" ]]; then
-            mv "horizon-files/${{ matrix.server_asset }}" dist/
-          fi
-          rm -rf horizon-files
-      - name: Put this fork's client in them
+      - name: Build Nirova game and resource preparer from this checkout
         run: |
           set -euo pipefail
-          cd upstream
-          case "${{ matrix.asset }}" in
-            *.tar.gz) tar -xzf "${{ matrix.asset }}" ;;
-            *) unzip -q "${{ matrix.asset }}" ;;
+          target=()
+          [[ -z "${{ matrix.target }}" ]] || target=(--target "${{ matrix.target }}")
+          cargo build --release --locked -p horizon-client --bin horizon-client "${target[@]}"
+          cargo build --release --locked -p horizon-prepare --bin horizon-prepare "${target[@]}"
+          out=target/release
+          [[ -z "${{ matrix.target }}" ]] || out="target/${{ matrix.target }}/release"
+          echo "BUILD_OUT=$out" >> "$GITHUB_ENV"
+      - name: Package the Nirova game and its own resource-preparation sources
+        run: |
+          set -euo pipefail
+          bundle="$GITHUB_WORKSPACE/dist/nirova-game-${{ matrix.name }}"
+          mkdir -p "$bundle/crates" "$bundle/mods/horizon/src/test"
+          cp "$BUILD_OUT/${{ matrix.binary }}" "$bundle/"
+          cp "$BUILD_OUT/${{ matrix.prepare }}" "$bundle/"
+          cp research-lock.json "$bundle/"
+          cp -R crates/horizon-prepare "$bundle/crates/"
+          cp -R mods/horizon/src/test/java "$bundle/mods/horizon/src/test/"
+          test -f "$bundle/crates/horizon-prepare/src/lib.rs"
+          test -f "$bundle/mods/horizon/src/test/java/dev/horizonlab/parity/PrepareWorker.java"
+          test -f "$bundle/research-lock.json"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            codesign --force --sign - "$bundle/${{ matrix.binary }}"
+            codesign --force --sign - "$bundle/${{ matrix.prepare }}"
+          fi
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          case "${{ matrix.name }}" in
+            linux)
+              tar -czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" -C "$GITHUB_WORKSPACE/dist" "nirova-game-${{ matrix.name }}"
+              ;;
+            *)
+              7z a -tzip "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" "$bundle" > /dev/null
+              ;;
           esac
-          rm "${{ matrix.asset }}"
-          found=$(find . -type f -name "${{ matrix.client }}" | head -1)
-          [[ -n "$found" ]] || { echo "::error::Horizon's ${{ matrix.asset }} has no ${{ matrix.client }}"; exit 1; }
-          cp "../$CLIENT" "$found"
-          chmod +x "$found"
-          # Horizon's Developer ID signature belonged to its own binary: sign this one ad hoc, as
-          # Apple Silicon runs nothing unsigned.
-          if [[ "$RUNNER_OS" == macOS ]]; then codesign --force --sign - "$found"; fi
-          top=$(dirname "$found" | cut -d/ -f2)
-          case "${{ matrix.asset }}" in
-            *.tar.gz) tar -czf "../dist/${{ matrix.asset }}" "$top" ;;
-            *) if [[ "$RUNNER_OS" == Windows ]]; then 7z a -tzip "../dist/${{ matrix.asset }}" "$top" > /dev/null
-               else ditto -c -k --norsrc --noextattr --noqtn --keepParent "$top" "../dist/${{ matrix.asset }}"; fi ;;
-          esac
-          ls -l ../dist
+          tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" >/dev/null 2>&1 || [[ "${{ matrix.name }}" != linux ]]
+          ls -lh "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}"
       - uses: actions/upload-artifact@v4
         with:
           name: game-${{ matrix.name }}
-          path: dist/*
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+
+  server:
+    name: build Linux dedicated server
+    needs: pick
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    env:
+      NIROVA_VERSION: ${{ needs.pick.outputs.version }}
+      NIROVA_NIGHTLY: ${{ needs.pick.outputs.nightly }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: nirova-server-linux
+      - name: Build game, preparer and server from source
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev
+          cargo build --release --locked -p horizon-client --bin horizon-client
+          cargo build --release --locked -p horizon-prepare --bin horizon-prepare
+          cargo build --release --locked -p horizon-server --bin horizon-server
+      - name: Package the dedicated server without upstream archives
+        run: |
+          set -euo pipefail
+          bundle="$GITHUB_WORKSPACE/dist/nirova-server-linux-x86_64"
+          mkdir -p "$bundle/crates" "$bundle/mods/horizon/src/test"
+          cp target/release/horizon-server "$bundle/"
+          cp target/release/horizon-client "$bundle/"
+          cp target/release/horizon-prepare "$bundle/"
+          cp research-lock.json "$bundle/"
+          cp -R crates/horizon-prepare "$bundle/crates/"
+          cp -R mods/horizon/src/test/java "$bundle/mods/horizon/src/test/"
+          test -f "$bundle/horizon-server"
+          test -f "$bundle/horizon-client"
+          tar -czf "$GITHUB_WORKSPACE/dist/nirova-server-linux-x86_64.tar.gz" -C "$GITHUB_WORKSPACE/dist" nirova-server-linux-x86_64
+          tar -tzf "$GITHUB_WORKSPACE/dist/nirova-server-linux-x86_64.tar.gz" | grep -q 'nirova-server-linux-x86_64/horizon-server'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: server-linux
+          path: dist/nirova-server-linux-x86_64.tar.gz
+          if-no-files-found: error
 
   release:
-    needs: [pick, build]
+    needs: [pick, build, server]
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -169,38 +220,57 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
-          pattern: game-*
+          pattern: '*'
           merge-multiple: true
-      - name: Sign the checksums (SHA256SUMS, SHA256SUMS.sig) for the nightly channel
+      - name: Sign checksums for Nirova's own release channel
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
         run: |
+          set -euo pipefail
           [[ -n "$RELEASE_SIGNING_KEY" ]] || { echo "::error::The RELEASE_SIGNING_KEY secret is not set"; exit 1; }
-          bash tools/ci/sign_release.sh nightly dist/horizon-linux-x86_64.tar.gz dist/horizon-windows-x64.zip \
-            dist/horizon-macos-arm64.zip dist/horizon-macos-x64.zip dist/horizon-server-linux-x86_64.tar.gz
+          bash tools/ci/sign_release.sh "${{ needs.pick.outputs.tag }}" dist/*
       - uses: dtolnay/rust-toolchain@stable
-      - name: The signature, checked as launchers check it
-        run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag nightly --publishing dist
-      - name: Publish as the `nightly` pre-release
+      - name: Verify the release signature as the launcher does
+        run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag "${{ needs.pick.outputs.tag }}" --publishing dist
+      - name: Publish Preview channel
+        if: needs.pick.outputs.channel == 'preview'
         env:
           GH_TOKEN: ${{ github.token }}
           DATE: ${{ needs.pick.outputs.date }}
           SHORT: ${{ needs.pick.outputs.short }}
-          UPSTREAM_NAME: ${{ needs.pick.outputs.upstream_name }}
         run: |
           set -euo pipefail
           cat > notes.md <<EOF
-          This fork's game client (commit $SHORT) in Horizon's own files of $UPSTREAM_NAME.
-          Horizon Offline Launcher installs it by itself; there is nothing to download here by hand.
+          Nirova Preview build from this repository's source (commit $SHORT).
+          The game, resource preparer and Linux server are built and packaged here.
+          No Horizon release archives are used as build inputs.
           EOF
           python3 tools/ci/nightly.py rotate
-          # A pre-release, never GitHub's latest: the latest stays the launcher's own release.
           gh release create nightly --prerelease --latest=false --target "$GITHUB_SHA" \
             --title "Nightly $DATE · $SHORT" --notes-file notes.md \
-            "dist/horizon-linux-x86_64.tar.gz#Game files the launcher installs: Linux (horizon-linux-x86_64.tar.gz)" \
-            "dist/horizon-windows-x64.zip#Game files the launcher installs: Windows (horizon-windows-x64.zip)" \
-            "dist/horizon-macos-arm64.zip#Game files the launcher installs: macOS on Apple Silicon (horizon-macos-arm64.zip)" \
-            "dist/horizon-macos-x64.zip#Game files the launcher installs: macOS on Intel (horizon-macos-x64.zip)" \
-            "dist/horizon-server-linux-x86_64.tar.gz#Horizon's dedicated server for Linux (horizon-server-linux-x86_64.tar.gz)" \
+            "dist/nirova-game-linux-x86_64.tar.gz#Nirova game: Linux x86_64" \
+            "dist/nirova-game-windows-x64.zip#Nirova game: Windows x64" \
+            "dist/nirova-game-macos-arm64.zip#Nirova game: macOS Apple Silicon" \
+            "dist/nirova-game-macos-x64.zip#Nirova game: macOS Intel" \
+            "dist/nirova-server-linux-x86_64.tar.gz#Nirova dedicated server: Linux x86_64" \
             dist/SHA256SUMS dist/SHA256SUMS.sig
           python3 tools/ci/nightly.py prune --days 7
+      - name: Publish Stable channel
+        if: needs.pick.outputs.channel == 'stable'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.pick.outputs.tag }}
+        run: |
+          set -euo pipefail
+          cat > notes.md <<EOF
+          Nirova Stable release $TAG, built entirely from this repository's source.
+          The game, resource preparer and Linux server are built and packaged here.
+          EOF
+          gh release create "$TAG" --latest --target "$GITHUB_SHA" \
+            --title "Nirova $TAG" --notes-file notes.md \
+            "dist/nirova-game-linux-x86_64.tar.gz#Nirova game: Linux x86_64" \
+            "dist/nirova-game-windows-x64.zip#Nirova game: Windows x64" \
+            "dist/nirova-game-macos-arm64.zip#Nirova game: macOS Apple Silicon" \
+            "dist/nirova-game-macos-x64.zip#Nirova game: macOS Intel" \
+            "dist/nirova-server-linux-x86_64.tar.gz#Nirova dedicated server: Linux x86_64" \
+            dist/SHA256SUMS dist/SHA256SUMS.sig
