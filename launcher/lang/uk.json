@@ -604,7 +604,6 @@
   "Export…": "Експортувати…",
   "Add another account.": "Додати інший обліковий запис.",
   "Launch…": "Запуск…",
-  "The results of benchmarks you run, for the community results on playhorizon.dev.": "The results of benchmarks you run, for the community results on сторінці проєкту.",
   "Not ported: {item}": "Не портовано: {item}",
   "Modpacks": "Модпаки",
   "{name} moved to the trash.": "{name} переміщено до кошика.",
@@ -668,5 +667,6 @@
   "Your game. Your settings.": "Твоя гра. Твої налаштування.",
   "Russian (default)": "Російська (типово)",
   "milk-blue": "Молочно-блакитний",
-  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "У NIROVA наразі немає власного сервісу телеметрії. Пінг про присутність гравців не надсилається, а кількість гравців онлайн недоступна."
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "У NIROVA наразі немає власного сервісу телеметрії. Пінг про присутність гравців не надсилається, а кількість гравців онлайн недоступна.",
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Результати запущених вами тестів — коли NIROVA запустить власний сервіс публікації результатів."
 }
