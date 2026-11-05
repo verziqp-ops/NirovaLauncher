@@ -4,7 +4,7 @@
 //! translation; a string the table lacks shows in English.
 //!
 //! The language follows the system's unless the player picks one in Settings
-//! (`Settings::language`). Translations are Horizon's own, written for this launcher.
+//! (`Settings::language`). Translations are maintained for Nivrora Launcher.
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -12,7 +12,6 @@ use std::sync::OnceLock;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Language {
-    #[default]
     #[serde(rename = "en")]
     English,
     #[serde(rename = "fr")]
@@ -25,6 +24,7 @@ pub enum Language {
     Chinese,
     #[serde(rename = "es")]
     Spanish,
+    #[default]
     #[serde(rename = "uk")]
     Ukrainian,
     #[serde(rename = "pl")]
@@ -109,12 +109,12 @@ impl Language {
             .find(|language| language.code() == base)
     }
 
-    /// The first of the system's preferred languages the launcher has, else English.
+    /// The first of the system's preferred languages the launcher has, else Ukrainian.
     pub fn pick<'a>(preferred: impl IntoIterator<Item = &'a str>) -> Self {
         preferred
             .into_iter()
             .find_map(Self::parse)
-            .unwrap_or_default()
+            .unwrap_or(Language::Ukrainian)
     }
 
     /// The system's language, as far as the launcher has it.
@@ -141,7 +141,7 @@ impl Language {
     }
 }
 
-static CURRENT: AtomicU8 = AtomicU8::new(0);
+static CURRENT: AtomicU8 = AtomicU8::new(6);
 
 /// Shows the launcher in `language` from now on.
 pub fn set(language: Language) {
