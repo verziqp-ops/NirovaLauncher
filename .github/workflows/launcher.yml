@@ -116,6 +116,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           python3 -m pip install --disable-pip-version-check dmgbuild==1.6.5
+          out=target/release
+          [[ -n "${{ matrix.target }}" ]] && out="target/${{ matrix.target }}/release"
           version="${HORIZON_LAUNCHER_VERSION:-$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)}"
           arch=arm64
           [[ "${{ matrix.name }}" == "macos-x64" ]] && arch=x64
