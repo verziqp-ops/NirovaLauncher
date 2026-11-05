@@ -2667,7 +2667,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "horizon-launcher"
+name = "nirova-launcher"
 version = "1.3.0"
 dependencies = [
  "base64",
