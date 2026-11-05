@@ -165,22 +165,22 @@ struct Colors {
 }
 
 const NIGHT_ART: Colors = Colors {
-    sun: [0xffe28c, 0xffbf66, 0xff944f],
-    far: 0x3a1f5e,
-    near: 0x150f2e,
-    cloud: [0x3b2869, 0x6e3a7e, 0xc96a86],
-    lit: [0x5a3f8a, 0x9c5a92, 0xf7a98a],
-    shade: 0x2a1a4c,
-    star: 0xf4f2ff,
+    sun: [0xd9eaf2, 0xbcd4e1, 0x9fb9c9],
+    far: 0x293b4c,
+    near: 0x172331,
+    cloud: [0x35495b, 0x40576a, 0x506779],
+    lit: [0x657f91, 0x8199a9, 0xa9bdca],
+    shade: 0x223242,
+    star: 0xdceaf1,
 };
 
 const DAWN_ART: Colors = Colors {
-    sun: [0xfffbea, 0xffeac2, 0xffd3a1],
-    far: 0xbaa8de,
-    near: 0x8c79c6,
-    cloud: [0xeef0fb, 0xfbeef3, 0xfff1e4],
-    lit: [0xffffff; 3],
-    shade: 0xd9cbe8,
+    sun: [0xffffff, 0xe7f1f6, 0xcbdce6],
+    far: 0xb9cbd6,
+    near: 0x9eb4c2,
+    cloud: [0xd6e2e9, 0xe2ebf0, 0xf0f5f8],
+    lit: [0xffffff, 0xf8fbfd, 0xeaf2f6],
+    shade: 0xb8cbd6,
     star: 0xffffff,
 };
 
@@ -192,8 +192,8 @@ const STAR_LEVELS: [f32; 4] = [0.95, 0.6, 0.3, 0.6];
 const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
 /// How the sky moves: not at all under the system's reduced motion (macOS) or with
-/// `HORIZON_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
-/// `HORIZON_LAUNCHER_MOTION=always`, for recordings.
+/// `NIVRORA_LAUNCHER_MOTION=off`; while the window is in front (and 10 s after); or always, with
+/// `NIVRORA_LAUNCHER_MOTION=always`, for recordings.
 #[derive(Clone, Copy, PartialEq)]
 enum Motion {
     Still,
@@ -203,7 +203,7 @@ enum Motion {
 
 fn motion() -> Motion {
     static MOTION: LazyLock<Motion> = LazyLock::new(|| {
-        match std::env::var("HORIZON_LAUNCHER_MOTION").as_deref() {
+        match std::env::var("NIVRORA_LAUNCHER_MOTION").as_deref() {
             Ok("off" | "reduced") => return Motion::Still,
             Ok("always") => return Motion::Always,
             Ok("full") => return Motion::InFront,
