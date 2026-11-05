@@ -97,9 +97,8 @@ impl Launcher {
         // The default language is Russian; players can select another language above.
         let said = self.settings.language.is_none().then(|| {
             div()
-                .child(trf(
+                .child(tr(
                     "NIVRORA starts in Russian by default. A string not translated yet shows in English.",
-                    &[("language", Language::system().name())],
                 ))
                 .into_any_element()
         });
