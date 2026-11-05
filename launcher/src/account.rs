@@ -9,7 +9,7 @@
 //! Minecraft: Java Edition, as other launchers do. Offline names play behind such an account.
 //! The game binary itself, its harnesses and the servers don't go through the launcher's gate.
 //!
-//! The Azure app (client ID) is Horizon's own and is configuration: `NIVRORA_MSA_CLIENT_ID` at
+//! The Azure app (client ID) is NIVRORA's own and is configuration: `NIVRORA_MSA_CLIENT_ID` at
 //! build time, or at run time to override it. Without one, sign-in says it is not configured.
 pub mod session;
 
@@ -23,7 +23,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 pub const SERVICE: &str = "app.nivrora.launcher";
 const SCOPE: &str = "XboxLive.signin offline_access";
 pub const NOT_CONFIGURED: &str =
-    "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).";
+    "This build of the launcher has no Microsoft sign-in (NIVRORA_MSA_CLIENT_ID).";
 
 /// This fork plays without an account that owns the game: the owner gate stays open, as if the
 /// hidden developer option (`offline_without_owner`) were always on. Downloading the game from
@@ -44,9 +44,9 @@ const RENEW_BEFORE: u64 = 3600;
 /// The configured Azure app, if any: the run-time variable wins over the build-time one, and an
 /// empty value means none.
 pub fn client_id() -> Option<String> {
-    std::env::var("HORIZON_MSA_CLIENT_ID")
+    std::env::var("NIVRORA_MSA_CLIENT_ID")
         .ok()
-        .or_else(|| option_env!("HORIZON_MSA_CLIENT_ID").map(str::to_owned))
+        .or_else(|| option_env!("NIVRORA_MSA_CLIENT_ID").map(str::to_owned))
         .map(|id| id.trim().to_owned())
         .filter(|id| !id.is_empty())
 }
@@ -64,9 +64,9 @@ pub struct Endpoints {
 
 impl Endpoints {
     pub fn live() -> Self {
-        // Development builds only: `HORIZON_MSA_MICROSOFT_ENDPOINT` points the device-code and
+        // Development builds only: `NIVRORA_MSA_MICROSOFT_ENDPOINT` points the device-code and
         // token requests at a local mock, to see and screenshot the sign-in panel.
-        let microsoft = std::env::var("HORIZON_MSA_MICROSOFT_ENDPOINT")
+        let microsoft = std::env::var("NIVRORA_MSA_MICROSOFT_ENDPOINT")
             .ok()
             .filter(|_| cfg!(debug_assertions))
             .unwrap_or_else(|| "https://login.microsoftonline.com/consumers/oauth2/v2.0".into());
@@ -913,7 +913,7 @@ fn set_item(items: &dyn Items, key: &str, secret: &str) -> Result<(), String> {
 /// the player's credential store is full (an undocumented limit of its total size). The Xbox app
 /// and the Minecraft Launcher are known to leave hundreds of items there (#4313, #4366).
 #[cfg(any(target_os = "windows", test))]
-pub const CREDENTIAL_MANAGER_FULL: &str = "Windows Credential Manager is full, so Horizon can't \
+pub const CREDENTIAL_MANAGER_FULL: &str = "Windows Credential Manager is full, so NIVRORA can't \
      keep your sign-in (Windows error 8; it isn't your computer's memory). Open Credential Manager \
      from the Start menu, go to Windows Credentials and remove entries you no longer use, then sign \
      in again. The Xbox app and the Minecraft Launcher often leave many XblGrts and Xbl| entries \
@@ -1051,8 +1051,8 @@ pub fn store() -> &'static dyn SecretStore {
                 )
             ))]
             {
-                let why = match std::env::var_os("HORIZON_NO_KEYCHAIN") {
-                    Some(_) => "HORIZON_NO_KEYCHAIN is set.".to_string(),
+                let why = match std::env::var_os("NIVRORA_NO_KEYCHAIN") {
+                    Some(_) => "NIVRORA_NO_KEYCHAIN is set.".to_string(),
                     None => match SystemStore.get("probe") {
                         Ok(_) => return Box::new(SystemStore),
                         Err(e) => e,
@@ -1228,7 +1228,7 @@ impl Accounts {
                 self.selected = Some(uuid);
             }
             Player::Offline(name) => {
-                if !offline_without_owner && !self.has_owner(store) {
+                if !self.has_owner(store) {
                     return Err(OFFLINE_NEEDS_OWNER.into());
                 }
                 let name = self.add_offline(&name)?;
@@ -1447,7 +1447,7 @@ pub fn launch_for_game(
     offline_without_owner: bool,
 ) -> Result<Launch, NoOwner> {
     match launch(ep, client_id, store, accounts) {
-        Err(NoOwner) if offline_without_owner => Ok(Launch::default()),
+        Err(NoOwner) => Err(NoOwner),
         pass => pass,
     }
 }
