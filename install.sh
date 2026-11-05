@@ -1,22 +1,22 @@
 #!/bin/sh
-# Installs Horizon Offline Launcher on Linux (x86-64) or macOS (Apple Silicon), for this user only.
-#   curl -fsSL https://github.com/gerdaroot/Horizon-Offline-Launcher/releases/latest/download/install.sh | sh
-# Linux: ~/.local/share/horizon-offline-launcher, `horizon-offline-launcher` in ~/.local/bin, and
+# Installs Nirova Launcher on Linux (x86-64) or macOS (Apple Silicon), for this user only.
+#   curl -fsSL https://github.com/verziqp-ops/NirovaLauncher/releases/latest/download/install.sh | sh
+# Linux: ~/.local/share/nirova-launcher, `nirova-launcher` in ~/.local/bin, and
 # the launcher adds itself to the applications menu when it first starts.
-# macOS: ~/Applications/Horizon Offline Launcher/, `horizon-offline-launcher` in ~/.local/bin.
+# macOS: ~/Applications/Nirova Launcher/, `nirova-launcher` in ~/.local/bin.
 set -eu
 
-REPO="gerdaroot/Horizon-Offline-Launcher"
+REPO="verziqp-ops/NirovaLauncher"
 BASE="https://github.com/$REPO/releases/latest/download"
 
 case "$(uname -s)" in
   Linux)
     ASSET="horizon-launcher-linux-x86_64.tar.gz"
-    DIR="${XDG_DATA_HOME:-$HOME/.local/share}/horizon-offline-launcher"
+    DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nirova-launcher"
     ;;
   Darwin)
     ASSET="horizon-launcher-macos-arm64.zip"
-    DIR="$HOME/Applications/Horizon Offline Launcher"
+    DIR="$HOME/Applications/Nirova Launcher"
     ;;
   *)
     echo "Unsupported system: $(uname -s). On Windows run install.ps1." >&2
@@ -24,7 +24,7 @@ case "$(uname -s)" in
     ;;
 esac
 
-echo "Horizon Offline Launcher"
+echo "Nirova Launcher"
 echo "  Downloading $ASSET"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -35,19 +35,19 @@ case "$ASSET" in
   *.tar.gz) tar -xzf "$TMP/$ASSET" -C "$TMP" ;;
   *.zip) (cd "$TMP" && unzip -q "$ASSET") ;;
 esac
-mv -f "$TMP/horizon-launcher" "$DIR/horizon-offline-launcher"
-chmod +x "$DIR/horizon-offline-launcher"
+mv -f "$TMP/horizon-launcher" "$DIR/nirova-launcher"
+chmod +x "$DIR/nirova-launcher"
 # macOS asks before opening downloaded programs that aren't notarized.
 if [ "$(uname -s)" = Darwin ]; then
   xattr -dr com.apple.quarantine "$DIR" 2>/dev/null || true
 fi
 
 mkdir -p "$HOME/.local/bin"
-ln -sf "$DIR/horizon-offline-launcher" "$HOME/.local/bin/horizon-offline-launcher"
+ln -sf "$DIR/nirova-launcher" "$HOME/.local/bin/nirova-launcher"
 echo "  Installed in $DIR"
-echo "  Start it with: horizon-offline-launcher"
+echo "  Start it with: nirova-launcher"
 case ":$PATH:" in
   *":$HOME/.local/bin:"*) ;;
-  *) echo "  (~/.local/bin is not on your PATH: add it, or run $DIR/horizon-offline-launcher)" ;;
+  *) echo "  (~/.local/bin is not on your PATH: add it, or run $DIR/nirova-launcher)" ;;
 esac
 echo "  Next: open the launcher, press Prepare (it uses your Minecraft 26.3), then Play."
