@@ -109,7 +109,7 @@ impl Language {
             .find(|language| language.code() == base)
     }
 
-    /// The first of the system's preferred languages the launcher has, else Ukrainian.
+    /// The first supported language, or Russian as the launcher default.
     pub fn pick<'a>(preferred: impl IntoIterator<Item = &'a str>) -> Self {
         preferred
             .into_iter()
