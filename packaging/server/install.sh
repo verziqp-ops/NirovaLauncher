@@ -5,11 +5,11 @@
 # the server build (horizon-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
 #
 #   curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.sh | sh
-#   curl -fsSL .../install.sh | sh -s -- --version v0.5.0 --dir /opt/horizon --bin /usr/local/bin
+##   curl -fsSL .../install.sh | sh -s -- --version v1.0.0 --dir /opt/nirova --bin /usr/local/bin
 #   sh install.sh --archive horizon-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
 #
 # It needs curl, tar or unzip, and sha256sum or shasum; it never asks for sudo (pick folders you can write).
-# Releases go to <dir>/releases/<version>, <dir>/current points at the one in use, and <bin>/horizon-server
+# runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
 # runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
 # Nothing of Mojang's is downloaded.
 set -eu
@@ -112,7 +112,12 @@ mkdir -p "$RELEASE/.local"
 ln -sfn "$DIR/game-files/horizon-client" "$RELEASE/.local/horizon-client"
 ln -sfn "$RELEASE" "$DIR/current"
 # Small launchers rather than links: the programs find their release folder from where they run.
-for tool in horizon-server horizon-prepare; do
+for pair in "nirova-server horizon-server" "nirova-prepare horizon-prepare"; do
+  set -- $pair
+  public=$1; internal=$2
+  printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$internal" > "$BIN/$public"
+  chmod +x "$BIN/$public"
+done
   printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$tool" > "$BIN/$tool"
   chmod +x "$BIN/$tool"
 done
@@ -139,4 +144,4 @@ if [ -z "$(ls -A "$DIR/game-files/horizon-client" 2>/dev/null)" ]; then
   echo "by the official launcher; see docs/server.md):"
   echo "  horizon-prepare --prepare --server-jar /path/to/server.jar"
 fi
-echo "Then set up a server: mkdir my-server && cd my-server && horizon-server init"
+echo "Then set up a server: mkdir my-server && cd my-server && nirova-server init"
