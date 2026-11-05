@@ -917,7 +917,7 @@ impl Launcher {
                         // Past the gate by the developer option alone is no owner, and in this
                         // fork (`account::GATE_OPEN`) only a session means one: no owner plays
                         // offline too.
-                        if !(self.settings.dev_offline || account::GATE_OPEN) || file.is_some() {
+                        if file.is_some() {
                             self.owner = Some(true);
                         }
                         if let Some(file) = file {
@@ -1446,7 +1446,7 @@ impl Launcher {
         self.starting_client = Some(tag.clone());
         self.play_pressed = Some(Instant::now());
         let tx = self.tx.clone();
-        let offline_without_owner = self.settings.dev_offline;
+        let offline_without_owner = false;
         std::thread::spawn(move || {
             backend::complete_assets(&tag);
             let session = account::session_for_game(&backend::game_home(), offline_without_owner);
@@ -3205,6 +3205,30 @@ impl Launcher {
             .child(body)
     }
 
+    fn instances_page(&mut self, cx: &mut Context<Self>) -> Div {
+        let t = self.theme;
+        let add = shell::icon_button("instances-add", "plus", 34., false, &t).on_click(cx.listener(
+            |this, _: &ClickEvent, _, cx| {
+                this.open_instance_dialog(None);
+                cx.notify();
+            },
+        ));
+        let items = self.instance_items(|label| shell::heading(label, &t), cx);
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(18.))
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .justify_between()
+                    .child(shell::text(theme::night::DISPLAY, shell::c(t.night.ink)).child(tr("Instances").to_string()))
+                    .child(add),
+            )
+            .children(items)
+    }
+
     fn settings_page(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let toggle = switch("auto-install", self.settings.auto_install(), &t).on_click(
@@ -4526,6 +4550,8 @@ impl Render for Launcher {
         let content = match self.page {
             Page::Play => self.play_page(cx),
             Page::Versions => self.versions_page(cx),
+            Page::Instances => self.instances_page(cx),
+            Page::Worlds => self.worlds_section(cx).unwrap_or_else(|| div().child(tr("No worlds yet"))),
             Page::Mods => self.mods_page(cx),
             Page::Servers => self.servers_page(cx),
             Page::Notes => self.notes_page(cx),
@@ -4670,7 +4696,7 @@ impl Render for Launcher {
                 .line_height(px(theme::WORDMARK.px * 0.5))
                 .font_weight(FontWeight::BOLD)
                 .text_color(t.ink)
-                .children("HORIZON".chars().enumerate().map(|(i, c)| {
+                .children("NIVRORA".chars().enumerate().map(|(i, c)| {
                     let at = held - i as f32 * theme::STAGGER.as_secs_f32() * 1.5;
                     let p = ease_out_cubic(at / theme::ENTER.as_secs_f32());
                     div()
@@ -4979,9 +5005,8 @@ mod tests {
             play_press(false, Some(true), false),
             PlayPress::PrepareThenPlay
         );
-        // This fork (`account::GATE_OPEN`): no owner prepares from the player's own install.
-        assert_eq!(play_press(false, Some(false), false), PlayPress::PrepareThenPlay);
-        assert_eq!(play_press(false, None, false), PlayPress::PrepareThenPlay);
+        assert_eq!(play_press(false, Some(false), false), PlayPress::Nothing);
+        assert_eq!(play_press(false, None, false), PlayPress::Nothing);
         assert!(!super::starts_now(false, false, false));
         assert_eq!(play_press(false, Some(true), true), PlayPress::Nothing);
         assert_eq!(play_press(true, Some(true), true), PlayPress::Nothing);
