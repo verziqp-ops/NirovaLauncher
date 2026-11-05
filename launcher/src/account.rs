@@ -6,7 +6,7 @@
 //! output.
 //!
 //! The owner gate ([`launch`]): the launcher starts the game only while an account in it owns
-//! Minecraft: Java Edition, as other launchers do. Offline names play behind such an account.
+//! Minecraft: Java Edition, as other launchers do. Guest profiles play behind such an account.
 //! The game binary itself, its harnesses and the servers don't go through the launcher's gate.
 //!
 //! The Azure app (client ID) is NIVRORA's own and is configuration: `NIVRORA_MSA_CLIENT_ID` at
@@ -1131,10 +1131,10 @@ impl Accounts {
             .unwrap_or_default();
         // A fresh installation starts with a local Guest profile. This is a launcher identity,
         // not a Microsoft account or proof of Minecraft ownership.
+        if !accounts.offline.iter().any(|name| name.eq_ignore_ascii_case("Player")) {
+            accounts.offline.push("Player".to_owned());
+        }
         if accounts.selected.is_none() && accounts.offline_selected.is_none() {
-            if !accounts.offline.iter().any(|name| name.eq_ignore_ascii_case("Player")) {
-                accounts.offline.push("Player".to_owned());
-            }
             accounts.offline_selected = Some("Player".to_owned());
         }
         accounts
