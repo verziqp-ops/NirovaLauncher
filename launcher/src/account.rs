@@ -1211,9 +1211,8 @@ impl Accounts {
         self.play_as_with(store, who, false)
     }
 
-    /// [`Self::play_as`], where `offline_without_owner` (the window's hidden developer option,
-    /// `backend::Settings::dev_offline`) lets an offline name play without an account that owns
-    /// the game.
+    /// [`Self::play_as`] with a legacy flag retained for API compatibility. Guest profiles
+    /// never bypass the Minecraft ownership check.
     pub fn play_as_with(
         &mut self,
         store: &dyn SecretStore,
@@ -1435,10 +1434,8 @@ pub fn launch(
     }
 }
 
-/// The owner gate before the game starts. With the window's hidden developer option
-/// (`backend::Settings::dev_offline`, `offline_without_owner`) no owner is no refusal: the game
-/// starts offline, without a session and without an `owner`. Downloads never come through here:
-/// `backend::download_for_owner` asks [`launch`] itself, so the option never downloads the game.
+/// The owner gate before the game starts. Local guest names do not bypass Minecraft ownership.
+/// Downloads and launches both pass through the same ownership check.
 pub fn launch_for_game(
     ep: &Endpoints,
     client_id: Option<&str>,
@@ -1656,7 +1653,7 @@ fn launch_as(
     let pass = accounts
         .play_as(store, who.clone())
         .and_then(|()| match launch(ep, client_id, store, accounts) {
-            // This fork: no owner plays offline, as `launch_for_game` lets it.
+            // A local guest profile is not a substitute for verified game ownership.
             Err(NoOwner) => Err(NoOwner.to_string()),
             pass => pass.map_err(|e| e.to_string()),
         });
