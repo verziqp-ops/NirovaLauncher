@@ -177,7 +177,6 @@
   "Nothing found that runs in Horizon. Show everything lists the rest.": "未找到可在 NIROVA 中运行的内容。开启“显示全部”可查看其余结果。",
   "The launcher goes down when the game starts, and comes back when it closes.": "游戏启动时启动器最小化，游戏关闭后恢复。",
   "GameMode": "GameMode",
-  "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is sent whatever the switches say.": "游玩时，游戏每分钟会发送一次匿名的“正在游玩” Ping，以便启动器显示当前有多少人在玩 NIROVA。它包含：游戏启动时生成并在关闭时遗忘的随机数、NIROVA 版本、您的操作系统（Linux、macOS 或 Windows）以及是否向局域网或好友开放了世界。它不包含：您的账户、安装 ID、世界或服务器名称，或您在游戏中的任何操作，且服务器不会保留您的 IP 地址。无论开关设置如何，它都会发送。",
   "When you report it on Discord, attach the crash report file (or paste it with Copy report) and say what you were doing.": "在 Discord 上报告时，请附上崩溃报告文件（或用“复制报告”粘贴），并说明你当时在做什么。",
   "Get my server": "获取我的服务器",
   "New instance": "新建实例",
@@ -411,7 +410,7 @@
   "Filters": "筛选",
   "{count} followers": "{count} 人关注",
   "Connect an AI agent": "Connect an AI agent",
-  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playNIROVA.dev says how long it is kept.",
+  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. The project's privacy notice explains how long its data is kept.",
   "Players": "玩家",
   "simulation distance": "模拟距离",
   "Updated": "最近更新",
@@ -657,5 +656,6 @@
   "Minecraft jar": "Minecraft jar",
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "此版本的启动器没有 Microsoft 登录(NIROVA_MSA_CLIENT_ID)。",
   "Offline launcher {version}": "离线启动器 {version}",
-  "milk-blue": "乳蓝色"
+  "milk-blue": "乳蓝色",
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
 }
