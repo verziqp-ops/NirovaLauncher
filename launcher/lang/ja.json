@@ -358,7 +358,6 @@
   "Bug reports": "バグレポート",
   "Only the reports you write and send yourself, with the game's log if you add it after reading it.": "あなたが自分で作成して送信したレポートのみ。読んだ後にゲームのログを追加した場合、それも含まれます。",
   "Benchmark uploads": "ベンチマークアップロード",
-  "The results of benchmarks you run, for the community results on playhorizon.dev.": "あなたが実行したベンチマークの結果。playNIROVA.dev のコミュニティ結果用に使用されます。",
   "Never sent: your account name or UUID, world names, server addresses, chat, or your IP address. Each report is dated to the day, under a random install ID you can delete.": "送信されない情報：アカウント名またはUUID、ワールド名、サーバーアドレス、チャット内容、IPアドレス。各レポートは日付単位で記録され、削除可能なランダムなインストールIDの下で管理されます。",
   "\"I'm playing\" ping": "「プレイ中」ピング",
   "All": "すべて",
@@ -657,5 +656,6 @@
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "このランチャーのビルドには Microsoft サインインがありません(NIROVA_MSA_CLIENT_ID)。",
   "Offline launcher {version}": "オフラインランチャー {version}",
   "milk-blue": "ミルキーブルー",
-  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "NIROVA 独自の結果サービスが利用可能になった際に公開する、実行したベンチマークの结果。"
 }
