@@ -1,7 +1,7 @@
 //! The launcher's view of Nirova's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
 //! Nirova's blue) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
-//! Open Font License). Screens not rebuilt yet draw the Blocks parts in the night's colours.
+//! Open Font License). Every screen uses the same Nirova palette and type scale, including the legacy page components.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
 use horizon_launcher::themes::Accent;
@@ -22,8 +22,8 @@ pub use tokens::{BLOCK_BEVEL as BEVEL, BLOCK_LIP as LIP};
 pub use tokens::{CONTROL_LARGE, DISABLED, FIELD, PRESSED, RISE, ROW, SEGMENT};
 
 /// Blocks have square corners: these stay for the places that ask for a radius.
-pub const RADIUS: f32 = 0.;
-pub const RADIUS_PLATE: f32 = 0.;
+pub const RADIUS: f32 = 8.;
+pub const RADIUS_PLATE: f32 = 12.;
 /// Buttons are a little taller than the quiet look's, for their lip.
 pub const CONTROL: f32 = 34.;
 /// The top bar, and the sidebar of instances and servers.
@@ -116,8 +116,8 @@ impl Theme {
             night.ink = 0xedf5fa;
             night.ink_soft = 0xc9d9e5;
             night.muted = 0xb9cbd6;
-            night.accent = 0xa9dceb;
-            night.accent_hi = 0xc4eaf5;
+            night.accent = 0xf09bc3;
+            night.accent_hi = 0xf7c2d9;
             night.on_accent = 0x17232c;
         } else {
             night.sky = [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb];
@@ -131,15 +131,15 @@ impl Theme {
             night.ink = 0x1b2a36;
             night.ink_soft = 0x405363;
             night.muted = 0x506776;
-            night.accent = 0x2d6d84;
-            night.accent_hi = 0x2d6d84;
+            night.accent = 0xa53d70;
+            night.accent_hi = 0xa53d70;
             night.on_accent = 0xffffff;
         }
         Self::from(accent.apply(night.blocks()), night)
     }
 
     fn from(p: tokens::Blocks, night: Night) -> Self {
-        // Nirova palette: graphite surfaces, misty blue-gray panels and a milk-blue primary accent.
+        // Nirova palette: graphite surfaces, misty blue-gray panels and a rose-pink primary accent.
         // Keep the upstream Night data for its artwork and motion, but use one coherent
         // palette for every launcher control and panel.
         let dark = p.dark;
