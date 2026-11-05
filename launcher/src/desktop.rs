@@ -138,7 +138,7 @@ pub fn install_in(data: &Path, exe: &Path) -> io::Result<bool> {
             fs::create_dir_all(dir)?;
         }
         // Written beside and renamed, so a menu never reads half an entry.
-        let temp = path.with_extension("horizon-tmp");
+        let temp = path.with_extension("nivrora-tmp");
         fs::write(&temp, &bytes)?;
         fs::rename(&temp, &path)?;
         wrote = true;
