@@ -604,7 +604,6 @@
   "Export…": "Exportar…",
   "Add another account.": "Añadir otra cuenta.",
   "Launch…": "Lanzar…",
-  "The results of benchmarks you run, for the community results on playhorizon.dev.": "Los resultados de las pruebas de rendimiento que ejecutes, para los resultados de la comunidad en playNIROVA.dev.",
   "Not ported: {item}": "No portado: {item}",
   "Modpacks": "Modpacks",
   "{name} moved to the trash.": "Se movió {name} a la papelera.",
@@ -657,5 +656,6 @@
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "Esta versión del launcher no tiene inicio de sesión de Microsoft (NIROVA_MSA_CLIENT_ID).",
   "Offline launcher {version}": "Launcher sin conexión {version}",
   "milk-blue": "Azul lechoso",
-  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Los resultados de las pruebas que ejecutes, cuando NIROVA disponga de su propio servicio de resultados."
 }
