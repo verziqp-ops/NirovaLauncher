@@ -14,7 +14,7 @@
 //! custom properties (a horizon-theme test fails when the file is out of date).
 //!
 //! `icons`: renders the icon masters in `docs/media/brand` (with `rsvg-convert`, from librsvg)
-//! into every size the platforms and the website use, and packs `packaging/icons/horizon.ico`
+//! into every size the platforms and the website use, and packs `packaging/icons/nirova.ico`
 //! and `horizon.icns`. `docs/media/brand/README.md` lists what goes where.
 
 use std::fs;
@@ -171,12 +171,12 @@ fn icons() -> Result<(), String> {
     for size in HICOLOR {
         let png = render(&square, (size, size))?;
         write(
-            &packaging.join(format!("hicolor/{size}x{size}/apps/horizon.png")),
+            &packaging.join(format!("hicolor/{size}x{size}/apps/nirova.png")),
             &png,
         )?;
     }
     write(
-        &packaging.join("hicolor/scalable/apps/horizon.svg"),
+        &packaging.join("hicolor/scalable/apps/nirova.svg"),
         &fs::read(&square).map_err(|e| format!("{}: {e}", square.display()))?,
     )?;
     let images = ICO
@@ -192,7 +192,7 @@ fn icons() -> Result<(), String> {
     write(&packaging.join("horizon.icns"), &icns(&entries))?;
     // The window icon the game and the launcher set at run time (X11 and Windows title bars).
     write(
-        &repo.join("crates/horizon-theme/icons/horizon-64.png"),
+        &repo.join("crates/horizon-theme/icons/nirova-64.png"),
         &render(&square, (64, 64))?,
     )?;
     // Avatars, and the website's icons (horizon-site copies docs/media/brand/web/ into its public/).
