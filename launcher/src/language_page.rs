@@ -98,7 +98,7 @@ impl Launcher {
         let said = self.settings.language.is_none().then(|| {
             div()
                 .child(tr(
-                    "NIVRORA starts in Russian by default. A string not translated yet shows in English.",
+                    "NIROVA starts in Russian by default. A string not translated yet shows in English.",
                 ))
                 .into_any_element()
         });
