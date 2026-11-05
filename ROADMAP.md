@@ -6,6 +6,9 @@ What is being done on NIROVA, what comes next and where you can help. There are 
 
 ## At a glance
 
+> Some tracking issue links in this inherited engine roadmap still point to the upstream source repository. They are historical engineering references, not NIROVA release or support links.
+
+
 NIROVA is Minecraft: Java Edition 26.3 rewritten from scratch in Rust, so it runs faster on the same computer. Single player, LAN, servers, resource packs and NIROVA's own mods work today, on your own copy of the game.
 
 **Being done now**
