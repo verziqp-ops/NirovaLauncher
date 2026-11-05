@@ -1,16 +1,16 @@
 [Desktop Entry]
 Type=Application
-Name=NIVRORA Launcher
-Name[en]=NIVRORA Launcher
-Name[uk]=Лаунчер NIVRORA
+Name=Nirova Launcher
+Name[en]=Nirova Launcher
+Name[uk]=Лаунчер Nirova
 GenericName=Игровой лаунчер
 GenericName[en]=Game launcher
 GenericName[uk]=Ігровий лаунчер
 Comment=Установка и запуск Minecraft: Java Edition
 Comment[en]=Install and play Minecraft: Java Edition
 Comment[uk]=Встановлення та запуск Minecraft: Java Edition
-Exec=nivrora-launcher
+Exec=nirova-launcher
 Icon=nivrora
 Terminal=false
 Categories=Game;
-StartupWMClass=nivrora-launcher
+StartupWMClass=nirova-launcher
