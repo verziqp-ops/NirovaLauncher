@@ -1,44 +1,84 @@
-# NIVRORA region-threading architecture plan
+# Региональная многопоточность NIVRORA
 
-Status: design proposal only. The game simulation remains single-threaded until each phase has implementation, differential tests, and measured results.
+**Статус: архитектурное проектирование. Региональный планировщик пока не подключён к симуляции.** Текущий тик мира остаётся последовательным. Это намеренно: нельзя объявлять многопоточность готовой, пока не доказана эквивалентность ванильной симуляции.
 
-## Invariants
+## Что сейчас связано в одном тике
 
-- A region has one simulation owner during a tick; no worker mutates another region's state directly.
-- Within a region, entity AI, block entities, scheduled ticks, redstone, fluids and block updates retain a deterministic sequential order.
-- Cross-region interactions are explicit messages, not shared mutable references.
-- Save/load boundaries and crash recovery must never observe a half-applied region tick.
-- Vanilla parity is a release gate, not an optional benchmark.
+В `crates/horizon-client/src/game.rs` игровой цикл проходит через `Game::tick` и `Game::tick_world`. Внутри одного прохода последовательно выполняются, среди прочего:
 
-## Staged migration
+1. продвижение игрового времени и глобальных часов;
+2. обработка входящих действий и обновление состояния игрока;
+3. подготовка/постобработка чанков и тик блоков;
+4. блоковые события, запланированные и случайные тики, движущиеся поршни;
+5. сущности и их столкновения с блоками;
+6. предметы, снаряды, порталы, мобы и опыт;
+7. LAN-события, сохранения и обновления клиентского состояния.
 
-### 0. Establish the baseline
-Capture deterministic fixtures and event traces for redstone clocks, observers, pistons, comparators, hoppers, fluids, mob AI, collisions, projectiles, portals, chunk borders and save/reload. Compare against the current engine and the relevant vanilla reference.
+Это не независимые списки задач. Редстоун может породить блоковое событие, поршень перемещает блоки и сущности, воронка читает контейнеры, моб нажимает нажимную плиту, жидкость меняет соседний блок, а загрузка чанка восстанавливает запланированные тики. Поэтому параллельный вызов существующих `tick_blocks`, `tick_mobs` и `tick_items` напрямую создаст гонки и изменит порядок ванильных событий.
 
-### 1. Model ownership
-Introduce region identifiers, ownership metadata, read-only snapshots and APIs that make cross-region writes impossible. Keep all simulation on the current main tick loop.
+## Целевая модель: один владелец состояния на регион
 
-### 2. Extract region tick transactions
-Make one region tick an explicit transaction with stable phases: inbound events, scheduled block work, block entities, entities, outbound events and commit. Do not reorder existing vanilla work within a region.
+- Мир делится на регионы из целых чанков. Начальный размер для экспериментов — 32×32 чанка, но размер должен быть конфигурируемым и проверяться нагрузочными тестами.
+- Каждый регион в пределах одного игрового тика имеет ровно одного writer-поток.
+- Все изменяющие состояние операции региона — редстоун, block entities, scheduled ticks, сущности, AI, коллизии и локальні блокові оновлення — залишаються послідовними всередині цього регіону.
+- Читання сусідніх регіонів виконується через незмінні snapshot-и, а не через спільні mutable-посилання.
+- Регіон не може напряму змінювати дані іншого регіону.
 
-### 3. Message passing at boundaries
-Use per-destination queues with deterministic ordering keys (simulation tick, source region, event sequence). Define when inbound events become visible. Never synchronously wait on a neighbour worker while holding region state.
+## Порядок тика і межі регіонів
 
-### 4. Parallel region scheduler
-Only after steps 0–3 pass, schedule independent regions on a bounded worker pool. A region must have exactly one writer at a time. Add back-pressure and deterministic fallback when a dependency cannot be resolved in the current tick.
+Кожен регіональний тик має транзакційні фази:
 
-### 5. Dimension scheduling
-Do not simply give Overworld, Nether and End independent clocks. First map every cross-dimension dependency: portals, player transfer, global time/weather, scheduled tasks, sleep, server tick and persistence. Parallelize dimension work only where dependencies and vanilla timing are explicitly preserved.
+1. **Ingress:** прийняти повідомлення, зафіксовані для цього регіону й тика.
+2. **Simulation:** виконати ванільні фази регіону в тому самому внутрішньому порядку.
+3. **Egress:** створити повідомлення для сусідніх регіонів, не змінюючи їхній стан.
+4. **Commit:** опублікувати результат тика та новий read-only snapshot.
 
-## Required correctness tests
+Ключ сортування повідомлень має бути детермінованим: `(game_tick, source_region, source_sequence, target_position)`. Потрібно окремо визначити момент видимості події на наступному регіоні. Не можна блокувати worker одного регіону в очікуванні сусіда, утримуючи блокування його стану: це створює дедлоки.
 
-- Same seed and input trace produce identical block/entity state hashes in single-threaded and region-scheduled modes.
-- Repeat tests with different worker counts and randomized worker scheduling.
-- Boundary tests cover redstone, piston structures, fluids, entities, projectiles and chunk load/unload.
-- Save/reload during heavy cross-region traffic yields the same state as uninterrupted execution.
-- No deadlocks, data races, lost messages, duplicate events or unbounded queues.
-- Benchmark tick time, p50/p95/p99 latency, CPU utilization and memory against the single-threaded baseline.
+Для редстоуну недостатньо просто відкласти всі події на один тик. Потрібно відтворити точний порядок vanilla neighbour updates, block events, scheduled ticks і piston phases, включно з ланцюгами, що перетинають межу регіону. Якщо точний порядок не може бути збережений, взаємодію тимчасово обробляє координатор у послідовному fallback.
 
-## Rollout
+## Ізоляція вимірів
 
-Keep the existing single-threaded scheduler as the reference and safe fallback. Enable region scheduling behind a developer feature flag first. Do not make it the default until parity suites pass on CI and long-running stress tests.
+Overworld, Nether та End можуть отримати окремі черги роботи, але не незалежні довільні ігрові годинники. Перед паралельним плануванням потрібно формально описати залежності:
+
+- глобальний game time, день/ніч і погода;
+- сон гравців та пропуск ночі;
+- портали, end gateways і переміщення гравців/мобів;
+- scheduled tasks, scoreboard, advancements і game rules;
+- збереження світу, аварійне завершення та відновлення.
+
+Глобальний координатор задає єдину точку узгодження для залежностей між вимірами. Якщо ферма в Nether змінює спільний стан або створює подію в Overworld, це має бути явно відображено в протоколі.
+
+## Етапи реалізації
+
+### 0. Еталон і профілювання
+Зібрати відтворювані сценарії та виміряти CPU, p50/p95/p99 тривалість тика, пам'ять і черги. Використати наявні таймери `horizon_client::spans` для визначення реальних вузьких місць перед оптимізацією.
+
+### 1. Володіння даними
+Ввести `RegionId`, таблицю власників чанків, API read-only snapshot і типізовані команди. Спочатку все ще виконувати на одному потоці; мета — зробити несанкціонований запис у чужий регіон неможливим на рівні API.
+
+### 2. Поділ симуляції на транзакції
+Винести локальний регіональний тик у чіткий набір фаз, зберігаючи поточний порядок подій. На цьому етапі однопотокова реалізація повинна давати ідентичні state hash до базової версії.
+
+### 3. Черги меж
+Додати черги повідомлень, детерміновану послідовність, back-pressure, ліміти пам'яті та fallback для взаємодій, що не можуть бути безпечно відкладені.
+
+### 4. Worker pool
+Паралелити лише незалежні регіони з одним writer на регіон. Кількість потоків обмежити доступними CPU; не створювати потік на кожен чанк. Додати метрики черг, очікування та часу регіону.
+
+### 5. Виміри та збереження
+Під'єднувати виміри лише після тестів глобального часу, порталів і збереження. Snapshot-и та commit мають бути атомарними щодо save/load.
+
+## Обов'язкові тести сумісності
+
+- Той самий seed та той самий input trace дають ідентичні block/entity state hash у базовому й регіональному режимах.
+- Перевірка з 1, 2, 4 і 8 worker-ами та перемішаним порядком запуску регіонів.
+- Редстоун: observer, comparator, repeater, hopper, piston, quasi-connectivity, ланцюги через межі чанків і регіонів.
+- Моби: AI, pathfinding, collision, target selection, pressure plates, damage і despawn на межах.
+- Рідини, вогонь, TNT, снаряди, предмети, портали, chunk load/unload і block entities.
+- Save/reload під час активних міжрегіональних повідомлень дає той самий світ, що й безперервний запуск.
+- Немає data races, deadlock, втрати/дублювання подій, неконтрольованого росту черг або пошкодження світу.
+
+## Критерії увімкнення
+
+Регіональний режим не стає типовим, доки CI не проходить differential parity suite, довгі stress-тести не показують відсутності race/deadlock, а бенчмарки не доводять реальне покращення p95/p99 тика без регресії пам'яті. Однопотоковий scheduler залишається еталоном і аварійним fallback.
