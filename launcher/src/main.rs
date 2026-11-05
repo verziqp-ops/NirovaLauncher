@@ -3722,6 +3722,15 @@ impl Launcher {
                     ),
                 );
             }
+            let dressed = a.name.clone();
+            actions = actions.child(
+                button(format!("microsoft-skin-{i}"), "Skin…", Kind::Ghost, &t).on_click(
+                    cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.open_skin(dressed.clone());
+                        cx.notify();
+                    }),
+                ),
+            );
             let sign_in_progress = self
                 .sign_in_target
                 .as_ref()
