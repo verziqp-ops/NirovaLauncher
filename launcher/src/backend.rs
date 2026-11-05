@@ -51,33 +51,33 @@ pub struct Release {
     pub nightly: Option<String>,
 }
 
-/// The release assets of each system Horizon ships for: (`std::env::consts::OS`, `ARCH`, the game,
+/// The release assets Nirova builds for each supported system: (`std::env::consts::OS`, `ARCH`, the game,
 /// the launcher). game-build.yml builds the game's, nightly-build.yml signs and publishes them, and
 /// launcher.yml builds the launcher's (`platform_assets_are_published`).
 pub const PLATFORMS: [(&str, &str, &str, &str); 4] = [
     (
         "linux",
         "x86_64",
-        "horizon-linux-x86_64.tar.gz",
+        "nirova-game-linux-x86_64.tar.gz",
         "nirova-launcher-linux-x86_64.tar.gz",
     ),
     (
         "macos",
         "aarch64",
-        "horizon-macos-arm64.zip",
+        "nirova-game-macos-arm64.zip",
         "nirova-launcher-macos-arm64.zip",
     ),
     // Intel Macs (#1161).
     (
         "macos",
         "x86_64",
-        "horizon-macos-x64.zip",
+        "nirova-game-macos-x64.zip",
         "nirova-launcher-macos-x64.zip",
     ),
     (
         "windows",
         "x86_64",
-        "horizon-windows-x64.zip",
+        "nirova-game-windows-x64.zip",
         "nirova-launcher-windows-x64.zip",
     ),
 ];
@@ -113,7 +113,7 @@ const fn platform_assets(os: &str, arch: &str) -> Option<(&'static str, &'static
 
 const OWN_ASSETS: Option<(&str, &str)> =
     platform_assets(std::env::consts::OS, std::env::consts::ARCH);
-/// The game build this launcher installs, None where Horizon has none.
+/// The Nirova game build this launcher installs, None where there is no supported package.
 pub const ASSET: Option<&str> = match OWN_ASSETS {
     Some((game, _)) => Some(game),
     None => None,
@@ -343,8 +343,10 @@ pub(crate) fn parse_releases(
         if r["draft"].as_bool().unwrap_or(false) || !keep(tag) {
             continue;
         }
+        let legacy_asset = asset.and_then(legacy_game_asset);
         let found = r["assets"].as_array().into_iter().flatten().find_map(|a| {
-            (Some(a["name"].as_str()?) == asset).then(|| {
+            let name = a["name"].as_str()?;
+            (Some(name) == asset || Some(name) == legacy_asset).then(|| {
                 Some((
                     a["browser_download_url"].as_str()?.to_string(),
                     a["size"].as_u64()?,
@@ -760,15 +762,21 @@ fn unpack(archive: &Path, url: &str, to: &Path) -> Result<(), String> {
 /// the fraction done.
 pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> {
     let tag = release.tag.as_str();
+    let asset = release
+        .asset
+        .as_ref()
+        .and_then(|(url, _)| url.rsplit('/').next())
+        .or(ASSET)
+        .unwrap_or_default();
     let sha256 = match &release.nightly {
-        // Signed for the Nightly channel, served under its own GitHub tag.
+        // Signed for the Preview channel, served under its own GitHub tag.
         Some(published) => crate::signed::nightly_digest(
             published,
-            ASSET.unwrap_or_default(),
+            asset,
             &horizon_release_sign::trusted_keys(),
             fetch_small,
         )?,
-        None if is_game_tag(tag) => signed_digest(tag, ASSET.unwrap_or_default())?,
+        None if is_game_tag(tag) => signed_digest(tag, asset)?,
         None => return Err(format!("{tag} is not a NIROVA release.")),
     };
     install_as(release, tag, &sha256, progress)
@@ -795,7 +803,7 @@ pub(crate) fn install_as(
     let unpacked = partial.join("unpacked");
     unpack(&archive, &url, &unpacked)?;
     progress(0.97);
-    // The archives hold one top folder (horizon-linux-x86_64/...); the version folder is its contents.
+    // The archives hold one top folder (nirova-game-linux/...); the version folder is its contents.
     let entries: Vec<_> = fs::read_dir(&unpacked)
         .map_err(|e| e.to_string())?
         .flatten()
@@ -3679,17 +3687,17 @@ pub fn {f}("
         assert_eq!(
             platform_assets("macos", "aarch64"),
             Some((
-                "horizon-macos-arm64.zip",
+                "nirova-game-macos-arm64.zip",
                 "nirova-launcher-macos-arm64.zip"
             ))
         );
         assert_eq!(
             platform_assets("macos", "x86_64"),
-            Some(("horizon-macos-x64.zip", "nirova-launcher-macos-x64.zip"))
+            Some(("nirova-game-macos-x64.zip", "nirova-launcher-macos-x64.zip"))
         );
         assert_eq!(
             platform_assets("windows", "x86_64").map(|(game, _)| game),
-            Some("horizon-windows-x64.zip")
+            Some("nirova-game-windows-x64.zip")
         );
         assert_eq!(platform_assets("linux", "aarch64"), None);
         assert_eq!(platform_assets("macos", "x86"), None);
