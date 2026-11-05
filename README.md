@@ -1,39 +1,54 @@
-# Nirova Launcher
+# NIVRORA Launcher
 
-A community launcher for the Rust-based Minecraft 26.3 client. This repository is in active development; public release builds are not available yet.
+**NIVRORA Launcher** — лаунчер для Minecraft Java Edition на базе игрового проекта Horizon, который получает собственный интерфейс, бренд и архитектуру.
 
-## Current target
+> Неофициальный проект сообщества. Не связан с Mojang или Microsoft. Для подготовки игровых ресурсов требуется собственная законная копия Minecraft Java Edition. Игровые файлы и ресурсы Minecraft не распространяются вместе с лаунчером.
 
-- One supported game version: **26.3**.
-- Windows, Linux and macOS build pipelines.
-- Local game-file discovery and manual selection.
-- Guest/offline profile support.
-- Microsoft account sign-in where configured.
-- Ely.by integration is planned; it is not yet available in this build.
-- Local skin and cape PNG selection is available for offline profiles; remote skin-provider integration is still being developed.
+## Языки
 
-## Before the first public release
+- Украинский — язык по умолчанию.
+- Русский.
+- English.
+- Дополнительно: Deutsch, Français, Español, 简体中文, Polski, Português (Brasil), 日本語 и Türkçe.
 
-The launcher needs a compatible local copy of the game's 26.3 files to prepare resources. It does not bundle Minecraft assets or promise compatibility with other game versions. Guest mode does not grant access to servers that require Microsoft account ownership checks.
+Язык можно изменить в настройках. Если язык системы не поддерживается, лаунчер запускается на украинском.
 
-## Downloads
+## Дизайн NIVRORA
 
-Downloads will appear under [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases) after the first successful, tested release. Do not install unofficial binaries from third-party mirrors.
+- Графитовая основа с мягкими сине-серыми поверхностями.
+- Молочно-голубой основной цвет действий и элементов управления.
+- Розовый используется только как дополнительный акцент.
+- Собственные название, логотип, иконки, тексты, страницы, установщик и уведомления.
+- Единая визуальная система для главной страницы, версий, экземпляров, миров, модов, серверов и настроек.
 
-## Modding
+## Текущий статус
 
-A Ukrainian beginner guide for creating content mods and native Rust mods is available in [docs/modding-uk.md](docs/modding-uk.md). The visual in-launcher mod creator is planned and is not implemented yet.
+Проект находится в разработке. Наличие исходного кода не означает, что все функции уже завершены или что опубликована готовая стабильная сборка. Проверенные возможности и сборки будут публиковаться в [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases).
 
-## Build from source
+## План многопоточности мира
 
-See the workflow files in the .github/workflows directory for supported CI targets and required build dependencies.
+Цель — безопасно исследовать региональную обработку мира, не меняя ванильную последовательность событий внутри региона. Это масштабная работа, а не уже включённая функция. Подробный план: [docs/region-threading-ru.md](docs/region-threading-ru.md).
 
-## Security and privacy
+Основные принципы:
+1. Сначала зафиксировать эталонное поведение редстоуна, мобов, блок-сущностей, чанков и сохранений.
+2. Закрепить за каждым регионом единственного владельца состояния.
+3. Передавать межрегиональные действия через очереди сообщений с детерминированным порядком.
+4. Сохранять последовательную обработку событий внутри региона.
+5. Проверять границы чанков, измерения, порталы и сохранения дифференциальными тестами.
+6. Включать параллельный планировщик только после прохождения тестов ванильной совместимости.
 
-- Never share your Microsoft or Ely.by password with anyone.
-- Account tokens must be stored using the operating system's secure credential store.
-- Report security issues privately to the repository owner rather than publishing exploit details.
+**Критерий принятия:** производительность не должна достигаться ценой изменения ванильной логики, потери событий или нестабильного состояния мира.
 
-## Licensing
+## Сборка из исходников
 
-This project includes third-party components. Their original copyright notices and license terms are retained in LICENSE and THIRD_PARTY_NOTICES.md.
+См. workflows в `.github/workflows` и инструкции разработчика в репозитории.
+
+## Безопасность
+
+- Не публикуйте пароли и токены аккаунтов.
+- Учётные данные должны храниться локально и безопасно.
+- Уязвимости сообщайте владельцу репозитория приватно.
+
+## Лицензии
+
+В проекте есть сторонние компоненты. Их авторские права и лицензии сохраняются в `LICENSE` и `THIRD_PARTY_NOTICES.md`.
