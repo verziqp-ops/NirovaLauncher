@@ -12,7 +12,7 @@ impl Launcher {
                 self.accounts
                     .selected()
                     .map_or_else(String::new, |a| a.name.clone()),
-                tr("Microsoft account"),
+                tr("Licensed account"),
             ),
             Player::Offline(name) => (name, tr("Guest profile")),
             Player::GameName => (
@@ -218,9 +218,9 @@ impl Launcher {
                 Some(
                     div()
                         .child(tr(if plays {
-                            "Offline name · plays"
+                            "Guest profile · active"
                         } else {
-                            "Offline name"
+                            "Guest profile"
                         }))
                         .into_any_element(),
                 ),
