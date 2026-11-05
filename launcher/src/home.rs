@@ -114,7 +114,7 @@ impl Launcher {
             .children(instance.map(|i| {
                 shell::text(night::UI, c(n.ink_soft)).child(instances_page::played_line(i))
             }));
-        // A Java instance (no Horizon tag) isn't offered Horizon's updates.
+        // A Java instance (no NIVRORA tag) isn't offered NIVRORA's updates.
         if let Some(release) = self.updates.horizon.as_ref().filter(|_| !tag.is_empty()) {
             let installing = self.installing.as_ref().filter(|(t, _)| *t == release.tag);
             let line = shell::text(night::CAPTION, c(n.muted))
@@ -191,7 +191,7 @@ impl Launcher {
         hero
     }
 
-    /// Play, then what else the instance offers: its version (Horizon), its mods, its folder.
+    /// Play, then what else the instance offers: its version (NIVRORA), its mods, its folder.
     /// `ready`: prepared, or a Java instance (its game comes with Play).
     pub(super) fn home_actions(&self, ready: bool, java: bool, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -533,12 +533,12 @@ impl Launcher {
     }
 }
 
-/// `HORIZON_LAUNCHER_PAGE=getting-ready` opens Home as if Play had been pressed on a version that
+/// `NIVRORA_LAUNCHER_PAGE=getting-ready` opens Home as if Play had been pressed on a version that
 /// downloads from Mojang, a third of the way through: for screenshots, nothing runs.
 pub(super) fn getting_ready_preview() -> bool {
     static PREVIEW: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *PREVIEW
-        .get_or_init(|| std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
+        .get_or_init(|| std::env::var("NIVRORA_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
 }
 
 /// The download under way, files done of how many.
