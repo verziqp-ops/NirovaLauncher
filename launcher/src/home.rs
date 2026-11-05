@@ -28,14 +28,14 @@ impl Launcher {
             if tag.is_empty() {
                 "Minecraft"
             } else {
-                "Horizon"
+                "NIVRORA"
             },
             |i| i.name.as_str(),
         );
         let mut what = vec![format!("Minecraft: Java Edition {game}")];
         if !tag.is_empty() {
             what.push(format!(
-                "Horizon {}",
+                "NIVRORA {}",
                 horizon_launcher::nightly::label(tag)
                     .unwrap_or_else(|| tag.trim_start_matches('v').to_string())
             ));
@@ -261,7 +261,7 @@ impl Launcher {
             .items_center()
             .gap(px(10.))
             .child(play)
-            // Horizon's versions don't apply to a Java instance.
+            // NIVRORA versions don't apply to a Java instance.
             .children((!java).then(|| self.picker(cx)))
             .child(
                 action("home-mods", Action::Quiet, &t)
@@ -281,7 +281,7 @@ impl Launcher {
             }))
     }
 
-    /// The card beside the hero, for a Horizon version: a line from a release's notes, and
+    /// The card beside the hero, for a NIVRORA version: a line from a release's notes, and
     /// joining a friend with their invite code.
     pub(super) fn home_card(&self, tag: &str, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
