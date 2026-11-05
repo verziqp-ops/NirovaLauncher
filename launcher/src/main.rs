@@ -610,7 +610,7 @@ impl Launcher {
             this.play_when_prepared = this.selected().cloned();
         }
         // `HORIZON_LAUNCHER_PAGE=new-instance`: the dialog open on Modded, for screenshots.
-        if std::env::var("HORIZON_LAUNCHER_PAGE").as_deref() == Ok("new-instance") {
+        if std::env::var("NIVRORA_LAUNCHER_PAGE").as_deref() == Ok("new-instance") {
             this.open_instance_dialog(None);
             this.pick_kind(new_instance::NewKind::Modded, cx);
         }
@@ -2365,6 +2365,27 @@ impl Launcher {
         let t = self.theme;
         let n = t.night;
         self.load_packs();
+        let mut primary_nav = div().flex().flex_col().gap(px(3.)).pb(px(12.));
+        for (page, label, icon) in Page::ALL {
+            let selected = self.page == page;
+            primary_nav = primary_nav.child(
+                shell::row(format!("nivrora-nav-{label}"), selected, &t)
+                    .h(px(44.))
+                    .child(blocks::icon(icon, 20., shell::c(if selected { n.accent_hi } else { n.ink_soft })))
+                    .child(
+                        shell::text(theme::night::UI, shell::c(if selected { n.ink } else { n.ink_soft }))
+                            .font_weight(if selected { FontWeight::SEMIBOLD } else { FontWeight::MEDIUM })
+                            .child(tr(label).to_string()),
+                    )
+                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.go(page);
+                        if page == Page::Worlds {
+                            this.home_tab = home_tabs::HomeTab::Worlds;
+                        }
+                        cx.notify();
+                    })),
+            );
+        }
         let heading = |label: String| shell::heading(label, &t);
         let add = shell::icon_button("add-instance", "plus", 24., false, &t).on_click(cx.listener(
             |this, _: &ClickEvent, _, cx| {
@@ -2574,7 +2595,7 @@ impl Launcher {
                 .child(
                     shell::text(theme::night::TITLE, shell::c(n.ink))
                         .font_family(theme::DISPLAY_FONT)
-                        .child("Horizon"),
+                        .child("NIVRORA"),
                 )
         });
         shell::sidebar_plate(&t)
@@ -2588,6 +2609,7 @@ impl Launcher {
             .pb(px(12.))
             .overflow_y_scroll()
             .children(brand)
+            .child(primary_nav)
             .child(list)
             .child(foot)
     }
@@ -4791,8 +4813,8 @@ fn key_bindings() -> Vec<KeyBinding> {
 fn menus() -> Vec<Menu> {
     vec![
         Menu {
-            name: "Horizon Launcher".into(),
-            items: vec![MenuItem::action("Quit Horizon Launcher", Quit)],
+            name: "NIVRORA Launcher".into(),
+            items: vec![MenuItem::action("Quit NIVRORA Launcher", Quit)],
             disabled: false,
         },
         Menu {
@@ -4853,7 +4875,7 @@ fn main() {
                     titlebar: Some(titlebar::options()),
                     #[cfg(target_os = "linux")]
                     window_decorations: Some(gpui::WindowDecorations::Client),
-                    app_id: Some("horizon-launcher".into()),
+                    app_id: Some("app.nivrora.launcher".into()),
                     // GPUI draws a window without focus at most every 33 ms to save energy. A
                     // benchmark's window often starts without it (KDE keeps focus from windows
                     // a background process opens), and it measures drawing, not that limit.
@@ -5013,10 +5035,10 @@ mod tests {
     #[test]
     fn the_app_menu_has_quit() {
         let menus = super::menus();
-        assert_eq!(menus[0].name, "Horizon Launcher");
+        assert_eq!(menus[0].name, "NIVRORA Launcher");
         assert!(matches!(
             &menus[0].items[0],
-            gpui::MenuItem::Action { name, .. } if name == "Quit Horizon Launcher"
+            gpui::MenuItem::Action { name, .. } if name == "Quit NIVRORA Launcher"
         ));
     }
 
