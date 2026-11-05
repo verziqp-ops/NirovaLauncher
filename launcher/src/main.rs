@@ -3056,6 +3056,7 @@ impl Launcher {
     }
 
     fn instances_page(&mut self, cx: &mut Context<Self>) -> Div {
+        self.load_packs();
         let t = self.theme;
         let add = shell::icon_button("instances-add", "plus", 34., false, &t).on_click(cx.listener(
             |this, _: &ClickEvent, _, cx| {
