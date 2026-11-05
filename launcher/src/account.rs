@@ -9,7 +9,7 @@
 //! Minecraft: Java Edition, as other launchers do. Offline names play behind such an account.
 //! The game binary itself, its harnesses and the servers don't go through the launcher's gate.
 //!
-//! The Azure app (client ID) is Horizon's own and is configuration: `HORIZON_MSA_CLIENT_ID` at
+//! The Azure app (client ID) is Horizon's own and is configuration: `NIVRORA_MSA_CLIENT_ID` at
 //! build time, or at run time to override it. Without one, sign-in says it is not configured.
 pub mod session;
 
@@ -20,7 +20,7 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The keychain service name every secret is stored under.
-pub const SERVICE: &str = "dev.playhorizon.launcher";
+pub const SERVICE: &str = "app.nivrora.launcher";
 const SCOPE: &str = "XboxLive.signin offline_access";
 pub const NOT_CONFIGURED: &str =
     "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).";
@@ -28,7 +28,7 @@ pub const NOT_CONFIGURED: &str =
 /// This fork plays without an account that owns the game: the owner gate stays open, as if the
 /// hidden developer option (`offline_without_owner`) were always on. Downloading the game from
 /// Mojang still needs an owner (`backend::download_for_owner`).
-pub const GATE_OPEN: bool = true;
+pub const GATE_OPEN: bool = false;
 /// What every Play says while no account in the launcher owns the game.
 pub const NEEDS_OWNER: &str =
     "Sign in with a Microsoft account that owns Minecraft: Java Edition to play";
@@ -85,7 +85,7 @@ fn request_to(method: &str, url: &str) -> ureq::Request {
     crate::proxy::agent(
         ureq::AgentBuilder::new()
             .timeout(Duration::from_secs(20))
-            .user_agent(&format!("horizon-launcher/{}", crate::backend::VERSION)),
+            .user_agent(&format!("nivrora-launcher/{}", crate::backend::VERSION)),
         url,
     )
     .build()
@@ -713,7 +713,7 @@ impl SecretStore for SystemStore {
             let attributes = vec![("service", SERVICE), ("account", key)];
             keyring
                 .create_item(
-                    "Horizon launcher: Minecraft account",
+                    "NIVRORA Launcher: Minecraft account",
                     &attributes,
                     secret.as_bytes(),
                     true,
@@ -1125,10 +1125,19 @@ impl Accounts {
         self.save_to(&Self::path())
     }
     pub(crate) fn load_from(path: &Path) -> Self {
-        std::fs::read_to_string(path)
+        let mut accounts = std::fs::read_to_string(path)
             .ok()
             .and_then(|t| serde_json::from_str(&t).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        // A fresh installation starts with a local Guest profile. This is a launcher identity,
+        // not a Microsoft account or proof of Minecraft ownership.
+        if accounts.selected.is_none() && accounts.offline_selected.is_none() {
+            if !accounts.offline.iter().any(|name| name.eq_ignore_ascii_case("Player")) {
+                accounts.offline.push("Player".to_owned());
+            }
+            accounts.offline_selected = Some("Player".to_owned());
+        }
+        accounts
     }
     pub(crate) fn save_to(&self, path: &Path) -> Result<(), String> {
         if let Some(dir) = path.parent() {
@@ -1219,7 +1228,7 @@ impl Accounts {
                 self.selected = Some(uuid);
             }
             Player::Offline(name) => {
-                if !(offline_without_owner || GATE_OPEN) && !self.has_owner(store) {
+                if !offline_without_owner && !self.has_owner(store) {
                     return Err(OFFLINE_NEEDS_OWNER.into());
                 }
                 let name = self.add_offline(&name)?;
@@ -1438,7 +1447,7 @@ pub fn launch_for_game(
     offline_without_owner: bool,
 ) -> Result<Launch, NoOwner> {
     match launch(ep, client_id, store, accounts) {
-        Err(NoOwner) if offline_without_owner || GATE_OPEN => Ok(Launch::default()),
+        Err(NoOwner) if offline_without_owner => Ok(Launch::default()),
         pass => pass,
     }
 }
@@ -1648,7 +1657,7 @@ fn launch_as(
         .play_as(store, who.clone())
         .and_then(|()| match launch(ep, client_id, store, accounts) {
             // This fork: no owner plays offline, as `launch_for_game` lets it.
-            Err(NoOwner) if GATE_OPEN => Ok(Launch::default()),
+            Err(NoOwner) => Err(e.to_string()),
             pass => pass.map_err(|e| e.to_string()),
         });
     (
