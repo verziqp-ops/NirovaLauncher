@@ -610,7 +610,6 @@
   "Export…": "Exporter…",
   "Add another account.": "Ajoutez un autre compte.",
   "Launch…": "Lancement…",
-  "The results of benchmarks you run, for the community results on playhorizon.dev.": "The results of benchmarks you run, for the community results on playNIROVA.dev.",
   "Not ported: {item}": "Non porté : {item}",
   "Modpacks": "Modpacks",
   "{name} moved to the trash.": "{name} a été mis à la corbeille.",
@@ -657,5 +656,6 @@
   "A 64×64 (or 64×32) skin PNG and a 64×32 cape PNG, kept by the launcher and given to the game when this name plays. You see them on yourself in single player and on servers that send no skin of their own; other players see them only where the server shows skins for names (SkinsRestorer: /skin).": "Un PNG de skin 64×64 (ou 64×32) et un PNG de cape 64×32, gardés par le launcher et donnés au jeu quand ce nom joue. Vous les voyez sur vous en solo et sur les serveurs qui n'envoient pas de skin à eux ; les autres joueurs ne les voient que là où le serveur affiche les skins par nom (SkinsRestorer : /skin).",
   "Offline launcher {version}": "Launcher hors ligne {version}",
   "milk-blue": "Bleu laiteux",
-  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Les résultats des benchmarks que vous lancez, lorsque NIROVA disposera de son propre service de résultats."
 }
