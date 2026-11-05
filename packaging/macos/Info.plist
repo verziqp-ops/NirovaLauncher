@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- NIVRORA.app's Info.plist; package.sh fills in @VERSION@ from launcher/Cargo.toml. -->
+<!-- NIROVA.app's Info.plist; package.sh fills in @VERSION@ from launcher/Cargo.toml. -->
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>ru</string>
 	<key>CFBundleDisplayName</key>
-	<string>NIVRORA</string>
+	<string>NIROVA</string>
 	<key>CFBundleExecutable</key>
-	<string>nivrora-launcher</string>
+	<string>nirova-launcher</string>
 	<key>CFBundleIconFile</key>
-	<string>nivrora</string>
+	<string>nirova</string>
 	<key>CFBundleIdentifier</key>
-	<string>app.nivrora.launcher</string>
+	<string>app.nirova.launcher</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>NIVRORA</string>
+	<string>NIROVA</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -30,6 +30,6 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>NIVRORA is an independent launcher. Not an official Minecraft product; not approved by or associated with Mojang or Microsoft.</string>
+	<string>NIROVA is an independent launcher. Not an official Minecraft product; not approved by or associated with Mojang or Microsoft.</string>
 </dict>
 </plist>
