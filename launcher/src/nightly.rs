@@ -16,11 +16,12 @@ pub const INSTANCE: &str = "nightly";
 /// The version a nightly installs as: `nightly-2026-10-28-0c02067`, from its title
 /// ("Preview 2026-10-28 · 0c02067"), else its publication date.
 pub fn version_of(release: &Release) -> String {
-    let mut words = release
+    let title = release
         .name
-        .strip_prefix("Nightly ")
-        .unwrap_or_default()
-        .split(" · ");
+        .strip_prefix("Preview ")
+        .or_else(|| release.name.strip_prefix("Nightly "))
+        .unwrap_or_default();
+    let mut words = title.split(" · ");
     let date = words.next().filter(|d| is_date(d)).unwrap_or(&release.date);
     let commit = words
         .next()
@@ -44,7 +45,7 @@ pub fn label(version: &str) -> Option<String> {
     let commit = version.strip_prefix("nightly-")?.get(11..);
     Some(match commit {
         Some(commit) if !commit.is_empty() => format!("Preview · {commit}"),
-        _ => "Nightly".to_owned(),
+        _ => "Preview".to_owned(),
     })
 }
 
@@ -129,7 +130,7 @@ mod tests {
             label("nightly-2026-10-29-4baa571").as_deref(),
             Some("Preview · 4baa571")
         );
-        assert_eq!(label("nightly-2026-10-29").as_deref(), Some("Nightly"));
+        assert_eq!(label("nightly-2026-10-29").as_deref(), Some("Preview"));
         assert_eq!(label("v0.2.97"), None);
     }
 
