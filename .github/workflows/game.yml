@@ -152,7 +152,11 @@ jobs:
               tar -czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" -C "$GITHUB_WORKSPACE/dist" "nirova-game-${{ matrix.name }}"
               ;;
             *)
-              (cd "$GITHUB_WORKSPACE/dist" && 7z a -tzip "${{ matrix.asset }}" "nirova-game-${{ matrix.name }}") > /dev/null
+              if [[ "$RUNNER_OS" == Windows ]]; then
+                (cd "$GITHUB_WORKSPACE/dist" && 7z a -tzip "${{ matrix.asset }}" "nirova-game-${{ matrix.name }}") > /dev/null
+              else
+                ditto -c -k --norsrc --noextattr --noqtn --keepParent "$GITHUB_WORKSPACE/dist/nirova-game-${{ matrix.name }}" "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}"
+              fi
               ;;
           esac
           tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" >/dev/null 2>&1 || [[ "${{ matrix.name }}" != linux ]]
