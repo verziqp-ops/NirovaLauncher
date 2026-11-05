@@ -2983,8 +2983,8 @@ impl Launcher {
                             .flex()
                             .flex_col()
                             .gap(px(4.))
-                            .child(shell::text(theme::night::DISPLAY, shell::c(night::ink)).child("NIVRORA"))
-                            .child(shell::text(theme::night::UI, shell::c(night::ink_soft)).child(tr("Your game. Your settings."))),
+                            .child(shell::text(theme::night::DISPLAY, shell::c(t.night.ink)).child("NIVRORA"))
+                            .child(shell::text(theme::night::UI, shell::c(t.night.ink_soft)).child(tr("Your game. Your settings."))),
                     ),
             )
             .child(
