@@ -25,7 +25,7 @@ const KINDS: [(PackKind, &str, &str); 5] = [
     (PackKind::Shader, "Shader packs", "zap"),
     (PackKind::DataPack, "Data packs", "notes"),
 ];
-/// The kinds with a tab: NIROVA's registry's, and Modrinth's resource packs. Modrinth's mods and
+/// The kinds with a tab: external community registry's, and Modrinth's resource packs. Modrinth's mods and
 /// data packs aren't usable yet; the Modpacks tab shows while the sidebar has it open.
 const SHOWN: [PackKind; 3] = [PackKind::Mod, PackKind::ResourcePack, PackKind::Shader];
 /// Java mods checked at once.
@@ -33,7 +33,7 @@ const CHECKING: usize = 2;
 /// The sources to pick from on the Resource packs and Modpacks tabs; CurseForge is shown beside them as coming soon.
 const SOURCES: [(SourceId, &str); 2] = [
     (SourceId::Modrinth, "Modrinth"),
-    (SourceId::Horizon, "NIROVA Catalog"),
+    (SourceId::Horizon, "External Catalog"),
 ];
 const PAGE: usize = 20;
 
@@ -45,7 +45,7 @@ pub(super) enum Event {
     Updates(HashMap<(SourceId, String), String>),
     /// A Java mod's check: its jar read, or why it couldn't be.
     Checked((SourceId, String), Result<Box<Check>, String>),
-    /// What a NIROVA catalog project says before install: signed or not, what it may do.
+    /// What an external catalog project says before install: signed or not, what it may do.
     About(HashMap<String, Vec<String>>),
     /// Registry files taken down that the launcher turned off.
     TakenDown(Vec<String>),
