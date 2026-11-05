@@ -96,7 +96,7 @@ pub const NIGHT: Night = Night {
     dark: true,
 };
 
-/// The light appearance: cool blue-gray sky and surfaces with a accessible rose-pink accent.
+/// The light appearance: cool blue-gray sky and surfaces with an accessible rose-pink accent.
 pub const DAWN: Night = Night {
     sky: [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb],
     page: 0xe7edf2,
