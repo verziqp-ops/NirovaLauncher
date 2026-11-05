@@ -3,7 +3,7 @@
 //! generated from [`css`] by `cargo run -p xtask -- tokens`, which the site's build reads from main). Change a value here and all three
 //! follow. The system is described in `docs/design-system.md`.
 //!
-//! Cool neutrals in two appearances and one milk-blue accent; Geist and Geist Mono, bundled here
+//! Cool neutrals in two appearances and one rose-pink accent; Geist and Geist Mono, bundled here
 //! under the SIL Open Font License (`fonts/OFL-Geist.txt`). The launcher's night look and its
 //! Bricolage Grotesque are in [`night`]. Colours are `0xRRGGBB`; sizes
 //! are in logical pixels.
@@ -324,7 +324,7 @@ pub const LIGHT: Palette = Palette {
     ink: 0x16181f,
     ink_soft: 0x3b3e49,
     muted: 0x646875,
-    accent: 0x5b3fd6,
+    accent: 0xa94475,
     on_accent: 0xffffff,
     danger: 0xb4372a,
     success: 0x1d7a48,
@@ -340,15 +340,15 @@ pub const DARK: Palette = Palette {
     ink: 0xecedf3,
     ink_soft: 0xc5c7d1,
     muted: 0x8b8f9c,
-    accent: 0x9a86ff,
-    on_accent: 0x0d0e13,
+    accent: 0xf09bc3,
+    on_accent: 0x17232c,
     danger: 0xf07a68,
     success: 0x45c27a,
     dark: true,
 };
 
 /// NIVRORA's launcher surfaces: graphite and blue-gray in dark mode, cool mist in light mode,
-/// with a milk-blue primary action. The game's menus keep [`LIGHT`] and [`DARK`].
+/// with a restrained pink primary action. The game's menus keep [`LIGHT`] and [`DARK`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Blocks {
     /// The window behind everything, tiled with a faint stone texture.
