@@ -114,7 +114,8 @@ fn a_picked_hue_is_any_degree_and_survives_settings_json() {
     assert_eq!(Accent::parse("217"), Some(Accent::custom(217.)));
     assert_eq!(Accent::custom(370.).name(), "10");
     assert_eq!(Accent::custom(212.).name(), "blue");
-    assert_eq!(Accent::VIOLET.name(), "violet");
+    assert_eq!(Accent::VIOLET.name(), "milk-blue");
+    assert_eq!(Accent::parse("violet"), Some(Accent::VIOLET));
     let saved = serde_json::to_string(&Accent::custom(217.5)).unwrap();
     assert_eq!(saved, "\"217.5\"");
     assert_eq!(
