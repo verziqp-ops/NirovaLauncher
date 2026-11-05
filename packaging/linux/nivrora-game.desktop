@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=NIVRORA
+Comment=NIVRORA game window
+Exec=horizon-client
+Icon=nivrora
+Terminal=false
+Categories=Game;
+StartupWMClass=nivrora
+NoDisplay=true
