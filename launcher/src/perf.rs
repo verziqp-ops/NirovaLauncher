@@ -25,6 +25,14 @@ pub fn process_started() -> Instant {
 const IDLE_GAP: Duration = Duration::from_millis(250);
 /// Bound frame-time diagnostics during long sessions (about 8 minutes at 60 FPS).
 const MAX_UI_FRAME_SAMPLES: usize = 30_000;
+/// Keep long-running metric histories bounded too (one sample per five-second probe is ample).
+const MAX_METRIC_SAMPLES: usize = 600;
+
+fn push_bounded<T>(samples: &mut Vec<T>, value: T, limit: usize) {
+    if samples.len() < limit {
+        samples.push(value);
+    }
+}
 pub use horizon_launcher::backend::GAME_FIRST_FRAME;
 
 pub struct Perf {
@@ -100,7 +108,11 @@ impl Perf {
 
     /// One more value of a measurement; the report keeps their summary.
     pub fn record(&mut self, name: &str, value: f64) {
-        self.values.entry(name.to_owned()).or_default().push(value);
+        push_bounded(
+            self.values.entry(name.to_owned()).or_default(),
+            value,
+            MAX_METRIC_SAMPLES,
+        );
         self.dirty = true;
     }
 
@@ -143,8 +155,12 @@ impl Perf {
         if let Some(rss) = horizon_bench::rss_bytes(std::process::id()) {
             self.values
                 .entry("launcher.rss_mb".into())
-                .or_default()
-                .push(rss as f64 / f64::from(1 << 20));
+                .or_default();
+            push_bounded(
+                self.values.get_mut("launcher.rss_mb").expect("RSS metric inserted"),
+                rss as f64 / f64::from(1 << 20),
+                MAX_METRIC_SAMPLES,
+            );
         }
         if self.dirty {
             self.save();
@@ -439,6 +455,17 @@ fn binary_bytes() -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn diagnostic_histories_stop_growing_at_their_limits() {
+        let mut samples = Vec::new();
+        for value in 0..(MAX_METRIC_SAMPLES + 50) {
+            push_bounded(&mut samples, value, MAX_METRIC_SAMPLES);
+        }
+        assert_eq!(samples.len(), MAX_METRIC_SAMPLES);
+        assert_eq!(samples.first(), Some(&0));
+        assert_eq!(samples.last(), Some(&(MAX_METRIC_SAMPLES - 1)));
+    }
 
     #[test]
     fn performance_tracking_starts_without_hardware_probes() {
