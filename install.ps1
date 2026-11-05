@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Installs Horizon Offline Launcher on Windows: the launcher, a Start menu shortcut and a desktop
+  Installs Nirova Launcher on Windows: the launcher, a Start menu shortcut and a desktop
   shortcut. No administrator rights needed.
 
 .DESCRIPTION
   One line, in PowerShell:
-    irm https://github.com/gerdaroot/Horizon-Offline-Launcher/releases/latest/download/install.ps1 | iex
+    irm https://github.com/verziqp-ops/NirovaLauncher/releases/latest/download/install.ps1 | iex
 
   Or with a launcher you built yourself (build.ps1 does this for you):
     .\install.ps1 -Exe launcher\target\release\horizon-launcher.exe
@@ -18,11 +18,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Repo = "gerdaroot/Horizon-Offline-Launcher"
+$Repo = "verziqp-ops/NirovaLauncher"
 $Asset = "horizon-launcher-windows-x64.zip"
-$Name = "Horizon Offline Launcher"
-$Dir = Join-Path $env:LOCALAPPDATA "Programs\HorizonOfflineLauncher"
-$Target = Join-Path $Dir "horizon-offline-launcher.exe"
+$Name = "Nirova Launcher"
+$Dir = Join-Path $env:LOCALAPPDATA "Programs\NirovaLauncher"
+$Target = Join-Path $Dir "nirova-launcher.exe"
 
 function Say($text) { Write-Host "  $text" }
 
@@ -47,7 +47,7 @@ if ($Exe) {
     $url = "https://github.com/$Repo/releases/latest/download/$Asset"
     Say "Downloading the latest release"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $work = Join-Path $env:TEMP "horizon-offline-launcher-install"
+    $work = Join-Path $env:TEMP "nirova-launcher-install"
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $work | Out-Null
     $zip = Join-Path $work $Asset
@@ -71,7 +71,7 @@ foreach ($lnk in $places) {
     $s.TargetPath = $Target
     $s.WorkingDirectory = $Dir
     $s.IconLocation = "$Target,0"
-    $s.Description = "Play Horizon (Minecraft 26.3 in Rust) without a Microsoft account"
+    $s.Description = "Launch Nirova Launcher"
     $s.Save()
 }
 Say "Shortcuts: Start menu and desktop"
