@@ -37,7 +37,7 @@ chmod 755 "$app/Contents/MacOS/nirova-launcher"
 # Build the macOS icon from NIROVA's own 512px app mark; no upstream Horizon icon is used.
 iconset="$out/nirova.iconset"
 mkdir -p "$iconset"
-source_icon="$here/../icons/hicolor/512x512/apps/nivrora.png"
+source_icon="$here/../icons/hicolor/512x512/apps/nirova.png"
 for size in 16 32 64 128 256 512; do
   sips -z "$size" "$size" "$source_icon" --out "$iconset/icon_${size}x${size}.png" >/dev/null
 done
