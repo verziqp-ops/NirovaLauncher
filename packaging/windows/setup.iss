@@ -3,7 +3,7 @@
 ; It installs for this user only, without administrator rights, in the same place as install.ps1
 ; (%LOCALAPPDATA%\Programs\NirovaLauncher), so either one updates the other's install and the
 ; launcher's own updates replace the same file. Uninstalling keeps the game, worlds and settings
-; (%APPDATA%\nirova-launcher).
+; (%APPDATA%\horizon-launcher), preserving existing profiles and settings.
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
