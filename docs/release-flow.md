@@ -1,38 +1,51 @@
-# Nirova release flow
+# Релизы NIROVA
 
-Nirova owns its game and launcher release channels. Game packages are built from this repository's checkout; the game workflow does not download or unpack prebuilt archives from `horizon-rust/horizon`.
+Этот документ описывает фактическую схему публикации. Наличие файла в GitHub Releases само по себе не означает, что сборка проверена.
 
-## Game channels
+## Пакеты лаунчера
 
-| Channel | Trigger | Release tag | Meaning |
-| --- | --- | --- | --- |
-| Stable | Push a version tag such as `v1.2.3` | `v1.2.3` | Stable game build |
-| Preview | Run `.github/workflows/game.yml` with `workflow_dispatch` | `nightly` | Preview build; the launcher displays it as Preview |
+Workflow `.github/workflows/launcher.yml` собирает:
 
-The GitHub tag `nightly` is retained for compatibility with existing signed-update handling. It is Nirova's own channel: its build is compiled from this repository and its checksum list is signed for the separate `nightly` channel. Stable releases are signed for their own version tag. A signature from one channel cannot be replayed as the other.
+| Платформа | Артефакты |
+| --- | --- |
+| Windows x64 | `NIROVA-Setup.exe` и `nirova-launcher-windows-x64.zip` |
+| Linux x86_64 | `nirova-launcher-linux-x86_64.tar.gz` |
+| macOS Apple Silicon | `nirova-launcher-macos-arm64.zip` и `nirova-launcher-macos-arm64.dmg` |
+| macOS Intel | `nirova-launcher-macos-x64.zip` и `nirova-launcher-macos-x64.dmg` |
 
-## What the game workflow builds
+DMG и ZIP создаются из app bundle `NIROVA.app`. Сейчас скрипт подписывает приложение ad-hoc, если не передан Developer ID. Это не равно полноценной Developer ID подписи и notarization; для публичного macOS релиза нужны Apple Developer ID secrets и notarization profile либо отдельная инструкция по Gatekeeper.
 
-`.github/workflows/game.yml` runs on relevant pull requests, on `v*` tags and when Preview is dispatched.
+## Публикация
 
-- Linux x86_64, Windows x64, macOS arm64 and macOS x64 game packages.
-- Linux x86_64, macOS arm64 and macOS x64 dedicated-server packages.
-- `horizon-client`, `horizon-prepare` and `horizon-server` are compiled from this checkout.
-- Each game package includes the matching resource-preparer source, Java parity/exporter sources and `research-lock.json`. The launcher uses these to prepare resources from the player's own official Minecraft installation.
-- No Mojang game jar or asset bundle is republished by the workflow. The user prepares resources locally from their own game installation.
+1. Обновить версию в `launcher/Cargo.toml`.
+2. Проверить lockfile и запустить тесты лаунчера.
+3. Убедиться, что PR workflow завершился успешно на всех build jobs.
+4. Слить проверенный код в `main`.
+5. Создать тег `launcher@X.Y.Z` на точном commit в `main`.
+6. Workflow соберёт платформенные архивы, подпишет `SHA256SUMS` и `SHA256SUMS.sig`, проверит подпись тем же механизмом, который использует лаунчер, и опубликует релиз.
+7. Проверить состав релиза: каждый ожидаемый файл, контрольные суммы, подпись и release notes.
 
-Pull-request runs build and package artifacts but never publish a release. A release job signs every package with `tools/ci/sign_release.sh`, verifies the signature with `horizon-release-sign`, then publishes the assets and `SHA256SUMS` files.
+Секрет `RELEASE_SIGNING_KEY` обязателен для подписанного релиза. Без него публикация должна завершиться ошибкой, а не считаться успешной.
 
-## Launcher channel and compatibility
+## Разделение каналов
 
-The launcher reads game releases from `verziqp-ops/NirovaLauncher`. New packages use `nirova-game-*` names; the updater also recognises the previous `horizon-*` asset names so older releases remain installable for rollback. The server installer reads the Nirova repository and uses the `nirova-server-*` packages.
+В репозитории одновременно есть game releases с тегами `vX.Y.Z` и launcher releases с тегами `launcher@X.Y.Z`. Нельзя полагаться на общий GitHub alias `releases/latest` для выбора нужного продукта: установщик и self-updater должны выбирать релиз именно с префиксом `launcher@`, а загрузчик игры — игровой тег/канал. Перед следующим публичным релизом нужно проверить все URL выбора последнего релиза.
 
-Launcher self-updates are separate: `.github/workflows/launcher.yml` builds Windows, Linux and macOS packages for tags `launcher@X.Y.Z`. Its artifacts are named `nirova-launcher-*`.
+## Чеклист перед публикацией
 
-## Validation and release status
+- [ ] CI tests зелёные.
+- [ ] Windows x64 installer и updater ZIP присутствуют.
+- [ ] Linux x86_64 archive присутствует.
+- [ ] macOS arm64 ZIP и DMG присутствуют.
+- [ ] macOS x64 ZIP и DMG присутствуют.
+- [ ] SHA256SUMS содержит все распространяемые бинарные пакеты.
+- [ ] SHA256SUMS.sig проходит локальную проверку.
+- [ ] Release notes объясняют установку, системные требования и известные ограничения.
+- [ ] Ссылки установки ведут на launcher release, а не на game release.
+- [ ] Обновление поверх предыдущей версии сохраняет настройки, профили и игровые данные.
+- [ ] Для macOS ясно указано состояние Developer ID/notarization.
+- [ ] Публичная загрузка не содержит пустых или частичных черновых релизов.
 
-A successful workflow run is required before a build can be described as a release. A pull-request build is not a published installer. Do not announce a version as playable until the platform packages have completed and a clean installation has been tested.
+## Ограничение проверки
 
-## Region simulation
-
-The deterministic region executor in `horizon-threads::region` is infrastructure only. The live world tick remains sequential until region ownership, RNG ordering, cross-region effects and vanilla differential tests are implemented. See [regional multithreading](region-threading-ru.md).
+Сборка на GitHub Actions проверяет компиляцию и тесты. Она не заменяет проверку установки и первого запуска на реальных Windows, Linux и macOS системах. До такой проверки релиз нельзя называть полностью подтверждённым.
