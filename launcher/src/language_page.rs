@@ -1,4 +1,4 @@
-//! Settings' Language row (`horizon_launcher::i18n`): a dropdown of the system's language and the
+//! Settings' Language row: a dropdown of the launcher's supported languages and the
 //! ones the launcher has, each named in itself. A list rather than a segment per language: nine
 //! segments took the row's whole width and left the row's own sentence a character wide.
 use super::*;
