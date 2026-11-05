@@ -36,22 +36,22 @@ almost nothing but type. What we take from it is its restraint rather than its c
 
 ### Colour
 
-Cool, slightly blue neutrals in two appearances with the same restraint, and NIVRORA's milk-blue.
+Graphite and blue-gray neutrals in dark mode, cool mist surfaces in light mode, and NIVRORA's milk-blue.
 Every text colour passes WCAG AA (4.5:1) on every background it is used on; the tests in
 `horizon-theme` check each pair in both palettes.
 
 | Token        | Light     | Dark      | Use |
 |--------------|-----------|-----------|-----|
-| `page`       | `#fafafc` | `#0d0e13` | the background |
-| `plate_soft` | `#f3f3f8` | `#181a22` | hover plate, fields, segmented track, console |
-| `plate`      | `#ebecf4` | `#20222c` | pressed plate, switch off, the faint wordmark |
-| `surface`    | `#ffffff` | `#16181f` | dialogs and menus that sit above the page |
-| `rule`       | `#e2e3ea` | `#24262f` | 1 px rules between rows, tracks |
-| `ink`        | `#16181f` | `#ecedf3` | text, selection, slider fill, the inverted segment |
-| `ink_soft`   | `#3b3e49` | `#c5c7d1` | secondary text, values |
-| `muted`      | `#646875` | `#8b8f9c` | labels, descriptions, mono indices and details |
-| `accent`     | `#5b3fd6` | `#9a86ff` | the main action, links, focus, progress |
-| `on_accent`  | `#ffffff` | `#0d0e13` | text on the accent |
+| `page`       | `#e9f0f4` | `#151c25` | the background |
+| `plate_soft` | `#dfe8ee` | `#1c2834` | hover plate, fields, segmented track, console |
+| `plate`      | `#f7fafc` | `#253442` | pressed plate, switch off, the faint wordmark |
+| `surface`    | `#f7fafc` | `#253442` | dialogs and menus that sit above the page |
+| `rule`       | `#d5e1e8` | `#35495a` | 1 px rules between rows, tracks |
+| `ink`        | `#182a36` | `#f0f6fa` | text, selection, slider fill, the inverted segment |
+| `ink_soft`   | `#3e5665` | `#c7d7e2` | secondary text, values |
+| `muted`      | `#536b7a` | `#9db2c1` | labels, descriptions, mono indices and details |
+| `accent`     | `#347b95` | `#a8d8e8` | the main action, links, focus, progress |
+| `on_accent`  | `#ffffff` | `#142630` | text on the accent |
 | `danger`     | `#b4372a` | `#f07a68` | errors, the crash notice's dot |
 | `success`    | `#1d7a48` | `#45c27a` | "Matches vanilla", "Ready" |
 
@@ -230,7 +230,7 @@ Light); `tokens.css` carries them as `--night-*`. The game's menus don't use it.
 
 | Token       | Night     | Dawn      | Use |
 |-------------|-----------|-----------|-----|
-| `sky-0…5`   | `#07061a` `#140f38` `#2a1656` `#5b2a78` `#b0477d` `#f08a5d` | `#c9d3f2` `#dcd8f3` `#ead5ec` `#f5d3d8` `#f9d6bd` `#fbe4c6` | the sky, top to horizon |
+| `sky-0…5`   | `#111923` `#172331` `#1b2b3a` `#202f3e` `#243445` `#293a4a` | `#e2eaf0` `#e6edf2` `#ebf0f4` `#e5edf2` `#dfe9ef` `#d7e3eb` | the sky, top to horizon |
 | `card`      | `#15112e` at 84 % | `#fdfcff` at 86 % | plates |
 | `card-hi`   | `#231c4a` at 90 % | `#ffffff` at 94 % | a selected or raised plate |
 | `stroke`, `rule` | `#b9acff` at 12 %, 10 % | `#3b2f78` at 12 %, 10 % | a plate's inner stroke, rules between rows |
