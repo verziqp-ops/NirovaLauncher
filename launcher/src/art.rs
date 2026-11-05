@@ -43,6 +43,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn blurred_background_keeps_its_expected_dimensions() {
+        let image = bake_blurred(&[[0x11, 0x22, 0x33, 255]; 4], 2, 2, 4., 2., 3.);
+        let size = image.size(0);
+        assert_eq!((size.width.0, size.height.0), (16, 16));
+    }
+
+    #[test]
     fn texels_cover_whole_device_pixels() {
         let image = bake(&[[0x11, 0x22, 0x33, 255]; 4], 2, 2, 4., 2.);
         let size = image.size(0);
