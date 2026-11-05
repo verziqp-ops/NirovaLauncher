@@ -38,10 +38,10 @@ MACHINE=$(uname -m)
 # A shell under Rosetta 2 says x86_64 on Apple Silicon: the native build runs faster there.
 [ "$(uname -s)" = Darwin ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ] && MACHINE=arm64
 case "$(uname -s)-$MACHINE" in
-  Linux-x86_64) ASSETS="nirova-server-linux-x86_64.tar.gz nirova-game-linux-x86_64.tar.gz" ;;
-  Darwin-arm64) ASSETS=nirova-server-macos-arm64.zip ;;
+  Linux-x86_64) ASSETS="nirova-server-linux-x86_64.tar.gz horizon-server-linux-x86_64.tar.gz horizon-linux-x86_64.tar.gz" ;;
+  Darwin-arm64) ASSETS="nirova-server-macos-arm64.zip horizon-macos-arm64.zip" ;;
   # Intel Macs: the Nightlies built since #1161.
-  Darwin-x86_64) ASSETS=nirova-server-macos-x64.zip ;;
+  Darwin-x86_64) ASSETS="nirova-server-macos-x64.zip horizon-macos-x64.zip" ;;
   *) die "no Horizon release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
 esac
 
