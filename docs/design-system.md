@@ -51,7 +51,7 @@ Every text colour passes WCAG AA (4.5:1) on every background it is used on; the 
 | `ink_soft`   | `#3e5665` | `#c7d7e2` | secondary text, values |
 | `muted`      | `#4b6271` | `#b9cbd6` | labels, descriptions, mono indices and details |
 | `accent`     | `#a94475` | `#f09bc3` | the main action, links, focus, progress |
-| `on_accent`  | ``#ffffff` | `#17232c` | text on the accent |
+| `on_accent`  | `#ffffff` | `#17232c` | text on the accent |
 | `danger`     | `#a3301d` | `#ffb3a8` | errors, the crash notice's dot |
 | `success`    | `#136336` | `#7ae2a9` | "Matches vanilla", "Ready" |
 
