@@ -177,7 +177,6 @@
   "Nothing found that runs in Horizon. Show everything lists the rest.": "Rien trouvé qui fonctionne dans NIROVA. Tout afficher liste le reste.",
   "The launcher goes down when the game starts, and comes back when it closes.": "Le launcher se réduit quand le jeu démarre et revient quand il se ferme.",
   "GameMode": "GameMode",
-  "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is sent whatever the switches say.": "Pendant que vous jouez, le jeu envoie un ping anonyme « En jeu » une fois par minute afin que le lanceur puisse afficher combien de personnes jouent à NIROVA en ce moment. Il contient : un nombre aléatoire créé au démarrage du jeu et oublié à sa fermeture, la version d'NIROVA, votre système d'exploitation (Linux, macOS ou Windows) et si vous avez un monde ouvert en LAN ou pour des amis. Il ne contient pas : votre compte, votre identifiant d'installation, les noms de mondes ou de serveurs, ni quoi que ce soit que vous fassiez en jeu, et le serveur ne conserve pas votre adresse IP. Il est envoyé quelle que soit la position des interrupteurs.",
   "When you report it on Discord, attach the crash report file (or paste it with Copy report) and say what you were doing.": "Pour le signaler sur Discord, joignez le rapport de plantage (ou collez-le avec Copier le rapport) et dites ce que vous faisiez.",
   "Get my server": "Obtenir mon serveur",
   "New instance": "Nouvelle instance",
@@ -414,7 +413,7 @@
   "Filters": "Filtres",
   "{count} followers": "{count} abonnés",
   "Connect an AI agent": "Connect an AI agent",
-  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playNIROVA.dev says how long it is kept.",
+  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. The project's privacy notice explains how long its data is kept.",
   "Players": "Joueurs",
   "simulation distance": "distance de simulation",
   "Updated": "Mis à jour",
@@ -657,5 +656,6 @@
   "Native mod builds": "Builds avec mods natifs",
   "A 64×64 (or 64×32) skin PNG and a 64×32 cape PNG, kept by the launcher and given to the game when this name plays. You see them on yourself in single player and on servers that send no skin of their own; other players see them only where the server shows skins for names (SkinsRestorer: /skin).": "Un PNG de skin 64×64 (ou 64×32) et un PNG de cape 64×32, gardés par le launcher et donnés au jeu quand ce nom joue. Vous les voyez sur vous en solo et sur les serveurs qui n'envoient pas de skin à eux ; les autres joueurs ne les voient que là où le serveur affiche les skins par nom (SkinsRestorer : /skin).",
   "Offline launcher {version}": "Launcher hors ligne {version}",
-  "milk-blue": "Bleu laiteux"
+  "milk-blue": "Bleu laiteux",
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
 }
