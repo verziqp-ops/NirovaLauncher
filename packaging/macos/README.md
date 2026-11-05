@@ -3,8 +3,7 @@
 `package.sh BINARY VERSION OUTDIR` (run by `.github/workflows/launcher.yml` on macOS) makes:
 
 - `NIVRORA.app`: `Contents/MacOS/nivrora-launcher`, `Contents/Info.plist` (this folder's, bundle
-  id `app.nivrora.launcher`, macOS 11 or later), `Contents/Resources/nivrora.icns`
-  (`packaging/icons`, from `cargo run -p xtask -- icons`).
+  id `app.nivrora.launcher`, macOS 11 or later), `Contents/Resources/nivrora.icns` (generated from NIVRORA's 512 px PNG app icon by `iconutil`).
 - `nivrora-launcher-macos-arm64.dmg`: the installer. Opening it shows the app and a link to
   Applications over `background.png` / `background@2x.png` (drawn from `background.html`); the
   player drags one onto the other. Built by [dmgbuild](https://github.com/dmgbuild/dmgbuild),
