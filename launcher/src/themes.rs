@@ -2,9 +2,9 @@
 //! Home.
 //!
 //! An accent is a hue, and the player may pick any of them; seven hues have names, as shortcuts.
-//! NIVRORA's milk-blue is the default. Another hue turns the violet tokens (`horizon_theme::Blocks`'
+//! NIVRORA's milk-blue is the default. Another hue turns the milk-blue tokens (`horizon_theme::Blocks`'
 //! accent and the main action's face, bevel and lip) to it, keeping their saturation and
-//! lightness, then darkens or lightens each just enough to read as well as the violet does: white
+//! lightness, then darkens or lightens each just enough to read as well as the milk-blue does: white
 //! on the face at 4.5:1, the accent at 3:1 on every background.
 use horizon_theme::{contrast, Blocks};
 use std::path::{Path, PathBuf};
@@ -18,7 +18,7 @@ pub struct Accent {
 }
 
 /// [`Accent::ALL`]'s names, in its order.
-const NAMES: [&str; 7] = ["violet", "blue", "teal", "green", "amber", "red", "pink"];
+const NAMES: [&str; 7] = ["milk-blue", "blue", "teal", "green", "amber", "red", "pink"];
 
 impl Accent {
     pub const VIOLET: Accent = Accent { hue: None };
@@ -53,7 +53,7 @@ impl Accent {
             .position(|a| *a == self)
             .map(|i| NAMES[i].to_owned());
         named.unwrap_or_else(|| match self.hue {
-            None => "violet".to_owned(),
+            None => "milk-blue".to_owned(),
             Some(hue) => format!("{hue}"),
         })
     }
@@ -61,8 +61,8 @@ impl Accent {
     /// A name, or a hue in degrees.
     pub fn parse(name: &str) -> Option<Self> {
         let name = name.trim().to_ascii_lowercase();
-        let name = if name == "purple" || name == "default" {
-            "violet"
+        let name = if name == "violet" || name == "purple" || name == "default" {
+            "milk-blue"
         } else {
             &name
         };
@@ -75,7 +75,7 @@ impl Accent {
             .map(Self::custom)
     }
 
-    /// Its hue in degrees; None for the violet, whose tokens stay as they are.
+    /// Its hue in degrees; None for milk-blue, whose tokens stay as they are.
     pub fn hue(self) -> Option<f32> {
         self.hue
     }
