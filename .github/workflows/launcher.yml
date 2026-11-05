@@ -1,4 +1,4 @@
-# Nirova Launcher: tests on every push and pull request; a tag `launcher@1.2.3` builds the
+# NIVRORA Launcher: tests on every push and pull request; a tag `launcher@1.2.3` builds the
 # launcher for Windows (with its installer), Linux and macOS, signs the checksums and publishes them
 # as a GitHub release, which launchers already installed update themselves from.
 name: launcher
@@ -131,7 +131,7 @@ jobs:
         if: runner.os == 'Windows'
         with:
           name: NIVRORA-Setup.exe
-          path: dist/Nirova-Setup.exe
+          path: dist/NIVRORA-Setup.exe
 
   release:
     needs: [test, build]
@@ -156,7 +156,7 @@ jobs:
         run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag "$GITHUB_REF_NAME" dist
       - uses: softprops/action-gh-release@v2
         with:
-          name: Nirova Launcher ${{ github.ref_name }}
+          name: NIVRORA Launcher ${{ github.ref_name }}
           files: |
             dist/*
             install.ps1
