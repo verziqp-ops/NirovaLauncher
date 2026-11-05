@@ -1,30 +1,32 @@
 //! Deterministic region-job executor.
 //!
-//! This is the worker and commit-ordering layer for region simulation. Jobs read immutable
-//! snapshots and return deltas; the caller applies those deltas at a tick barrier. It deliberately
-//! does not expose shared mutable world state to workers. The live Game tick remains sequential
-//! until its world storage, RNG streams and cross-region effects can use this protocol without
-//! changing vanilla ordering.
+//! Jobs read immutable snapshots and return deltas. Workers never receive shared mutable world
+//! state. Results and cross-region messages are ordered at the tick barrier. This executor is
+//! infrastructure only: the live Game tick remains sequential until world ownership, RNG streams
+//! and cross-region effects can use this protocol without changing vanilla ordering.
 
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc, Mutex,
 };
 
-/// A region in the horizontal chunk grid. One region contains 8 × 8 chunks.
+/// A region in one game dimension. One region contains 32 × 32 chunks.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct RegionId {
+    /// The game's stable dimension key, assigned by the caller.
+    pub dimension: i32,
     pub x: i32,
     pub z: i32,
 }
 
 impl RegionId {
-    pub const CHUNKS_PER_REGION: i32 = 8;
+    pub const CHUNKS_PER_REGION: i32 = 32;
 
     /// Maps a chunk coordinate to its owning region. Euclidean division matters for negative
     /// coordinates: chunk -1 belongs to region -1, not region 0.
-    pub fn from_chunk(chunk_x: i32, chunk_z: i32) -> Self {
+    pub fn from_chunk(dimension: i32, chunk_x: i32, chunk_z: i32) -> Self {
         Self {
+            dimension,
             x: chunk_x.div_euclid(Self::CHUNKS_PER_REGION),
             z: chunk_z.div_euclid(Self::CHUNKS_PER_REGION),
         }
@@ -49,15 +51,18 @@ pub struct RegionResult<R> {
     pub output: R,
 }
 
-/// A cross-region effect emitted by a job. `local_order` preserves the order within that job;
-/// `job_order` preserves the caller-assigned canonical order between jobs. Messages are applied
-/// only after the worker barrier, never by mutating another worker's snapshot.
+/// A cross-region effect emitted by a job. Its stable order is
+/// `(tick, source_region, source_sequence, target_position)`. Messages are applied only after the
+/// worker barrier, never by mutating another worker's snapshot.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RegionMessage<T> {
-    pub job_order: u64,
-    pub local_order: u32,
+    pub tick: u64,
     pub source: RegionId,
+    pub source_sequence: u64,
     pub target: RegionId,
+    pub target_x: i32,
+    pub target_y: i32,
+    pub target_z: i32,
     pub payload: T,
 }
 
@@ -65,7 +70,11 @@ pub struct RegionMessage<T> {
 pub enum RegionScheduleError {
     MixedTicks,
     DuplicateJobOrder(u64),
-    DuplicateMessageOrder { job_order: u64, local_order: u32 },
+    DuplicateMessageOrder {
+        tick: u64,
+        source: RegionId,
+        source_sequence: u64,
+    },
 }
 
 impl std::fmt::Display for RegionScheduleError {
@@ -76,11 +85,12 @@ impl std::fmt::Display for RegionScheduleError {
                 write!(f, "region job order {order} is not unique")
             }
             Self::DuplicateMessageOrder {
-                job_order,
-                local_order,
+                tick,
+                source,
+                source_sequence,
             } => write!(
                 f,
-                "region message order ({job_order}, {local_order}) is not unique"
+                "region message order ({tick}, {source:?}, {source_sequence}) is not unique"
             ),
         }
     }
@@ -133,7 +143,7 @@ impl RegionScheduler {
         let mut order: Vec<usize> = (0..jobs.len()).collect();
         order.sort_by_key(|&index| (jobs[index].order, jobs[index].region));
         for pair in order.windows(2) {
-            let (left, right) = (jobs[pair[0]], jobs[pair[1]]);
+            let (left, right) = (pair[0], pair[1]);
             if jobs[left].order == jobs[right].order {
                 return Err(RegionScheduleError::DuplicateJobOrder(jobs[left].order));
             }
@@ -179,25 +189,30 @@ impl RegionScheduler {
     }
 }
 
-/// Orders messages at the tick barrier and rejects ambiguous sequence numbers.
+/// Orders cross-region messages at the tick barrier and rejects ambiguous sequence numbers.
 pub fn order_messages<T>(
     mut messages: Vec<RegionMessage<T>>,
 ) -> Result<Vec<RegionMessage<T>>, RegionScheduleError> {
     messages.sort_by_key(|message| {
         (
-            message.job_order,
-            message.local_order,
+            message.tick,
             message.source,
+            message.source_sequence,
+            message.target_x,
+            message.target_y,
+            message.target_z,
             message.target,
         )
     });
     for pair in messages.windows(2) {
-        if pair[0].job_order == pair[1].job_order
-            && pair[0].local_order == pair[1].local_order
+        if pair[0].tick == pair[1].tick
+            && pair[0].source == pair[1].source
+            && pair[0].source_sequence == pair[1].source_sequence
         {
             return Err(RegionScheduleError::DuplicateMessageOrder {
-                job_order: pair[0].job_order,
-                local_order: pair[0].local_order,
+                tick: pair[0].tick,
+                source: pair[0].source,
+                source_sequence: pair[0].source_sequence,
             });
         }
     }
@@ -209,23 +224,32 @@ mod tests {
     use super::*;
     use std::sync::Barrier;
 
+    fn region(x: i32, z: i32) -> RegionId {
+        RegionId {
+            dimension: 0,
+            x,
+            z,
+        }
+    }
+
     fn job(tick: u64, order: u64, x: i32, z: i32, values: Vec<i32>) -> RegionJob<Vec<i32>> {
         RegionJob {
             tick,
             order,
-            region: RegionId { x, z },
+            region: region(x, z),
             snapshot: Arc::new(values),
         }
     }
 
     #[test]
     fn negative_chunk_coordinates_use_euclidean_regions() {
-        assert_eq!(RegionId::from_chunk(0, 0), RegionId { x: 0, z: 0 });
-        assert_eq!(RegionId::from_chunk(7, 7), RegionId { x: 0, z: 0 });
-        assert_eq!(RegionId::from_chunk(8, 8), RegionId { x: 1, z: 1 });
-        assert_eq!(RegionId::from_chunk(-1, -1), RegionId { x: -1, z: -1 });
-        assert_eq!(RegionId::from_chunk(-8, -8), RegionId { x: -1, z: -1 });
-        assert_eq!(RegionId::from_chunk(-9, -9), RegionId { x: -2, z: -2 });
+        assert_eq!(RegionId::from_chunk(0, 0, 0), region(0, 0));
+        assert_eq!(RegionId::from_chunk(0, 31, 31), region(0, 0));
+        assert_eq!(RegionId::from_chunk(0, 32, 32), region(1, 1));
+        assert_eq!(RegionId::from_chunk(0, -1, -1), region(-1, -1));
+        assert_eq!(RegionId::from_chunk(0, -32, -32), region(-1, -1));
+        assert_eq!(RegionId::from_chunk(0, -33, -33), region(-2, -2));
+        assert_eq!(RegionId::from_chunk(-1, 0, 0).dimension, -1);
     }
 
     #[test]
@@ -290,20 +314,26 @@ mod tests {
     }
 
     #[test]
-    fn message_order_is_stable_and_unique() {
+    fn messages_commit_in_canonical_source_order() {
         let messages = vec![
             RegionMessage {
-                job_order: 2,
-                local_order: 1,
-                source: RegionId { x: 1, z: 0 },
-                target: RegionId { x: 2, z: 0 },
+                tick: 2,
+                source: region(1, 0),
+                source_sequence: 0,
+                target: region(2, 0),
+                target_x: 64,
+                target_y: 5,
+                target_z: 1,
                 payload: "east",
             },
             RegionMessage {
-                job_order: 1,
-                local_order: 0,
-                source: RegionId { x: 0, z: 0 },
-                target: RegionId { x: 1, z: 0 },
+                tick: 2,
+                source: region(0, 0),
+                source_sequence: 0,
+                target: region(1, 0),
+                target_x: 32,
+                target_y: 5,
+                target_z: 1,
                 payload: "west",
             },
         ];
@@ -314,25 +344,32 @@ mod tests {
         );
         let duplicate = vec![
             RegionMessage {
-                job_order: 1,
-                local_order: 0,
-                source: RegionId { x: 0, z: 0 },
-                target: RegionId { x: 1, z: 0 },
+                tick: 1,
+                source: region(0, 0),
+                source_sequence: 7,
+                target: region(1, 0),
+                target_x: 32,
+                target_y: 0,
+                target_z: 0,
                 payload: (),
             },
             RegionMessage {
-                job_order: 1,
-                local_order: 0,
-                source: RegionId { x: 1, z: 0 },
-                target: RegionId { x: 0, z: 0 },
+                tick: 1,
+                source: region(0, 0),
+                source_sequence: 7,
+                target: region(-1, 0),
+                target_x: -1,
+                target_y: 0,
+                target_z: 0,
                 payload: (),
             },
         ];
         assert_eq!(
             order_messages(duplicate),
             Err(RegionScheduleError::DuplicateMessageOrder {
-                job_order: 1,
-                local_order: 0
+                tick: 1,
+                source: region(0, 0),
+                source_sequence: 7
             })
         );
     }
