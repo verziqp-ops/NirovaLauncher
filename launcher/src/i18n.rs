@@ -16,6 +16,7 @@ pub enum Language {
     English,
     #[serde(rename = "fr")]
     French,
+    #[default]
     #[serde(rename = "ru")]
     Russian,
     #[serde(rename = "de")]
@@ -24,7 +25,6 @@ pub enum Language {
     Chinese,
     #[serde(rename = "es")]
     Spanish,
-    #[default]
     #[serde(rename = "uk")]
     Ukrainian,
     #[serde(rename = "pl")]
@@ -114,12 +114,12 @@ impl Language {
         preferred
             .into_iter()
             .find_map(Self::parse)
-            .unwrap_or(Language::Ukrainian)
+            .unwrap_or(Language::Russian)
     }
 
     /// The launcher's first-run language. Players can choose another language in Settings.
     pub fn system() -> Self {
-        Self::Ukrainian
+        Self::Russian
     }
 
     /// The table, as shipped: English text to this language's.
@@ -140,7 +140,7 @@ impl Language {
     }
 }
 
-static CURRENT: AtomicU8 = AtomicU8::new(6);
+static CURRENT: AtomicU8 = AtomicU8::new(2);
 
 /// Shows the launcher in `language` from now on.
 pub fn set(language: Language) {
