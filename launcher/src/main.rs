@@ -346,7 +346,7 @@ struct Launcher {
     /// The Mods page: the browser's search, installs and updates (`mods_page.rs`).
     mods: mods_page::Mods,
     github: github_mods_page::Github,
-    /// The instances, for the sidebar and Play, and their dialog (`instances_page.rs`).
+    /// NIVRORA instances, for the sidebar and Play, and their dialog (`instances_page.rs`).
     instances: instances_page::Instances,
     /// Home's Worlds section, of the selected instance (`worlds_page.rs`).
     worlds: worlds_page::Worlds,
