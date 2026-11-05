@@ -87,8 +87,8 @@ pub const NIGHT: Night = Night {
     ink: 0xedf5fa,
     ink_soft: 0xc9d9e5,
     muted: 0xb9cbd6,
-    accent: 0xa9dceb,
-    accent_hi: 0xc4eaf5,
+    accent: 0xf09bc3,
+    accent_hi: 0xf7c2d9,
     on_accent: 0x17232c,
     success: 0x7ae2a9,
     warn: 0xf5c66e,
@@ -96,7 +96,7 @@ pub const NIGHT: Night = Night {
     dark: true,
 };
 
-/// The light appearance: cool blue-gray sky and surfaces with a readable milk-blue accent.
+/// The light appearance: cool blue-gray sky and surfaces with a accessible rose-pink accent.
 pub const DAWN: Night = Night {
     sky: [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb],
     page: 0xe7edf2,
@@ -111,8 +111,8 @@ pub const DAWN: Night = Night {
     ink: 0x1b2a36,
     ink_soft: 0x405363,
     muted: 0x506776,
-    accent: 0x2d6d84,
-    accent_hi: 0x2d6d84,
+    accent: 0xa94475,
+    accent_hi: 0xa94475,
     on_accent: 0xffffff,
     success: 0x136336,
     warn: 0x7a4f00,
