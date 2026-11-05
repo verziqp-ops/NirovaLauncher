@@ -7,7 +7,7 @@
 //! frame is asked for only when something on screen changes (a cloud moves one texel, a group of
 //! stars steps to its next brightness): a few frames a second. The sky stands still under reduced
 //! motion, and stops 10 s after the window loses focus ([`motion`]).
-use crate::art::bake;
+use crate::art::{bake, bake_blurred};
 use gpui::{div, img, prelude::*, px, rgb, Div, RenderImage};
 use horizon_theme::night::Night;
 use std::sync::{Arc, LazyLock};
@@ -165,22 +165,22 @@ struct Colors {
 }
 
 const NIGHT_ART: Colors = Colors {
-    sun: [0xffe28c, 0xffbf66, 0xff944f],
-    far: 0x3a1f5e,
-    near: 0x150f2e,
-    cloud: [0x3b2869, 0x6e3a7e, 0xc96a86],
-    lit: [0x5a3f8a, 0x9c5a92, 0xf7a98a],
-    shade: 0x2a1a4c,
-    star: 0xf4f2ff,
+    sun: [0xf3b6d0, 0xe99bc1, 0xd67fa9],
+    far: 0x526a78,
+    near: 0x263944,
+    cloud: [0x657d8a, 0x8d8292, 0xbf829f],
+    lit: [0x8297a2, 0xc59aaf, 0xe6b2c8],
+    shade: 0x425966,
+    star: 0xf5edf2,
 };
 
 const DAWN_ART: Colors = Colors {
-    sun: [0xfffbea, 0xffeac2, 0xffd3a1],
-    far: 0xbaa8de,
-    near: 0x8c79c6,
-    cloud: [0xeef0fb, 0xfbeef3, 0xfff1e4],
-    lit: [0xffffff; 3],
-    shade: 0xd9cbe8,
+    sun: [0xf6c7d8, 0xebafc6, 0xd996b3],
+    far: 0xb6cbd3,
+    near: 0x8ea8b2,
+    cloud: [0xeff5f6, 0xf7e9ef, 0xf4dde8],
+    lit: [0xffffff, 0xf7dde9, 0xf2c8db],
+    shade: 0xd4e1e5,
     star: 0xffffff,
 };
 
@@ -402,11 +402,11 @@ impl Sky {
             let layers = Layers {
                 clouds: std::array::from_fn(|i| {
                     let l = &CLOUDS[i];
-                    bake(&clouds(l, art, i), l.period, CLOUD_ROWS, TEXEL, scale)
+                    bake_blurred(&clouds(l, art, i), l.period, CLOUD_ROWS, TEXEL, scale, 3.0 * scale)
                 }),
                 far: skyline(&FAR, art.far, scale),
                 near: skyline(&NEAR, art.near, scale),
-                sun: bake(&sun(art), SUN_RADIUS * 2, SUN_RADIUS, LAND, scale),
+                sun: bake_blurred(&sun(art), SUN_RADIUS * 2, SUN_RADIUS, LAND, scale, 3.0 * scale),
             };
             if let Some((_, old)) = self.baked.replace((key, layers)) {
                 self.replaced
@@ -557,7 +557,7 @@ fn skyline(line: &Skyline, color: u32, scale: f32) -> Arc<RenderImage> {
             (m == b'#').then_some(color)
         });
     }
-    bake(&out, w, line.rows, LAND, scale)
+    bake_blurred(&out, w, line.rows, LAND, scale, 3.0 * scale)
 }
 
 /// The upper half of a sun cut by the horizon, in three bands of colour, its lower half sliced by
