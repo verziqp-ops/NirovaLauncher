@@ -1,5 +1,17 @@
 # Nirova / Horizon engine modernization plan
 
+## Current scope agreed for Nirova
+
+Work in this branch is restricted to **engine/launcher performance and a unified visual system**.
+Version management, Minecraft-folder selection, mods, account flows and other launcher features are
+explicitly deferred; do not mix them into these changes.
+
+The supplied launcher screenshot is a layout reference only. The visual direction remains the
+blue-charcoal / soft-blue surfaces with a restrained pink accent in dark mode, and milky blue-white
+surfaces with a readable rose accent in light mode. Rework the background/art direction later without
+changing the shared design tokens independently on individual pages.
+
+
 This document records the staged performance and compatibility work. It is a plan, not a claim that the engine changes below are already implemented.
 
 ## Non-negotiable compatibility rule
@@ -107,4 +119,8 @@ A work package is complete only when:
 
 ## Immediate next implementation target
 
-Build the immutable render-snapshot boundary and frame pacing instrumentation around the existing integrated server thread. This is safer and more foundational than moving arbitrary mutable AI/physics code into worker threads.
+Build the immutable render-snapshot boundary around the existing integrated server thread, then measure frame pacing and tick latency. This is safer and more foundational than moving arbitrary mutable AI/physics code into worker threads.
+
+## Implemented in this branch
+
+- Launcher UI frame-time diagnostics now stop retaining samples after 30,000 active frame intervals. This bounds diagnostic memory during long sessions; it does not itself claim to improve in-game FPS. The benchmark scenario completes well before the cap.
