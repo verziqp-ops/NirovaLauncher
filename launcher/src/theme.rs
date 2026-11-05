@@ -1,6 +1,6 @@
-//! The launcher's view of Nivrora's design tokens (`crates/horizon-theme`, described in
+//! The launcher's view of Nirova's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Nivrora's blue) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
+//! Nirova's blue) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
 //! Open Font License). Screens not rebuilt yet draw the Blocks parts in the night's colours.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
@@ -80,10 +80,10 @@ fn c(hex: u32) -> Hsla {
 }
 
 /// Whether the launcher is pinned dark (`Some(true)`) or light, or follows the system (`None`):
-/// `NIVRORA_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
+/// `NIROVA_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
 /// choice in Settings.
 pub fn pinned_dark(choice: Appearance) -> Option<bool> {
-    match std::env::var("NIVRORA_LAUNCHER_APPEARANCE").as_deref() {
+    match std::env::var("NIROVA_LAUNCHER_APPEARANCE").as_deref() {
         Ok("light") => Some(false),
         Ok("dark") => Some(true),
         _ => match choice {
@@ -139,7 +139,7 @@ impl Theme {
     }
 
     fn from(p: tokens::Blocks, night: Night) -> Self {
-        // Nivrora palette: graphite surfaces, misty blue-gray panels and a milk-blue primary accent.
+        // Nirova palette: graphite surfaces, misty blue-gray panels and a milk-blue primary accent.
         // Keep the upstream Night data for its artwork and motion, but use one coherent
         // palette for every launcher control and panel.
         let dark = p.dark;
