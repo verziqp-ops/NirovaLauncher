@@ -4,7 +4,7 @@
 //! is needed; `nivrora-game.desktop` (hidden from menus) gives the game's window its icon on Wayland.
 //! A release build writes it when it starts only if there is no entry yet or the one there starts
 //! a program that is gone ([`repair`]), so a development or test build never takes over a working
-//! entry. Turning the Settings switch on (or `horizon-launcher desktop-entry`) points it at this
+//! entry. Turning the Settings switch on (or `nivrora-launcher desktop-entry`) points it at this
 //! binary whatever is there ([`install`]); the switch off and `desktop-entry --remove` take it all
 //! away again.
 use std::ffi::OsStr;
@@ -227,7 +227,7 @@ fn target_from(exe: &Path, appimage: Option<&Path>) -> PathBuf {
 }
 
 /// Registers the launcher whatever entry is there: for the player turning it on (the Settings
-/// switch, `horizon-launcher desktop-entry`).
+/// switch, `nivrora-launcher desktop-entry`).
 pub fn install(exe: &Path) -> Result<bool, String> {
     let data = data_home().ok_or("No home folder to put the menu entry in.")?;
     install_in(&data, &target(exe)).map_err(|e| format!("{}: {e}", data.display()))
