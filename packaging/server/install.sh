@@ -6,7 +6,7 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/packaging/server/install.sh | sh
 ##   curl -fsSL .../install.sh | sh -s -- --version v1.0.0 --dir /opt/nirova --bin /usr/local/bin
-#   sh install.sh --archive horizon-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
+#   sh install.sh --archive nirova-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
 #
 # It needs curl, tar or unzip, and sha256sum or shasum; it never asks for sudo (pick folders you can write).
 # runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
@@ -38,10 +38,10 @@ MACHINE=$(uname -m)
 # A shell under Rosetta 2 says x86_64 on Apple Silicon: the native build runs faster there.
 [ "$(uname -s)" = Darwin ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ] && MACHINE=arm64
 case "$(uname -s)-$MACHINE" in
-  Linux-x86_64) ASSETS="horizon-server-linux-x86_64.tar.gz nirova-game-linux-x86_64.tar.gz" ;;
-  Darwin-arm64) ASSETS=nirova-game-macos-arm64.zip ;;
+  Linux-x86_64) ASSETS="nirova-server-linux-x86_64.tar.gz nirova-game-linux-x86_64.tar.gz" ;;
+  Darwin-arm64) ASSETS=nirova-server-macos-arm64.zip ;;
   # Intel Macs: the Nightlies built since #1161.
-  Darwin-x86_64) ASSETS=nirova-game-macos-x64.zip ;;
+  Darwin-x86_64) ASSETS=nirova-server-macos-x64.zip ;;
   *) die "no Horizon release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
 esac
 
