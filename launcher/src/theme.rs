@@ -144,14 +144,12 @@ impl Theme {
         // palette for every launcher control and panel.
         let dark = p.dark;
         let (page, side, panel, raised, button, well, outline, rule,
-             ink, ink_soft, muted, accent, on_accent) = if dark {
+             ink, ink_soft, muted) = if dark {
             (0x101720, 0x172230, 0x1D2B3A, 0x26384A, 0x30465A, 0x121D29,
-             0x40576B, 0x314457, 0xEDF5FA, 0xC9D9E5, 0x9FB4C5,
-             0xB8E1EF, 0x14232D)
+             0x40576B, 0x314457, 0xEDF5FA, 0xC9D9E5, 0x9FB4C5)
         } else {
             (0xF1F5F8, 0xE7EEF3, 0xFAFCFD, 0xE1EAF0, 0xD4E1E9, 0xF5F8FA,
-             0xC2D1DC, 0xD2DEE6, 0x1B2A36, 0x405363, 0x687D8D,
-             0x77BBD2, 0x10232D)
+             0xC2D1DC, 0xD2DEE6, 0x1B2A36, 0x405363, 0x687D8D)
         };
         let page = c(page);
         let side = c(side);
@@ -164,8 +162,11 @@ impl Theme {
         let ink = c(ink);
         let ink_soft = c(ink_soft);
         let muted = c(muted);
-        let accent = c(accent);
-        let on_accent = c(on_accent);
+        let accent = c(p.accent);
+        let on_accent = c(p.on_face);
+        let face = c(p.face);
+        let face_bevel = c(p.face_bevel);
+        let face_lip = c(p.face_lip);
         Self {
             page,
             plate_soft: raised,
@@ -189,9 +190,9 @@ impl Theme {
             bevel: outline,
             lip: rule,
             outline,
-            face: accent,
-            face_bevel: outline,
-            face_lip: rule,
+            face,
+            face_bevel,
+            face_lip,
             on_face: on_accent,
             night,
             dark,
