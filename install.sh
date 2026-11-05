@@ -32,18 +32,23 @@ curl -fL --progress-bar "$BASE/$ASSET" -o "$TMP/$ASSET"
 
 mkdir -p "$DIR"
 case "$ASSET" in
-  *.tar.gz) tar -xzf "$TMP/$ASSET" -C "$TMP" ;;
-  *.zip) (cd "$TMP" && unzip -q "$ASSET") ;;
+  *.tar.gz)
+    tar -xzf "$TMP/$ASSET" -C "$TMP"
+    install -m 755 "$TMP/nirova-launcher" "$DIR/nirova-launcher"
+    BIN="$DIR/nirova-launcher"
+    ;;
+  *.zip)
+    (cd "$TMP" && unzip -q "$ASSET")
+    # macOS release ZIPs contain the complete NIROVA.app bundle, not a loose binary.
+    test -x "$TMP/NIROVA.app/Contents/MacOS/nirova-launcher"
+    rm -rf "$DIR/NIROVA.app"
+    mv "$TMP/NIROVA.app" "$DIR/NIROVA.app"
+    BIN="$DIR/NIROVA.app/Contents/MacOS/nirova-launcher"
+    ;;
 esac
-mv -f "$TMP/nirova-launcher" "$DIR/nirova-launcher"
-chmod +x "$DIR/nirova-launcher"
-# macOS asks before opening downloaded programs that aren't notarized.
-if [ "$(uname -s)" = Darwin ]; then
-  xattr -dr com.apple.quarantine "$DIR" 2>/dev/null || true
-fi
 
 mkdir -p "$HOME/.local/bin"
-ln -sf "$DIR/nirova-launcher" "$HOME/.local/bin/nirova-launcher"
+ln -sf "$BIN" "$HOME/.local/bin/nirova-launcher"
 echo "  Installed in $DIR"
 echo "  Start it with: nirova-launcher"
 case ":$PATH:" in
