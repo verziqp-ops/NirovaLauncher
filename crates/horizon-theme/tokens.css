@@ -37,19 +37,19 @@
   --night-sky-5: #d7e3eb;
   --night-page: #e7edf2;
   --night-side: #dfe7ed;
-  --night-ink: #182a36;
-  --night-ink-soft: #3e5665;
+  --night-ink: #1b2a36;
+  --night-ink-soft: #405363;
   --night-muted: #536b7a;
-  --night-accent: #77b6ce;
-  --night-accent-hi: #347b95;
-  --night-on-accent: #ffffff;
+  --night-accent: #2d6d84;
+  --night-accent-hi: #2d6d84;
+  --night-on-accent: #10232d;
   --night-success: #136336;
   --night-warn: #7a4f00;
   --night-danger: #a3301d;
-  --night-card: rgba(253, 252, 255, 0.86);
+  --night-card: rgba(246, 249, 251, 0.86);
   --night-card-hi: rgba(255, 255, 255, 0.94);
-  --night-stroke: rgba(59, 47, 120, 0.12);
-  --night-rule: rgba(59, 47, 120, 0.1);
+  --night-stroke: rgba(120, 146, 167, 0.12);
+  --night-rule: rgba(120, 146, 167, 0.1);
   --font: "Geist", ui-sans-serif, system-ui, sans-serif;
   --mono: "Geist Mono", ui-monospace, monospace;
   --pixel: "Pixelify Sans", "Geist", ui-sans-serif, sans-serif;
@@ -157,7 +157,7 @@
     --ink-soft: #c7d7e2;
     --muted: #9db2c1;
     --accent: #a8d8e8;
-    --on-accent:  #ffffff;
+    --on-accent: #142630;
     --danger: #f07a68;
     --success: #45c27a;
     --warn: #f0b84f;
@@ -192,10 +192,10 @@
     --night-success: #5fd39a;
     --night-warn: #f5b45a;
     --night-danger: #ff8a78;
-    --night-card: rgba(21, 17, 46, 0.84);
-    --night-card-hi: rgba(35, 28, 74, 0.9);
-    --night-stroke: rgba(185, 172, 255, 0.12);
-    --night-rule: rgba(185, 172, 255, 0.1);
+    --night-card: rgba(28, 42, 56, 0.84);
+    --night-card-hi: rgba(40, 57, 74, 0.9);
+    --night-stroke: rgba(120, 146, 167, 0.12);
+    --night-rule: rgba(120, 146, 167, 0.1);
   }
 }
 
@@ -240,7 +240,7 @@
   --night-muted: #9fb3c3;
   --night-accent: #a9dceb;
   --night-accent-hi: #c4eaf5;
-  --night-on-accent: #ffffff;
+  --night-on-accent: #17232c;
   --night-success: #5fd39a;
   --night-warn: #f5b45a;
   --night-danger: #ff8a78;
