@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           date=$(date -u +%F)
           short="${GITHUB_SHA:0:7}"
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             tag=nightly
             version="nightly-$date-$short"
             nightly="$date $short"
@@ -152,7 +152,7 @@ jobs:
               tar -czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" -C "$GITHUB_WORKSPACE/dist" "nirova-game-${{ matrix.name }}"
               ;;
             *)
-              7z a -tzip "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" "$bundle" > /dev/null
+              (cd "$GITHUB_WORKSPACE/dist" && 7z a -tzip "${{ matrix.asset }}" "nirova-game-${{ matrix.name }}") > /dev/null
               ;;
           esac
           tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" >/dev/null 2>&1 || [[ "${{ matrix.name }}" != linux ]]
