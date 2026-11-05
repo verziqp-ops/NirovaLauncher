@@ -656,5 +656,6 @@
   "Found by itself in your launcher's folder. Or pick the {version}.jar file.": "Encontrado solo en la carpeta de tu launcher. O elige el archivo {version}.jar.",
   "Minecraft jar": "Jar de Minecraft",
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "Esta versión del launcher no tiene inicio de sesión de Microsoft (NIVRORA_MSA_CLIENT_ID).",
-  "Offline launcher {version}": "Launcher sin conexión {version}"
+  "Offline launcher {version}": "Launcher sin conexión {version}",
+  "milk-blue": "Azul lechoso"
 }
