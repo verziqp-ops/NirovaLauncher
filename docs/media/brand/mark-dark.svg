@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-  <title>Horizon</title>
-  <g fill="#ecedf3"><rect x="4" y="3" width="2" height="4"/><rect x="10" y="3" width="2" height="4"/></g>
-  <g fill="#ecedf3" opacity=".36"><rect x="4" y="8" width="2" height="4"/><rect x="10" y="8" width="2" height="4"/></g>
-  <rect x="1" y="7" width="14" height="1" fill="#9a86ff"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><title>NIROVA</title><defs><linearGradient id="r" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#1689ff"/><stop offset=".35" stop-color="#36c8ff"/><stop offset=".6" stop-color="#d9c9ff"/><stop offset=".82" stop-color="#f044e9"/><stop offset="1" stop-color="#ff78e8"/></linearGradient></defs><path fill="url(#r)" d="M278 790C220 790 188 753 188 694V354C188 281 225 226 291 194C359 161 430 181 481 239L782 583V281C782 211 821 174 879 174C938 174 974 214 974 276V674C974 748 936 800 869 830C798 861 731 837 680 779L380 431V686C380 751 341 790 278 790Z"/></svg>
