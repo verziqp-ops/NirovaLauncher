@@ -1,5 +1,5 @@
 //! The launcher's languages: English (the strings in the code), French, Russian, German and
-//! Spanish, the languages Horizon's own game menus have, Simplified Chinese, Ukrainian,
+//! Spanish, the languages available in the game menus, Simplified Chinese, Ukrainian,
 //! Polish, Brazilian Portuguese, Japanese and Turkish. A table per language (`launcher/lang/<code>.json`) maps each English string to its
 //! translation; a string the table lacks shows in English.
 //!
