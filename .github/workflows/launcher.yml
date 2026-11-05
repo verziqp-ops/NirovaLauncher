@@ -165,7 +165,13 @@ jobs:
             choco install innosetup -y --no-progress
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
           }
-          $version = if ($env:NIROVA_LAUNCHER_VERSION) { $env:NIROVA_LAUNCHER_VERSION } else { "0.0.0" }
+          if ($env:NIROVA_LAUNCHER_VERSION) {
+            $version = $env:NIROVA_LAUNCHER_VERSION
+          } else {
+            $match = Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"' | Select-Object -First 1
+            if (-not $match) { throw "Could not read launcher version from Cargo.toml" }
+            $version = $match.Matches[0].Groups[1].Value
+          }
           & $iscc /Q "/DAppVersion=$version" "/DSource=$PWD\target\release\nirova-launcher.exe" "/O$PWD\..\dist" ..\packaging\windows\setup.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Get-ChildItem ..\dist
