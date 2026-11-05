@@ -111,8 +111,7 @@ impl Page {
         }
     }
 
-    /// Every page, with its name and icon: the top bar shows all but Settings, which has its
-    /// own button.
+    /// NIVRORA's primary destinations, shown in the left sidebar.
     const ALL: [(Page, &'static str, &'static str); 5] = [
         (Page::Play, "Home", "home"),
         (Page::Versions, "Versions", "archive"),
