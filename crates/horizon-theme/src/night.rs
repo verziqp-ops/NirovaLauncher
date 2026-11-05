@@ -1,5 +1,5 @@
 //! The launcher's night look ("Night" in `docs/design-system.md`): a pixel night sky that turns to
-//! a sunset at the bottom, plates over it only where text needs them, one violet for the main
+//! a sunset at the bottom, plates over it only where text needs them, one milk-blue for the main
 //! action, focus and progress, and Bricolage Grotesque (SIL OFL 1.1, `fonts/OFL-BricolageGrotesque.txt`).
 //! Light players get the same look at dawn ([`DAWN`]). The game's menus don't use it.
 use crate::{step, Blocks, Step, Web};
@@ -96,7 +96,7 @@ pub const NIGHT: Night = Night {
     dark: true,
 };
 
-/// The light appearance: the same sky at dawn, pale blue to peach, with the night's violet.
+/// The light appearance: the same sky at dawn, pale blue to peach, with the night's milk-blue.
 pub const DAWN: Night = Night {
     sky: [0xc9d3f2, 0xdcd8f3, 0xead5ec, 0xf5d3d8, 0xf9d6bd, 0xfbe4c6],
     page: 0xe9e6f6,
