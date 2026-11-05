@@ -142,6 +142,6 @@ esac
 if [ -z "$(ls -A "$DIR/game-files/horizon-client" 2>/dev/null)" ]; then
   echo "Next, prepare the game files from your own Minecraft 26.3 (it needs Java 25 and the game installed once"
   echo "by the official launcher; see docs/server.md):"
-  echo "  horizon-prepare --prepare --server-jar /path/to/server.jar"
+  echo "  nirova-prepare --prepare --server-jar /path/to/server.jar"
 fi
 echo "Then set up a server: mkdir my-server && cd my-server && nirova-server init"
