@@ -389,10 +389,10 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(id)
-            .ok_or_else(|| format!("{id} isn't in Horizon's registry."))?;
+            .ok_or_else(|| format!("{id} isn't in the external catalog."))?;
         project_of(p).ok_or_else(|| {
             format!(
-                "{} is a {} in Horizon's registry: this launcher can't install those yet.",
+                "{} is a {} in the external catalog: this launcher can't install those yet.",
                 p.name,
                 p.kind.name()
             )
@@ -527,7 +527,7 @@ fn relative(kind: Kind, id: &str, file_name: &str) -> Result<String, String> {
         Kind::ResourcePack => Ok(format!("resourcepacks/{file_name}")),
         Kind::Shader => Ok(format!("shaderpacks/{file_name}")),
         Kind::Modpack => Err("A modpack installs as its own profile (pack::install).".into()),
-        Kind::DataPack => Err("Horizon's registry has no data packs.".into()),
+        Kind::DataPack => Err("The external catalog has no data packs.".into()),
     }
 }
 
@@ -587,8 +587,8 @@ fn newest<'a>(
     })
 }
 
-const NEEDS_NEWER: &str = "needs a newer Horizon than the game you play";
-const NEEDS_PORT: &str = "needs a native port: Horizon doesn't run WebAssembly mods any more";
+const NEEDS_NEWER: &str = "needs a newer game build than the one you play";
+const NEEDS_PORT: &str = "needs a native port: this game does not run WebAssembly mods";
 
 /// Whether version `v` is a WebAssembly mod with code: a `.hmod` that may do more than add
 /// content. The registry keeps it for the modpacks that need it; a modpack installs it with its
