@@ -23,7 +23,7 @@ pub const NIGHTLY: Option<&str> = match option_env!("NIROVA_NIGHTLY") {
 };
 
 /// How a nightly names itself where players read it, so their reports say which build they come
-/// from: `Nightly 2026-10-28 · 0c02067`. None for any other build.
+/// from: `Preview 2026-10-28 · 0c02067`. None for any other build.
 pub fn nightly_label() -> Option<String> {
     NIGHTLY.map(label)
 }
@@ -35,8 +35,8 @@ pub fn nightly_version() -> Option<String> {
 
 fn label(nightly: &str) -> String {
     match nightly.split_once(' ') {
-        Some((date, commit)) => format!("Nightly {date} · {commit}"),
-        None => format!("Nightly {nightly}"),
+        Some((date, commit)) => format!("Preview {date} · {commit}"),
+        None => format!("Preview {nightly}"),
     }
 }
 
@@ -46,9 +46,9 @@ mod tests {
     fn a_nightly_names_its_date_and_commit() {
         assert_eq!(
             super::label("2026-10-28 0c02067"),
-            "Nightly 2026-10-28 · 0c02067"
+            "Preview 2026-10-28 · 0c02067"
         );
-        assert_eq!(super::label("2026-10-28"), "Nightly 2026-10-28");
+        assert_eq!(super::label("2026-10-28"), "Preview 2026-10-28");
         assert_eq!(super::nightly_label().is_some(), super::NIGHTLY.is_some());
     }
 
