@@ -168,9 +168,25 @@ jobs:
           if-no-files-found: error
 
   server:
-    name: build Linux dedicated server
+    name: build server ${{ matrix.name }}
     needs: pick
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux
+            os: ubuntu-22.04
+            target: ''
+            asset: nirova-server-linux-x86_64.tar.gz
+          - name: macos-arm64
+            os: macos-15
+            target: ''
+            asset: nirova-server-macos-arm64.zip
+          - name: macos-x64
+            os: macos-15
+            target: x86_64-apple-darwin
+            asset: nirova-server-macos-x64.zip
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     env:
       NIROVA_VERSION: ${{ needs.pick.outputs.version }}
@@ -180,35 +196,56 @@ jobs:
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: nirova-server-linux
-      - name: Build game, preparer and server from source
+          shared-key: nirova-server-${{ matrix.name }}
+      - name: Linux audio and device headers
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev
-          cargo build --release --locked -p horizon-client --bin horizon-client
-          cargo build --release --locked -p horizon-prepare --bin horizon-prepare
-          cargo build --release --locked -p horizon-server --bin horizon-server
-      - name: Package the dedicated server without upstream archives
+      - name: Build the Nirova server, game and preparer from source
+        shell: bash
         run: |
           set -euo pipefail
-          bundle="$GITHUB_WORKSPACE/dist/nirova-server-linux-x86_64"
+          target=()
+          [[ -z "${{ matrix.target }}" ]] || target=(--target "${{ matrix.target }}")
+          cargo build --release --locked -p horizon-client --bin horizon-client "${target[@]}"
+          cargo build --release --locked -p horizon-prepare --bin horizon-prepare "${target[@]}"
+          cargo build --release --locked -p horizon-server --bin horizon-server "${target[@]}"
+          out=target/release
+          [[ -z "${{ matrix.target }}" ]] || out="target/${{ matrix.target }}/release"
+          echo "BUILD_OUT=$out" >> "$GITHUB_ENV"
+      - name: Package the server with Nirova's own resource preparer
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="$GITHUB_WORKSPACE/dist/nirova-server-${{ matrix.name }}"
           mkdir -p "$bundle/crates" "$bundle/mods/horizon/src/test"
-          cp target/release/horizon-server "$bundle/"
-          cp target/release/horizon-client "$bundle/"
-          cp target/release/horizon-prepare "$bundle/"
+          cp "$BUILD_OUT/horizon-server" "$bundle/"
+          cp "$BUILD_OUT/horizon-client" "$bundle/"
+          cp "$BUILD_OUT/horizon-prepare" "$bundle/"
           cp research-lock.json "$bundle/"
           cp -R crates/horizon-prepare "$bundle/crates/"
           cp -R mods/horizon/src/test/java "$bundle/mods/horizon/src/test/"
           test -f "$bundle/horizon-server"
           test -f "$bundle/horizon-client"
-          tar -czf "$GITHUB_WORKSPACE/dist/nirova-server-linux-x86_64.tar.gz" -C "$GITHUB_WORKSPACE/dist" nirova-server-linux-x86_64
-          tar -tzf "$GITHUB_WORKSPACE/dist/nirova-server-linux-x86_64.tar.gz" | grep -q 'nirova-server-linux-x86_64/horizon-server'
+          test -f "$bundle/crates/horizon-prepare/src/lib.rs"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            codesign --force --sign - "$bundle/horizon-server"
+            codesign --force --sign - "$bundle/horizon-client"
+            codesign --force --sign - "$bundle/horizon-prepare"
+            ditto -c -k --norsrc --noextattr --noqtn --keepParent "$bundle" "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}"
+          else
+            tar -czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" -C "$GITHUB_WORKSPACE/dist" "nirova-server-${{ matrix.name }}"
+            tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" | grep -q "nirova-server-${{ matrix.name }}/horizon-server"
+          fi
       - uses: actions/upload-artifact@v4
         with:
-          name: server-linux
-          path: dist/nirova-server-linux-x86_64.tar.gz
+          name: server-${{ matrix.name }}
+          path: dist/${{ matrix.asset }}
           if-no-files-found: error
 
   release:
