@@ -3942,15 +3942,16 @@ pub fn {f}("
     }
 
     #[test]
-    fn the_language_follows_the_system_unless_picked() {
+    fn the_language_defaults_to_russian_unless_picked() {
         use crate::i18n::Language;
         assert_eq!(Settings::parse("{}").language, None);
+        assert_eq!(Settings::parse("{}").language(), Language::Russian);
         let fr = Settings::parse(r#"{"language": "fr"}"#);
         assert_eq!(fr.language(), Language::French);
         let future = Settings::parse(r#"{"language": "eo", "game_args": "--x"}"#);
         assert_eq!((future.language, future.game_args.as_str()), (None, "--x"));
         let saved = serde_json::to_value(Settings::default()).unwrap();
-        assert!(saved.get("language").is_none(), "unset is left out");
+        assert!(saved.get("language").is_none(), "unset is left out; runtime default is Russian");
     }
 
     #[test]
