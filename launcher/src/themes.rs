@@ -9,7 +9,7 @@
 use horizon_theme::{contrast, Blocks};
 use std::path::{Path, PathBuf};
 
-/// An accent: a hue in degrees, or none for NIVRORA's milk-blue, whose tokens are the palette's own
+/// An accent: a hue in degrees, or none for NIROVA's milk-blue, whose tokens are the palette's own
 /// and stay untouched.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(try_from = "String", into = "String")]
