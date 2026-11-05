@@ -19,7 +19,7 @@ AppId={{6F0C3B7E-4A1D-4C8B-9E52-3D7A1F2B8C90}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=verziqp-ops
+AppPublisher=NIROVA
 AppPublisherURL=https://github.com/verziqp-ops/NirovaLauncher
 AppSupportURL=https://github.com/verziqp-ops/NirovaLauncher/issues
 AppUpdatesURL=https://github.com/verziqp-ops/NirovaLauncher/releases
@@ -39,6 +39,7 @@ Compression=lzma2/max
 SolidCompression=yes
 CloseApplications=force
 DefaultLanguage=russian
+ShowLanguageDialog=no
 
 [Languages]
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
