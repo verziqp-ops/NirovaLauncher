@@ -18,9 +18,9 @@ pub const README_URL: &str =
     "https://github.com/verziqp-ops/NirovaLauncher/blob/main/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
 pub const AGENT_DOCS_URL: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/docs";
-/// This launcher's version: the release workflow sets `HORIZON_LAUNCHER_VERSION` from the
+/// This launcher's version: the release workflow sets `NIROVA_LAUNCHER_VERSION` from the
 /// tag it builds (no version-bump commits); other builds say Cargo.toml's.
-pub const VERSION: &str = version_or(option_env!("HORIZON_LAUNCHER_VERSION"));
+pub const VERSION: &str = version_or(option_env!("NIROVA_LAUNCHER_VERSION"));
 /// Launcher releases are tagged `launcher@X.Y.Z` from 0.2 on (docs/versioning.md), and Horizon's
 /// own `vX.Y.Z`. Before 0.2 they were `launcher-vX.Y.Z` and `vYYYY.MM.DD[.N]`: every 0.2 tag is
 /// newer than every one of those ([`release_order`]).
@@ -206,13 +206,13 @@ pub fn launcher_version(tag: &str) -> Option<&str> {
         .filter(|v| v.starts_with(|c: char| c.is_ascii_digit()))
 }
 
-/// The tag this launcher was released as. launcher.yml gives it (`HORIZON_LAUNCHER_TAG`); a release
+/// The tag this launcher was released as. launcher.yml gives it (`NIROVA_LAUNCHER_TAG`); a release
 /// built before it did gave only the version, of a `launcher-v` tag; a build from source is
 /// Cargo.toml's version on the 0.2 line.
 pub fn own_tag() -> String {
     own_tag_of(
-        option_env!("HORIZON_LAUNCHER_TAG"),
-        option_env!("HORIZON_LAUNCHER_VERSION"),
+        option_env!("NIROVA_LAUNCHER_TAG"),
+        option_env!("NIROVA_LAUNCHER_VERSION"),
     )
 }
 
@@ -1996,7 +1996,7 @@ pub fn prepare_in_process(
 /// data folder (~/.local/share/horizon on Linux, as the release folders' horizon.sh uses). It is
 /// never inside a version folder, so installing, updating or removing a version keeps the saves.
 pub fn game_home() -> PathBuf {
-    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
+    if let Some(home) = std::env::var_os("NIROVA_HOME").filter(|h| !h.is_empty()) {\n        return PathBuf::from(home);\n    }\n    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
     dirs::data_dir()
@@ -4021,7 +4021,7 @@ pub fn {f}("
         assert_eq!(version_or(None), env!("CARGO_PKG_VERSION"));
         assert_eq!(
             VERSION,
-            option_env!("HORIZON_LAUNCHER_VERSION")
+            option_env!("NIROVA_LAUNCHER_VERSION")
                 .filter(|v| !v.is_empty())
                 .unwrap_or(env!("CARGO_PKG_VERSION"))
         );
