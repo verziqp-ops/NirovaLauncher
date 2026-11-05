@@ -83,7 +83,7 @@ fn c(hex: u32) -> Hsla {
 /// `NIVRORA_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
 /// choice in Settings.
 pub fn pinned_dark(choice: Appearance) -> Option<bool> {
-    match std::env::var("HORIZON_LAUNCHER_APPEARANCE").as_deref() {
+    match std::env::var("NIVRORA_LAUNCHER_APPEARANCE").as_deref() {
         Ok("light") => Some(false),
         Ok("dark") => Some(true),
         _ => match choice {
