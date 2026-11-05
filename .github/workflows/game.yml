@@ -329,7 +329,7 @@ jobs:
           Nirova Stable release $TAG, built entirely from this repository's source.
           The game, resource preparer and Linux server are built and packaged here.
           EOF
-          gh release create "$TAG" --latest --target "$GITHUB_SHA" \
+          gh release create "$TAG" --latest=false --target "$GITHUB_SHA" \
             --title "Nirova $TAG" --notes-file notes.md \
             "dist/nirova-game-linux-x86_64.tar.gz#Nirova game: Linux x86_64" \
             "dist/nirova-game-windows-x64.zip#Nirova game: Windows x64" \
