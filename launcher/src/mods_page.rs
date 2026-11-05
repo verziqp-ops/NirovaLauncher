@@ -727,7 +727,7 @@ impl Launcher {
                         ));
                     }
                     modpack = p.kind == PackKind::Modpack;
-                    if modpack && p.source == SourceId::NIVRORA {
+                    if modpack && p.source == SourceId::Horizon {
                         let pack = horizon::pack::install(&p.id, &progress)?;
                         if let Some(url) = &p.icon {
                             horizon_launcher::instances::adopt_icon(
@@ -772,7 +772,7 @@ impl Launcher {
                             names.join(", ")
                         ));
                     }
-                    if p.source == SourceId::NIVRORA && p.kind == PackKind::Mod {
+                    if p.source == SourceId::Horizon && p.kind == PackKind::Mod {
                         return Ok(format!(
                             "Installed {} into horizon-mods and turned it on, checksum checked \
                              (Options > Mods in the game).",
@@ -935,7 +935,7 @@ impl Launcher {
         let source_note = (source_for(self.mods.kind) == SourceId::Modrinth && !java)
             .then(|| div().flex().child(self.mods_source_switch(cx)));
         // The registry lists only what was supported by NIROVA: no "everything", no Modrinth filters.
-        let registry = self.mods.source == SourceId::NIVRORA && !java;
+        let registry = self.mods.source == SourceId::Horizon && !java;
         let filters = (!registry).then(|| self.mods_filters(cx));
         let controls = div()
             .flex()
@@ -1247,7 +1247,7 @@ impl Launcher {
             let on = match &self.mods.java {
                 _ if e.kind != PackKind::Mod => None,
                 Some(_) => Some(java_instance::is_on(&self.mods.home(), e)),
-                None if e.source == SourceId::NIVRORA => Some(
+                None if e.source == SourceId::Horizon => Some(
                     horizon::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
                 ),
                 None => None,
@@ -1558,7 +1558,7 @@ impl Launcher {
                     ),
                     &t,
                 );
-            } else if m.source == SourceId::NIVRORA {
+            } else if m.source == SourceId::Horizon {
                 tr("Nothing in NIROVA's registry matches yet.")
             } else if m.everything {
                 tr("Nothing found.")
