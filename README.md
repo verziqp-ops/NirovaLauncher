@@ -39,3 +39,7 @@ GitHub Actions собирает лаунчер для Windows, Linux и macOS. �
 ## Лицензии и сторонние компоненты
 
 NIROVA — независимый неофициальный проект, не связанный с Mojang или Microsoft. Торговые марки Minecraft, Mojang и Microsoft принадлежат их владельцам. Лицензии исходных и сторонних компонентов сохраняются в соответствующих файлах проекта.
+
+## Internal naming
+
+The public product and launcher binary are NIROVA. A number of engine crate IDs and legacy technical identifiers still use the historical `horizon-*` spelling. They are being migrated separately; do not rename them with a global search-and-replace because they are referenced by Cargo dependencies, runtime paths, compatibility code and release verification.
