@@ -59,26 +59,26 @@ pub const PLATFORMS: [(&str, &str, &str, &str); 4] = [
         "linux",
         "x86_64",
         "horizon-linux-x86_64.tar.gz",
-        "nivrora-launcher-linux-x86_64.tar.gz",
+        "nirova-launcher-linux-x86_64.tar.gz",
     ),
     (
         "macos",
         "aarch64",
         "horizon-macos-arm64.zip",
-        "nivrora-launcher-macos-arm64.zip",
+        "nirova-launcher-macos-arm64.zip",
     ),
     // Intel Macs (#1161).
     (
         "macos",
         "x86_64",
         "horizon-macos-x64.zip",
-        "nivrora-launcher-macos-x64.zip",
+        "nirova-launcher-macos-x64.zip",
     ),
     (
         "windows",
         "x86_64",
         "horizon-windows-x64.zip",
-        "nivrora-launcher-windows-x64.zip",
+        "nirova-launcher-windows-x64.zip",
     ),
 ];
 
@@ -128,14 +128,14 @@ pub const LAUNCHER_ASSET: Option<&str> = match OWN_ASSETS {
 /// one file. A launcher running from one updates by replacing that file ([`appimage_path`]), so it
 /// needs this archive rather than the platform's `.tar.gz`.
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = Some("nivrora-launcher-linux-x86_64.AppImage");
+pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = Some("nirova-launcher-linux-x86_64.AppImage");
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub const LAUNCHER_APPIMAGE_ASSET: Option<&str> = None;
 
 const LAUNCHER_BINARY: &str = if cfg!(windows) {
-    "nivrora-launcher.exe"
+    "nirova-launcher.exe"
 } else {
-    "nivrora-launcher"
+    "nirova-launcher"
 };
 
 pub(crate) const CLIENT: &str = if cfg!(windows) {
@@ -149,7 +149,7 @@ pub(crate) const CLIENT: &str = if cfg!(windows) {
 fn agent(url: &str) -> ureq::Agent {
     crate::proxy::agent(
         ureq::AgentBuilder::new()
-            .user_agent(&format!("nivrora-launcher/{VERSION}"))
+            .user_agent(&format!("nirova-launcher/{VERSION}"))
             // A connection that goes quiet fails instead of waiting for ever.
             .timeout_connect(std::time::Duration::from_secs(15))
             .timeout_read(std::time::Duration::from_secs(60)),
@@ -769,7 +769,7 @@ pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> 
             fetch_small,
         )?,
         None if is_game_tag(tag) => signed_digest(tag, ASSET.unwrap_or_default())?,
-        None => return Err(format!("{tag} is not a NIVRORA release.")),
+        None => return Err(format!("{tag} is not a NIROVA release.")),
     };
     install_as(release, tag, &sha256, progress)
 }
@@ -905,7 +905,7 @@ pub fn resources_summary(prepared: bool, sounds: bool, version: &str) -> String 
     use crate::i18n::trf;
     match (prepared, sounds) {
         (false, _) => trf(
-            "Not prepared. NIVRORA needs the files of your own Minecraft {version}.",
+            "Not prepared. NIROVA needs the files of your own Minecraft {version}.",
             &[("version", version)],
         ),
         (true, true) => trf("Prepared for Minecraft {version}", &[("version", version)]),
@@ -1282,7 +1282,7 @@ pub fn complete_assets(tag: &str) {
     });
 }
 
-/// NIVRORA's own download (an owner's) may have stopped before the sounds and the languages,
+/// NIROVA's own download (an owner's) may have stopped before the sounds and the languages,
 /// and the copies of `complete_assets` read them from its store: asked again, once per run, through
 /// the same owner gate as any download from Mojang (`download_for_owner`), which keeps the files
 /// already whole. Called where a download is expected (`reuse_prepared_everywhere`), never on Play.
@@ -1497,7 +1497,7 @@ pub fn java_game(
 ) -> Result<Command, String> {
     let game = instance.java.as_ref().ok_or_else(|| {
         format!(
-            "{} plays NIVRORA, not Minecraft: Java Edition",
+            "{} plays NIROVA, not Minecraft: Java Edition",
             instance.name
         )
     })?;
@@ -1594,7 +1594,7 @@ fn download_for(
                 sources::Os::Windows => "windows",
             };
             mojang::download(pins, dir, os, 8, fetch, &mojang::CANCEL, log).map_err(|e| {
-                format!("\n  • NIVRORA tried to download {v} from Mojang for {name}, but: {e}")
+                format!("\n  • NIROVA tried to download {v} from Mojang for {name}, but: {e}")
             })
         }
         // An owner by its last answer, who can't be asked now.
@@ -1604,11 +1604,11 @@ fn download_for(
             pass.offline.unwrap_or_default()
         )),
         Err(_) if signed_in => Err(
-            "\n  • No signed-in account owns Minecraft: Java Edition, so NIVRORA can't download it."
+            "\n  • No signed-in account owns Minecraft: Java Edition, so NIROVA can't download it."
                 .into(),
         ),
         Err(_) => Err(format!(
-            "\n  • Or sign in with the Microsoft account that owns Minecraft: NIVRORA then \
+            "\n  • Or sign in with the Microsoft account that owns Minecraft: NIROVA then \
              downloads {v} from Mojang itself."
         )),
     }
@@ -1667,7 +1667,7 @@ fn java(
     let runtime = data_dir().join("minecraft").join("runtime");
     let home = mojang::java_runtime(&component, &runtime, 8, &fetch, &mojang::CANCEL, log)
         .map_err(|e| {
-        format!("{missing}\n  • NIVRORA also tried to download Minecraft's own Java from Mojang, but: {e}")
+        format!("{missing}\n  • NIROVA also tried to download Minecraft's own Java from Mojang, but: {e}")
     })?;
     find(major, &[home]).map(|jdk| jdk.home())
 }
@@ -2228,7 +2228,7 @@ pub fn client_command(tag: &str) -> Command {
     }
     // PipeWire remembers volume and mute per application name. The game's own name is
     // "PipeWire ALSA [horizon-client]", shared with development and test runs, where
-    // muting it once left every later game silent: played from here it is "NIVRORA".
+    // muting it once left every later game silent: played from here it is "NIROVA".
     if std::env::var_os("PIPEWIRE_PROPS").is_none() {
         cmd.env(
             "PIPEWIRE_PROPS",
@@ -2398,7 +2398,7 @@ pub fn need_prepared(tag: &str) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!(
-            "{tag} is not prepared yet. Prepare it first: `nivrora-launcher prepare --version {tag}` \
+            "{tag} is not prepared yet. Prepare it first: `nirova-launcher prepare --version {tag}` \
              uses your own Minecraft {v}, or downloads it from Mojang for the signed-in account \
              that owns it.",
             v = game_version(tag)
@@ -2418,7 +2418,7 @@ pub fn client_as(tag: &str, who: Option<&account::Player>) -> Result<Command, St
         None => account::session_for_game(&game_home(), false).map_err(|e| e.to_string()),
         Some(who) => account::session_for_game_as(&game_home(), who),
     }
-    .map_err(|refused| format!("{refused} Sign in with `nivrora-launcher account sign-in`."))?;
+    .map_err(|refused| format!("{refused} Sign in with `nirova-launcher account sign-in`."))?;
     need_prepared(tag)?;
     complete_assets(tag);
     crate::browser::horizon::before_play(&game_home());
@@ -2465,7 +2465,7 @@ pub fn release_notes(tag: Option<&str>) -> Result<Release, String> {
         Some(tag) => releases
             .into_iter()
             .find(|r| r.tag == tag)
-            .ok_or_else(|| format!("No NIVRORA release is tagged {tag}.")),
+            .ok_or_else(|| format!("No NIROVA release is tagged {tag}.")),
         None => releases
             .into_iter()
             .next()
@@ -2722,10 +2722,10 @@ pub fn self_update_allowed() -> bool {
         && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none_or(|v| v.is_empty() || v == "0")
 }
 
-/// The version in `nivrora-launcher --version`'s output (`nivrora-launcher 0.1.5`).
+/// The version in `nirova-launcher --version`'s output (`nirova-launcher 0.1.5`).
 fn parse_version_output(out: &str) -> Option<&str> {
     out.trim()
-        .strip_prefix("nivrora-launcher ")
+        .strip_prefix("nirova-launcher ")
         .map(str::trim)
         .filter(|v| !v.is_empty())
 }
@@ -2932,7 +2932,7 @@ pub fn self_update(release: &Release, progress: impl Fn(f32)) -> Result<(), Stri
     unpack(&archive, &url, &unpacked)?;
     // A launcher inside Horizon.app replaces the whole bundle (its Info.plist, icon and
     // signature belong with the binary); a bare binary, as older launchers are, only the binary,
-    // which the macOS archive also holds (NIVRORA.app/Contents/MacOS/nivrora-launcher).
+    // which the macOS archive also holds (NIROVA.app/Contents/MacOS/nirova-launcher).
     if let Some(app) = app_bundle(exe_path()) {
         if let Some(new) = find_app(&unpacked) {
             replace_bundle(&new, app)?;
@@ -3301,14 +3301,14 @@ pub struct Settings {
     /// What the window does while the game runs. Stays by default.
     #[serde(default)]
     pub while_playing: WhilePlaying,
-    /// The accent colour on top of the appearance (`themes::Accent`). NIVRORA's milk-blue by default.
+    /// The accent colour on top of the appearance (`themes::Accent`). NIROVA's milk-blue by default.
     #[serde(default)]
     pub accent: crate::themes::Accent,
     /// Home's background: a picture the player picked, kept in the data folder under this name
-    /// (`themes::keep_background`). Unset shows the NIVRORA graphite-blue background.
+    /// (`themes::keep_background`). Unset shows the NIROVA graphite-blue background.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub background: Option<String>,
-    /// The window's language. Unset uses Russian as the NIVRORA default.
+    /// The window's language. Unset uses Russian as the NIROVA default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<crate::i18n::Language>,
     /// The player has read the notice before the first native mod (`native_status::NOTICE`).
@@ -3361,7 +3361,7 @@ impl Settings {
     pub fn desktop_entry(&self) -> bool {
         self.desktop_entry.unwrap_or(true)
     }
-    /// The window's language: the one picked, else NIVRORA's Russian default.
+    /// The window's language: the one picked, else NIROVA's Russian default.
     pub fn language(&self) -> crate::i18n::Language {
         self.language.unwrap_or(crate::i18n::Language::Russian)
     }
@@ -3680,12 +3680,12 @@ pub fn {f}("
             platform_assets("macos", "aarch64"),
             Some((
                 "horizon-macos-arm64.zip",
-                "nivrora-launcher-macos-arm64.zip"
+                "nirova-launcher-macos-arm64.zip"
             ))
         );
         assert_eq!(
             platform_assets("macos", "x86_64"),
-            Some(("horizon-macos-x64.zip", "nivrora-launcher-macos-x64.zip"))
+            Some(("horizon-macos-x64.zip", "nirova-launcher-macos-x64.zip"))
         );
         assert_eq!(
             platform_assets("windows", "x86_64").map(|(game, _)| game),
@@ -3743,12 +3743,12 @@ pub fn {f}("
     #[test]
     fn a_crash_after_the_vulkan_adapter_line_and_before_the_first_frame_is_a_start_crash() {
         let start = [
-            "NIVRORA: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
+            "NIROVA: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
             "Horizon renderer: Intel(R) HD Graphics 530 (Vulkan, IntegratedGpu)",
         ];
         assert!(vulkan_start_crashed(start));
         // A step line after the adapter keeps it a start crash.
-        let step = [start[1], "NIVRORA renderer: creating the pipelines"];
+        let step = [start[1], "NIROVA renderer: creating the pipelines"];
         assert!(vulkan_start_crashed(step));
         // A crash after the first frame is the game's, not the renderer start's.
         let later = [start[1], "Horizon: first frame after 812 ms"];
@@ -3844,7 +3844,7 @@ pub fn {f}("
         assert_eq!(launcher_version("launcher-vx"), None);
         let list = serde_json::json!([
             {"tag_name": "v2026.10.12", "assets": [{"name": "horizon-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
-            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "nivrora-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
+            {"tag_name": "launcher-v9.0.0", "assets": [{"name": "nirova-launcher-linux-x86_64.tar.gz", "browser_download_url": "u", "size": 1}]},
             {"tag_name": "v2026.10.13", "assets": []},
             {"tag_name": "launcher-v0.0.1", "draft": true, "assets": []},
         ]);
@@ -4030,7 +4030,7 @@ pub fn {f}("
         assert!(launcher_update(&[r(own_tag())]).is_none());
         assert_eq!(launcher_version(&own_tag()), Some(VERSION));
         assert_eq!(
-            parse_version_output(&format!("nivrora-launcher {VERSION}\n")),
+            parse_version_output(&format!("nirova-launcher {VERSION}\n")),
             Some(VERSION)
         );
     }
@@ -4112,7 +4112,7 @@ pub fn {f}("
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         assert_eq!(
             launcher_asset_running_from(true),
-            Some("nivrora-launcher-linux-x86_64.AppImage")
+            Some("nirova-launcher-linux-x86_64.AppImage")
         );
     }
 
@@ -4125,7 +4125,7 @@ pub fn {f}("
     fn only_an_appimage_file_counts() {
         use std::ffi::OsStr;
         let mount = OsStr::new("/tmp/.mount_Horizon123");
-        let exe = Path::new("/tmp/.mount_NIVRORA123/usr/bin/nivrora-launcher");
+        let exe = Path::new("/tmp/.mount_NIROVA123/usr/bin/nirova-launcher");
         assert_eq!(appimage_path_in(None, Some(mount), exe), None);
         assert_eq!(
             appimage_path_in(Some(OsStr::new("Horizon.AppImage")), Some(mount), exe),
@@ -4147,7 +4147,7 @@ pub fn {f}("
             Some(file.clone())
         );
         // Inherited from another AppImage: this launcher is installed elsewhere.
-        let elsewhere = Path::new("/home/a/.local/bin/nivrora-launcher");
+        let elsewhere = Path::new("/home/a/.local/bin/nirova-launcher");
         assert_eq!(
             appimage_path_in(Some(file.as_os_str()), Some(mount), elsewhere),
             None
@@ -4863,14 +4863,14 @@ pub fn {f}("
 
     #[test]
     fn finds_the_app_bundle_around_the_binary() {
-        let exe = Path::new("/Applications/NIVRORA.app/Contents/MacOS/nivrora-launcher");
+        let exe = Path::new("/Applications/NIROVA.app/Contents/MacOS/nirova-launcher");
         assert_eq!(
             app_bundle(exe),
             Some(Path::new("/Applications/Horizon.app"))
         );
         assert_eq!(app_bundle(Path::new("/Users/me/horizon-launcher")), None);
         assert_eq!(
-            app_bundle(Path::new("/x/Contents/MacOS/nivrora-launcher")),
+            app_bundle(Path::new("/x/Contents/MacOS/nirova-launcher")),
             None
         );
         let work = std::env::temp_dir().join(format!("horizon-find-app-{}", std::process::id()));
@@ -4892,14 +4892,14 @@ pub fn {f}("
             let app = dir.join("Horizon.app");
             fs::create_dir_all(app.join("Contents/MacOS")).unwrap();
             fs::create_dir_all(app.join("Contents/Resources")).unwrap();
-            let bin = app.join("Contents/MacOS/nivrora-launcher");
+            let bin = app.join("Contents/MacOS/nirova-launcher");
             fs::copy("/usr/bin/true", &bin).unwrap();
             fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
             fs::write(app.join("Contents/Resources/version"), version).unwrap();
             fs::write(
                 app.join("Contents/Info.plist"),
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><dict>\
-                 <key>CFBundleExecutable</key><string>nivrora-launcher</string>\
+                 <key>CFBundleExecutable</key><string>nirova-launcher</string>\
                  <key>CFBundleIdentifier</key><string>dev.horizon.test</string>\
                  <key>CFBundlePackageType</key><string>APPL</string></dict></plist>\n",
             )
@@ -4927,7 +4927,7 @@ pub fn {f}("
         replace_bundle(&new, &installed).unwrap();
         let version = fs::read_to_string(installed.join("Contents/Resources/version")).unwrap();
         assert_eq!(version, "2.0.0");
-        let bin = installed.join("Contents/MacOS/nivrora-launcher");
+        let bin = installed.join("Contents/MacOS/nirova-launcher");
         assert!(
             Command::new(&bin).status().unwrap().success(),
             "still executable"
@@ -4963,7 +4963,7 @@ pub fn {f}("
     #[test]
     fn launcher_versions_read_from_the_binary() {
         assert_eq!(
-            parse_version_output("nivrora-launcher 0.1.5\n"),
+            parse_version_output("nirova-launcher 0.1.5\n"),
             Some("0.1.5")
         );
         assert_eq!(parse_version_output("something else"), None);
@@ -4974,7 +4974,7 @@ pub fn {f}("
             None
         );
         assert_eq!(
-            installed_launcher_version(Path::new("/nonexistent/nivrora-launcher")),
+            installed_launcher_version(Path::new("/nonexistent/nirova-launcher")),
             None
         );
     }
