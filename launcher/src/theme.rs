@@ -1,6 +1,6 @@
-//! The launcher's view of Horizon's design tokens (`crates/horizon-theme`, described in
+//! The launcher's view of Nivrora's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Horizon's violet) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
+//! Nivrora's blue) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
 //! Open Font License). Screens not rebuilt yet draw the Blocks parts in the night's colours.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
@@ -80,7 +80,7 @@ fn c(hex: u32) -> Hsla {
 }
 
 /// Whether the launcher is pinned dark (`Some(true)`) or light, or follows the system (`None`):
-/// `HORIZON_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
+/// `NIVRORA_LAUNCHER_APPEARANCE=light` or `dark` (for screenshots and tests), else the player's
 /// choice in Settings.
 pub fn pinned_dark(choice: Appearance) -> Option<bool> {
     match std::env::var("HORIZON_LAUNCHER_APPEARANCE").as_deref() {
@@ -108,19 +108,19 @@ impl Theme {
     }
 
     fn from(p: tokens::Blocks, night: Night) -> Self {
-        // Nirova palette: cool blue/charcoal surfaces with a restrained pink accent.
+        // Nivrora palette: graphite surfaces, misty blue-gray panels and a milk-blue primary accent.
         // Keep the upstream Night data for its artwork and motion, but use one coherent
         // palette for every launcher control and panel.
         let dark = p.dark;
         let (page, side, panel, raised, button, well, outline, rule,
              ink, ink_soft, muted, accent, on_accent) = if dark {
-            (0x0B1420, 0x101D2B, 0x172638, 0x203246, 0x26394D, 0x0E1B29,
-             0x344B62, 0x2A3D51, 0xEAF1F8, 0xC4D2E0, 0x9AAEC2,
-             0xF09BC3, 0x20202A)
+            (0x101720, 0x172230, 0x1D2B3A, 0x26384A, 0x30465A, 0x121D29,
+             0x40576B, 0x314457, 0xEDF5FA, 0xC9D9E5, 0x9FB4C5,
+             0xB8E1EF, 0x14232D)
         } else {
-            (0xF2F6FC, 0xEAF0F8, 0xFFFFFF, 0xE7EEF7, 0xDDE7F2, 0xF7F9FC,
-             0xCBD6E4, 0xD9E2EC, 0x18283B, 0x3C4D63, 0x65768C,
-             0xD96F9F, 0xFFFFFF)
+            (0xF1F5F8, 0xE7EEF3, 0xFAFCFD, 0xE1EAF0, 0xD4E1E9, 0xF5F8FA,
+             0xC2D1DC, 0xD2DEE6, 0x1B2A36, 0x405363, 0x687D8D,
+             0x77BBD2, 0x10232D)
         };
         let page = c(page);
         let side = c(side);
