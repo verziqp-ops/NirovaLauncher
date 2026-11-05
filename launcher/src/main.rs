@@ -329,7 +329,7 @@ struct Launcher {
     /// Modrinth projects' icon URLs (`instance_mods.rs`).
     project_icons: instance_mods::ProjectIcons,
     play_pressed: Option<Instant>,
-    /// `horizon-launcher benchmark` started this window to measure it.
+    /// `nivrora-launcher benchmark` started this window to measure it.
     bench: Option<perf::Bench>,
     /// The Modpacks page: the imported packs (read when the page first opens), the one shown,
     /// the report's filter, and the pipeline step running now with its log.
@@ -2421,7 +2421,7 @@ impl Launcher {
                 .id("launcher-version")
                 .px(px(8.))
                 .pt(px(6.))
-                .child(trf("Offline launcher {version}", &[("version", backend::VERSION)]))
+                .child(trf("NIVRORA Launcher {version}", &[("version", backend::VERSION)]))
                 .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                     this.version_clicked();
                     cx.notify();
@@ -4627,7 +4627,7 @@ impl Launcher {
         (reveal, held.as_secs_f32())
     }
 
-    /// `horizon-launcher benchmark`: scroll the page a little on every frame, back to the top at
+    /// `nivrora-launcher benchmark`: scroll the page a little on every frame, back to the top at
     /// the bottom, so the frame times measure scrolling.
     fn bench_scroll(&mut self, window: &mut Window) {
         let handle = &self.content_scroll.handle;
