@@ -11,11 +11,11 @@ use std::sync::{Arc, Mutex};
 
 /// Game and launcher releases come from this fork (signed with its own key, release-keys.txt),
 /// never from upstream's `horizon-rust/horizon`: those would bring the account gate back.
-pub const REPO: &str = "gerdaroot/Horizon-Offline-Launcher";
+pub const REPO: &str = "verziqp-ops/NirovaLauncher";
 /// Horizon's own repository: native mods' sources and commits this fork doesn't have come from it.
 pub const UPSTREAM_REPO: &str = "horizon-rust/horizon";
 pub const README_URL: &str =
-    "https://github.com/gerdaroot/Horizon-Offline-Launcher/blob/main/launcher/README.md";
+    "https://github.com/verziqp-ops/NirovaLauncher/blob/main/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
 pub const AGENT_DOCS_URL: &str = "https://playhorizon.dev/docs/agents";
 /// This launcher's version: the release workflow sets `HORIZON_LAUNCHER_VERSION` from the
