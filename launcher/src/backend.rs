@@ -1998,7 +1998,8 @@ pub fn prepare_in_process(
 pub fn game_home() -> PathBuf {
     if let Some(home) = std::env::var_os("NIROVA_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
-    }\n    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
+    }
+    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
     let data = dirs::data_dir().unwrap_or_else(std::env::temp_dir);
