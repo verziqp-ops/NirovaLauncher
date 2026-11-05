@@ -1010,9 +1010,9 @@ plain = """You can port a mod to NIROVA with your own AI agent on your own compu
 you the tools, but provides no hosted agents."""
 dev = """A player runs their own agent locally with `horizon-ctl` and the MCP servers (docs/agent-control.md), `cargo \
 horizon-mod`, `horizon-port-pack` and the parity harnesses as the check. NIROVA writes the guide \
-(playhorizon.dev/docs/agents, docs/modpacks.md) and runs no agents, accounts or keys for players. The No AI \
+(docs/agent-control.md, docs/modpacks.md) and runs no agents, accounts or keys for players. The No AI \
 switch turns all of it off."""
-links = ["https://playhorizon.dev/docs/agents", "docs/modpacks.md", "docs/agent-control.md"]
+links = ["https://docs/agent-control.md", "docs/modpacks.md", "docs/agent-control.md"]
 
 [[item]]
 id = "x-account"
