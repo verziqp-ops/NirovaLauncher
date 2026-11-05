@@ -41,6 +41,7 @@ pub struct RegionJob<T> {
 }
 
 /// A worker's result. Results are returned in canonical `order`, not completion order.
+#[derive(Debug, PartialEq, Eq)]
 pub struct RegionResult<R> {
     pub tick: u64,
     pub order: u64,
