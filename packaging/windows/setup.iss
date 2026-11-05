@@ -20,9 +20,9 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=gerdaroot
-AppPublisherURL=https://github.com/verziqp-ops/NIVRORA
-AppSupportURL=https://github.com/verziqp-ops/NIVRORA/issues
-AppUpdatesURL=https://github.com/verziqp-ops/NIVRORA/releases
+AppPublisherURL=https://github.com/verziqp-ops/NirovaLauncher
+AppSupportURL=https://github.com/verziqp-ops/NirovaLauncher/issues
+AppUpdatesURL=https://github.com/verziqp-ops/NirovaLauncher/releases
 DefaultDirName={localappdata}\Programs\NIVRORA
 DisableDirPage=yes
 DisableProgramGroupPage=yes
@@ -38,14 +38,13 @@ WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
 CloseApplications=force
+DefaultLanguage=ukrainian
 
 [Languages]
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
-[Setup]
-DefaultLanguage=ukrainian
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
