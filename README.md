@@ -12,8 +12,8 @@
 | Platform | Artifact | Status |
 |---|---|---|
 | Windows x64 | `Nirova-Setup.exe` | Preview installer |
-| Windows x64 | `horizon-launcher-windows-x64.zip` | Preview portable archive |
-| Linux x86_64 | `horizon-launcher-linux-x86_64.tar.gz` | Preview archive |
+| Windows x64 | `nirova-launcher-windows-x64.zip` | Preview portable archive |
+| Linux x86_64 | `nirova-launcher-linux-x86_64.tar.gz` | Preview archive |
 | macOS | — | No successful package published yet |
 
 These are temporary CI artifacts, not permanent releases. GitHub currently expires them after 90 days. They may contain bugs and are **not verified as a complete playable Minecraft experience**. Do not use them with important worlds or accounts.
