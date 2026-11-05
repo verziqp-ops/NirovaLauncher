@@ -358,7 +358,6 @@
   "Bug reports": "Relatórios de bugs",
   "Only the reports you write and send yourself, with the game's log if you add it after reading it.": "Só os relatórios que você mesmo escreve e envia, com o log do jogo se você o adicionar depois de lê-lo.",
   "Benchmark uploads": "Envio de benchmarks",
-  "The results of benchmarks you run, for the community results on playhorizon.dev.": "Os resultados dos benchmarks que você executar serão enviados para compor os resultados da comunidade em playNIROVA.dev.",
   "Never sent: your account name or UUID, world names, server addresses, chat, or your IP address. Each report is dated to the day, under a random install ID you can delete.": "Nunca enviados: o nome ou UUID da sua conta, nomes de mundos, endereços de servidores, chat ou seu endereço IP. Cada relatório tem só a data do dia, sob um ID de instalação aleatório que você pode apagar.",
   "\"I'm playing\" ping": "\"Estou jogando\" ping",
   ".mrpack (Modrinth), .zip (CurseForge), or a Prism, MultiMC or CurseForge instance. Horizon ports what it can on this computer, from your own downloads, and plays the pack as its own profile. Nothing is uploaded or shared.": ".mrpack (Modrinth), .zip (CurseForge) ou uma instância do Prism, MultiMC ou CurseForge. O NIROVA porta o que for possível neste computador, usando seus próprios downloads, e executa o modpack como um perfil separado. Nada é enviado ou compartilhado.",
@@ -657,5 +656,6 @@
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "Esta versão do launcher não tem login da Microsoft (NIROVA_MSA_CLIENT_ID).",
   "Offline launcher {version}": "Launcher offline {version}",
   "milk-blue": "Azul leitoso",
-  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Os resultados dos benchmarks que você executar, quando a NIROVA disponibilizar seu próprio serviço de resultados."
 }
