@@ -656,5 +656,14 @@
   "Found by itself in your launcher's folder. Or pick the {version}.jar file.": "Знайдено самостійно в теці вашого лаунчера. Або виберіть файл {version}.jar.",
   "Minecraft jar": "Jar Minecraft",
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "У цій збірці лаунчера немає входу Microsoft (HORIZON_MSA_CLIENT_ID).",
-  "Offline launcher {version}": "Офлайн-лаунчер {version}"
+  "Offline launcher {version}": "Офлайн-лаунчер {version}",
+  "Guest profile": "Гостьовий профіль",
+  "Licensed account": "Ліцензійний обліковий запис",
+  "Guest profile · active": "Гостьовий профіль · активний",
+  "Guest profile · game generated": "Гостьовий профіль · автоматично створений",
+  "Guest profile · game generated · active": "Гостьовий профіль · автоматично створений · активний",
+  "NIVRORA Launcher": "Лаунчер NIVRORA",
+  "NIVRORA": "NIVRORA",
+  "Instances": "Екземпляри",
+  "No worlds yet": "Поки немає світів"
 }
