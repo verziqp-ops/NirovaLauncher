@@ -3361,9 +3361,9 @@ impl Settings {
     pub fn desktop_entry(&self) -> bool {
         self.desktop_entry.unwrap_or(true)
     }
-    /// The window's language: the one picked, else Russian.
+    /// The window's language: the one picked, else NIVRORA's Russian default.
     pub fn language(&self) -> crate::i18n::Language {
-        self.language.unwrap_or_else(crate::i18n::Language::system)
+        self.language.unwrap_or(crate::i18n::Language::Russian)
     }
     /// Whether new Horizon versions are installed automatically.
     pub fn auto_install(&self) -> bool {
