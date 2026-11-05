@@ -1996,12 +1996,15 @@ pub fn prepare_in_process(
 /// data folder (~/.local/share/horizon on Linux, as the release folders' horizon.sh uses). It is
 /// never inside a version folder, so installing, updating or removing a version keeps the saves.
 pub fn game_home() -> PathBuf {
-    if let Some(home) = std::env::var_os("NIROVA_HOME").filter(|h| !h.is_empty()) {\n        return PathBuf::from(home);\n    }\n    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
+    if let Some(home) = std::env::var_os("NIROVA_HOME").filter(|h| !h.is_empty()) {
+        return PathBuf::from(home);
+    }\n    if let Some(home) = std::env::var_os("HORIZON_HOME").filter(|h| !h.is_empty()) {
         return PathBuf::from(home);
     }
-    dirs::data_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join("horizon")
+    let data = dirs::data_dir().unwrap_or_else(std::env::temp_dir);
+    let nirova = data.join("nirova");
+    let legacy = data.join("horizon");
+    if nirova.exists() || !legacy.exists() { nirova } else { legacy }
 }
 
 /// Whether No AI is on: every AI feature hidden and off (`horizon_core::no_ai`, kept in the
