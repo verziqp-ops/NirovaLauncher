@@ -20,6 +20,10 @@ The launcher needs a compatible local copy of the game's 26.3 files to prepare r
 
 Downloads will appear under [Releases](https://github.com/verziqp-ops/NirovaLauncher/releases) after the first successful, tested release. Do not install unofficial binaries from third-party mirrors.
 
+## Modding
+
+A Ukrainian beginner guide for creating content mods and native Rust mods is available in [docs/modding-uk.md](docs/modding-uk.md). The visual in-launcher mod creator is planned and is not implemented yet.
+
 ## Build from source
 
 See the workflow files in the .github/workflows directory for supported CI targets and required build dependencies.
