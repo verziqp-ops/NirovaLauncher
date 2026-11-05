@@ -1,5 +1,5 @@
 ; NIVRORA Launcher's Windows installer (Inno Setup 6), built by .github/workflows/launcher.yml:
-;   iscc /DAppVersion=1.2.0 /DSource=path\to\nivrora-launcher.exe /Odist packaging\windows\setup.iss
+;   iscc /DAppVersion=1.2.0 /DSource=path\to\horizon-launcher.exe /Odist packaging\windows\setup.iss
 ; It installs for this user only, without administrator rights, in the same place as install.ps1
 ; (%LOCALAPPDATA%\Programs\NIVRORA), so either one updates the other's install and the
 ; launcher's own updates replace the same file. Uninstalling keeps the game, worlds and settings
@@ -12,14 +12,14 @@
   #define Source "..\..\launcher\target\release\nivrora-launcher.exe"
 #endif
 #define AppName "NIVRORA Launcher"
-#define AppExe "nirova-launcher.exe"
+#define AppExe "nivrora-launcher.exe"
 
 [Setup]
 AppId={{6F0C3B7E-4A1D-4C8B-9E52-3D7A1F2B8C90}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=gerdaroot
+AppPublisher=verziqp-ops
 AppPublisherURL=https://github.com/verziqp-ops/NirovaLauncher
 AppSupportURL=https://github.com/verziqp-ops/NirovaLauncher/issues
 AppUpdatesURL=https://github.com/verziqp-ops/NirovaLauncher/releases
@@ -31,14 +31,14 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputBaseFilename=NIVRORA-Setup
-SetupIconFile=..\icons\nivrora.ico
+SetupIconFile=..\icons\horizon.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
 CloseApplications=force
-DefaultLanguage=ukrainian
+DefaultLanguage=russian
 
 [Languages]
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
