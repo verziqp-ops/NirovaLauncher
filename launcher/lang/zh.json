@@ -656,5 +656,6 @@
   "Found by itself in your launcher's folder. Or pick the {version}.jar file.": "已在你的启动器文件夹中自动找到。或者选择 {version}.jar 文件。",
   "Minecraft jar": "Minecraft jar",
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "此版本的启动器没有 Microsoft 登录(NIVRORA_MSA_CLIENT_ID)。",
-  "Offline launcher {version}": "离线启动器 {version}"
+  "Offline launcher {version}": "离线启动器 {version}",
+  "milk-blue": "乳蓝色"
 }
