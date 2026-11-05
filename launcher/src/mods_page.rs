@@ -145,7 +145,7 @@ impl Mods {
 
     pub(super) fn new(cx: &mut App) -> Self {
         let (tx, rx) = channel();
-        let page = std::env::var("HORIZON_LAUNCHER_PAGE");
+        let page = std::env::var("NIVRORA_LAUNCHER_PAGE");
         let kind = match page.as_deref() {
             Ok("modpacks") => PackKind::Modpack,
             Ok("resourcepacks") => PackKind::ResourcePack,
@@ -366,10 +366,10 @@ impl Launcher {
                 }
             }
         }
-        // `HORIZON_LAUNCHER_PROJECT=<slug>` (with `HORIZON_LAUNCHER_PAGE=mods`): opens that
+        // `NIVRORA_LAUNCHER_PROJECT=<slug>` (with `NIVRORA_LAUNCHER_PAGE=mods`): opens that
         // project's page once a search finds it, for screenshots.
         if self.mods.browse.open.is_none() {
-            if let Ok(want) = std::env::var("HORIZON_LAUNCHER_PROJECT") {
+            if let Ok(want) = std::env::var("NIVRORA_LAUNCHER_PROJECT") {
                 if let Some(p) = self
                     .mods
                     .results
@@ -377,7 +377,7 @@ impl Launcher {
                     .find(|p| p.id == want || p.slug == want)
                     .cloned()
                 {
-                    std::env::remove_var("HORIZON_LAUNCHER_PROJECT");
+                    std::env::remove_var("NIVRORA_LAUNCHER_PROJECT");
                     self.mods_open(p);
                 }
             }
