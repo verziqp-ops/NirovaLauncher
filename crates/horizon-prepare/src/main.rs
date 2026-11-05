@@ -5,9 +5,9 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-/// This release's version: release.yml builds it with `HORIZON_VERSION` from the tag
+/// This release's version: release.yml builds it with `NIROVA_VERSION` from the tag
 /// (docs/versioning.md); a build from source says Cargo.toml's.
-const VERSION: &str = match option_env!("HORIZON_VERSION") {
+const VERSION: &str = match option_env!("NIROVA_VERSION") {
     Some(version) if !version.is_empty() => version,
     _ => env!("CARGO_PKG_VERSION"),
 };
