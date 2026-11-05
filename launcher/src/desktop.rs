@@ -1,10 +1,10 @@
 //! Linux: the launcher puts itself in the applications menu. It writes
-//! `applications/nivrora-launcher.desktop` (pointing at wherever the binary is now) and NIROVA's
+//! `applications/nirova-launcher.desktop` (pointing at wherever the binary is now) and NIROVA's
 //! icon into the `hicolor` theme, under `$XDG_DATA_HOME` (`~/.local/share` by default), so no root
-//! is needed; `nivrora-game.desktop` (hidden from menus) gives the game's window its icon on Wayland.
+//! is needed; `nirova-game.desktop` (hidden from menus) gives the game's window its icon on Wayland.
 //! A release build writes it when it starts only if there is no entry yet or the one there starts
 //! a program that is gone ([`repair`]), so a development or test build never takes over a working
-//! entry. Turning the Settings switch on (or `nivrora-launcher desktop-entry`) points it at this
+//! entry. Turning the Settings switch on (or `nirova-launcher desktop-entry`) points it at this
 //! binary whatever is there ([`install`]); the switch off and `desktop-entry --remove` take it all
 //! away again.
 use std::ffi::OsStr;
@@ -16,45 +16,45 @@ use std::path::{Path, PathBuf};
 const ICONS: [(&str, &[u8]); 9] = [
     (
         "16x16",
-        include_bytes!("../../packaging/icons/hicolor/16x16/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/16x16/apps/nirova.png"),
     ),
     (
         "24x24",
-        include_bytes!("../../packaging/icons/hicolor/24x24/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/24x24/apps/nirova.png"),
     ),
     (
         "32x32",
-        include_bytes!("../../packaging/icons/hicolor/32x32/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/32x32/apps/nirova.png"),
     ),
     (
         "48x48",
-        include_bytes!("../../packaging/icons/hicolor/48x48/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/48x48/apps/nirova.png"),
     ),
     (
         "64x64",
-        include_bytes!("../../packaging/icons/hicolor/64x64/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/64x64/apps/nirova.png"),
     ),
     (
         "128x128",
-        include_bytes!("../../packaging/icons/hicolor/128x128/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/128x128/apps/nirova.png"),
     ),
     (
         "256x256",
-        include_bytes!("../../packaging/icons/hicolor/256x256/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/256x256/apps/nirova.png"),
     ),
     (
         "512x512",
-        include_bytes!("../../packaging/icons/hicolor/512x512/apps/nivrora.png"),
+        include_bytes!("../../packaging/icons/hicolor/512x512/apps/nirova.png"),
     ),
     (
         "scalable",
-        include_bytes!("../../packaging/icons/hicolor/scalable/apps/nivrora.svg"),
+        include_bytes!("../../packaging/icons/hicolor/scalable/apps/nirova.svg"),
     ),
 ];
 
-const LAUNCHER_ENTRY: &str = "nivrora-launcher.desktop";
-const GAME_ENTRY: &str = "nivrora-game.desktop";
-const GAME_ENTRY_TEXT: &str = include_str!("../../packaging/linux/nivrora-game.desktop");
+const LAUNCHER_ENTRY: &str = "nirova-launcher.desktop";
+const GAME_ENTRY: &str = "nirova-game.desktop";
+const GAME_ENTRY_TEXT: &str = include_str!("../../packaging/linux/nirova-game.desktop");
 
 /// `$XDG_DATA_HOME`, or `~/.local/share` when it is unset or not absolute (as the spec says).
 pub fn data_home() -> Option<PathBuf> {
@@ -87,10 +87,10 @@ pub fn launcher_entry(exe: &Path) -> String {
          Comment=Install, prepare and play NIROVA, Minecraft: Java Edition {minecraft} rewritten in Rust\n\
          Exec={}\n\
          TryExec={}\n\
-         Icon=nivrora\n\
+         Icon=nirova\n\
          Terminal=false\n\
          Categories=Game;\n\
-         StartupWMClass=nivrora-launcher\n",
+         StartupWMClass=nirova-launcher\n",
         quote(exe),
         exe.display(),
         minecraft = horizon_core::VANILLA_VERSION,
@@ -111,9 +111,9 @@ fn files(data: &Path, exe: &Path) -> Vec<(PathBuf, Vec<u8>)> {
     ];
     for (size, bytes) in ICONS {
         let name = if size == "scalable" {
-            "nivrora.svg"
+            "nirova.svg"
         } else {
-            "nivrora.png"
+            "nirova.png"
         };
         out.push((
             data.join("icons/hicolor")
@@ -138,7 +138,7 @@ pub fn install_in(data: &Path, exe: &Path) -> io::Result<bool> {
             fs::create_dir_all(dir)?;
         }
         // Written beside and renamed, so a menu never reads half an entry.
-        let temp = path.with_extension("nivrora-tmp");
+        let temp = path.with_extension("nirova-tmp");
         fs::write(&temp, &bytes)?;
         fs::rename(&temp, &path)?;
         wrote = true;
@@ -227,7 +227,7 @@ fn target_from(exe: &Path, appimage: Option<&Path>) -> PathBuf {
 }
 
 /// Registers the launcher whatever entry is there: for the player turning it on (the Settings
-/// switch, `nivrora-launcher desktop-entry`).
+/// switch, `nirova-launcher desktop-entry`).
 pub fn install(exe: &Path) -> Result<bool, String> {
     let data = data_home().ok_or("No home folder to put the menu entry in.")?;
     install_in(&data, &target(exe)).map_err(|e| format!("{}: {e}", data.display()))
@@ -259,26 +259,26 @@ mod tests {
 
     #[test]
     fn exec_paths_are_quoted() {
-        let entry = launcher_entry(Path::new("/home/a b/NIROVA \"x\"/nivrora-launcher"));
-        assert!(entry.contains("Exec=\"/home/a b/NIROVA \\\"x\\\"/nivrora-launcher\"\n"));
-        assert!(entry.contains("TryExec=/home/a b/NIROVA \"x\"/nivrora-launcher\n"));
-        assert!(entry.contains("Icon=nivrora\n"));
+        let entry = launcher_entry(Path::new("/home/a b/NIROVA \"x\"/nirova-launcher"));
+        assert!(entry.contains("Exec=\"/home/a b/NIROVA \\\"x\\\"/nirova-launcher\"\n"));
+        assert!(entry.contains("TryExec=/home/a b/NIROVA \"x\"/nirova-launcher\n"));
+        assert!(entry.contains("Icon=nirova\n"));
     }
 
     #[test]
     fn installs_follows_a_moved_binary_and_removes() {
         let data = std::env::temp_dir().join(format!("horizon-desktop-{}", std::process::id()));
         let _ = fs::remove_dir_all(&data);
-        assert!(install_in(&data, Path::new("/opt/a/nivrora-launcher")).unwrap());
-        assert!(!install_in(&data, Path::new("/opt/a/nivrora-launcher")).unwrap());
-        let png = data.join("icons/hicolor/48x48/apps/nivrora.png");
+        assert!(install_in(&data, Path::new("/opt/a/nirova-launcher")).unwrap());
+        assert!(!install_in(&data, Path::new("/opt/a/nirova-launcher")).unwrap());
+        let png = data.join("icons/hicolor/48x48/apps/nirova.png");
         assert!(fs::read(&png).unwrap().starts_with(b"\x89PNG"));
         assert!(data
-            .join("icons/hicolor/scalable/apps/nivrora.svg")
+            .join("icons/hicolor/scalable/apps/nirova.svg")
             .exists());
-        assert!(install_in(&data, Path::new("/opt/b/nivrora-launcher")).unwrap());
+        assert!(install_in(&data, Path::new("/opt/b/nirova-launcher")).unwrap());
         let entry = fs::read_to_string(data.join("applications").join(LAUNCHER_ENTRY)).unwrap();
-        assert!(entry.contains("Exec=\"/opt/b/nivrora-launcher\""));
+        assert!(entry.contains("Exec=\"/opt/b/nirova-launcher\""));
         remove_in(&data).unwrap();
         assert!(!data.join("applications").join(LAUNCHER_ENTRY).exists());
         assert!(!png.exists());
@@ -288,15 +288,15 @@ mod tests {
 
     #[test]
     fn the_target_is_try_exec_else_the_first_word_of_exec() {
-        let ours = launcher_entry(Path::new("/opt/a b/horizon \"x\"/nivrora-launcher"));
+        let ours = launcher_entry(Path::new("/opt/a b/horizon \"x\"/nirova-launcher"));
         assert_eq!(
             entry_target(&ours).as_deref(),
-            Some("/opt/a b/horizon \"x\"/nivrora-launcher")
+            Some("/opt/a b/horizon \"x\"/nirova-launcher")
         );
         let without_try = ours.replace("TryExec=", "X-Old=");
         assert_eq!(
             entry_target(&without_try).as_deref(),
-            Some("/opt/a b/horizon \"x\"/nivrora-launcher")
+            Some("/opt/a b/horizon \"x\"/nirova-launcher")
         );
         let wrapper = "[Desktop Entry]\nExec=flatpak run dev.horizon.Launcher %U\n";
         assert_eq!(entry_target(wrapper).as_deref(), Some("flatpak"));
@@ -317,7 +317,7 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
         let (data, bin) = (root.join("data"), root.join("bin"));
         fs::create_dir_all(&bin).unwrap();
-        let installed = bin.join("nivrora-launcher");
+        let installed = bin.join("nirova-launcher");
         fs::write(&installed, b"").unwrap();
         let entry = data.join("applications").join(LAUNCHER_ENTRY);
         let path = Some(bin.as_os_str());
@@ -328,7 +328,7 @@ mod tests {
         // Ours works: a build elsewhere leaves it alone.
         assert!(!needs_repair_in(&data, path));
         // So does one another launcher wrote, found on PATH or by its path.
-        fs::write(&entry, "[Desktop Entry]\nExec=nivrora-launcher %U\n").unwrap();
+        fs::write(&entry, "[Desktop Entry]\nExec=nirova-launcher %U\n").unwrap();
         assert!(!needs_repair_in(&data, path));
         assert!(needs_repair_in(&data, None));
         // The program is gone (a deleted target/ folder, a moved binary): write it again.
@@ -345,7 +345,7 @@ mod tests {
     /// when the launcher exits.
     #[test]
     fn an_appimage_entry_starts_the_appimage() {
-        let exe = Path::new("/tmp/.mount_NIROVA123/usr/bin/nivrora-launcher");
+        let exe = Path::new("/tmp/.mount_NIROVA123/usr/bin/nirova-launcher");
         let appimage = Path::new("/home/a b/NIROVA.AppImage");
         assert_eq!(target_from(exe, Some(appimage)), appimage);
         assert_eq!(target_from(exe, None), exe);
