@@ -14,6 +14,29 @@ Performance work must preserve the existing simulation contract: fixed game-tick
 - The game is Rust-based and expects local compatible game files; this repository does not bundle Minecraft assets.
 - The repository license is MIT for this repository's code. It does not grant rights to Minecraft game code, assets, trademarks, or distribution.
 
+
+## Launcher audit update (2026-11-05)
+
+The launcher already contains much of the requested version and folder foundation; do not rebuild it from scratch:
+
+- `launcher/src/minecraft_versions.rs` reads Mojang's official `version_manifest_v2.json`, caches it for offline listing, and recognizes releases, snapshots, old betas and old alphas.
+- `launcher/src/new_instance.rs` and `launcher/src/instances_page.rs` provide Java instance creation and a searchable version picker (60 visible rows at a time). Java instances can be pinned to a selected version.
+- `backend::Settings.minecraft_dir` stores a custom Minecraft directory; `minecraft-dir` is also exposed in launcher CLI settings. The backend checks the configured folder, the official launcher's known folder locations and other launchers' folders when finding reusable assets.
+- Java instances already have separate game folders, so versions/modpacks can keep their own worlds, options and packs without overwriting the default Horizon home.
+
+### Launcher follow-up work (extend, don't duplicate)
+
+1. Verify that the GUI exposes a clear Browse control for `minecraft_dir`; if not, add one with path validation, folder detection and a reset-to-auto option.
+2. On first run, show the detected `.minecraft` path and let the player confirm or choose another folder. Never silently move or overwrite their files.
+3. Add a version manager page with Release / Snapshot / Historical filters, search, installed/downloaded status, per-version progress, cancel/retry, and clear disk-space estimates.
+4. Support per-instance version pinning, cloning an installation, separate game directories, safe deletion, and world backups before switching to older versions.
+5. Reuse Mojang's official manifest and checksum metadata; validate downloads and write atomically. Do not serve proprietary game files from Nirova infrastructure.
+6. Keep Microsoft sign-in, ownership checks and token storage secure. An offline *profile label* can be useful for Horizon's own engine, but must not become an entitlement bypass for launching proprietary Minecraft Java Edition.
+
+### Existing authentication issue to review before release
+
+The current `launcher/src/account.rs` declares `GATE_OPEN: bool = true` and comments that the fork allows play without an account that owns Minecraft. This is already present on the base branch; it was not introduced by the design/performance branch. It conflicts with the surrounding ownership-check code and must receive a deliberate legal/security review before distributing the launcher. This plan does not add to or extend that bypass. The safe product distinction is: guest/local profiles for Nirova's own engine; verified entitlement for launching Minecraft Java Edition.
+
 ## Work packages
 
 ### 0. Baseline, profiling and compatibility harness
