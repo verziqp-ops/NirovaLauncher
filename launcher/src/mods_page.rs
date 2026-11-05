@@ -224,7 +224,7 @@ impl Mods {
             return Support::Works;
         }
         let metadata = p.support();
-        if p.kind != PackKind::Mod || p.source == SourceId::NIVRORA || !metadata.installable() {
+        if p.kind != PackKind::Mod || p.source == SourceId::Horizon || !metadata.installable() {
             return metadata;
         }
         match self.checks.get(&(p.source, p.id.clone())) {
@@ -417,7 +417,7 @@ impl Launcher {
                 ..Query::new(m.text.text(), m.kind)
             },
         };
-        // A Java instance's files are Modrinth's; NIROVA's registry is for Horizon.
+        // A Java instance's files are Modrinth's; NIROVA's registry is for NIROVA.
         let source = match m.java_for(m.kind) {
             Some(_) => SourceId::Modrinth,
             None => m.source,
