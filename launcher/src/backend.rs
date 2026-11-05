@@ -17,7 +17,7 @@ pub const UPSTREAM_REPO: &str = "horizon-rust/horizon";
 pub const README_URL: &str =
     "https://github.com/verziqp-ops/NirovaLauncher/blob/main/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
-pub const AGENT_DOCS_URL: &str = "https://playhorizon.dev/docs/agents";
+pub const AGENT_DOCS_URL: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/docs";
 /// This launcher's version: the release workflow sets `HORIZON_LAUNCHER_VERSION` from the
 /// tag it builds (no version-bump commits); other builds say Cargo.toml's.
 pub const VERSION: &str = version_or(option_env!("HORIZON_LAUNCHER_VERSION"));
@@ -769,7 +769,7 @@ pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> 
             fetch_small,
         )?,
         None if is_game_tag(tag) => signed_digest(tag, ASSET.unwrap_or_default())?,
-        None => return Err(format!("{tag} is not a Horizon release.")),
+        None => return Err(format!("{tag} is not a NIVRORA release.")),
     };
     install_as(release, tag, &sha256, progress)
 }
@@ -905,7 +905,7 @@ pub fn resources_summary(prepared: bool, sounds: bool, version: &str) -> String 
     use crate::i18n::trf;
     match (prepared, sounds) {
         (false, _) => trf(
-            "Not prepared. Horizon needs the files of your own Minecraft {version}.",
+            "Not prepared. NIVRORA needs the files of your own Minecraft {version}.",
             &[("version", version)],
         ),
         (true, true) => trf("Prepared for Minecraft {version}", &[("version", version)]),
@@ -1282,7 +1282,7 @@ pub fn complete_assets(tag: &str) {
     });
 }
 
-/// Horizon's own download (an owner's) may have stopped before the sounds and the languages,
+/// NIVRORA's own download (an owner's) may have stopped before the sounds and the languages,
 /// and the copies of `complete_assets` read them from its store: asked again, once per run, through
 /// the same owner gate as any download from Mojang (`download_for_owner`), which keeps the files
 /// already whole. Called where a download is expected (`reuse_prepared_everywhere`), never on Play.
@@ -1497,7 +1497,7 @@ pub fn java_game(
 ) -> Result<Command, String> {
     let game = instance.java.as_ref().ok_or_else(|| {
         format!(
-            "{} plays Horizon, not Minecraft: Java Edition",
+            "{} plays NIVRORA, not Minecraft: Java Edition",
             instance.name
         )
     })?;
@@ -1594,7 +1594,7 @@ fn download_for(
                 sources::Os::Windows => "windows",
             };
             mojang::download(pins, dir, os, 8, fetch, &mojang::CANCEL, log).map_err(|e| {
-                format!("\n  • Horizon tried to download {v} from Mojang for {name}, but: {e}")
+                format!("\n  • NIVRORA tried to download {v} from Mojang for {name}, but: {e}")
             })
         }
         // An owner by its last answer, who can't be asked now.
@@ -1604,11 +1604,11 @@ fn download_for(
             pass.offline.unwrap_or_default()
         )),
         Err(_) if signed_in => Err(
-            "\n  • No signed-in account owns Minecraft: Java Edition, so Horizon can't download it."
+            "\n  • No signed-in account owns Minecraft: Java Edition, so NIVRORA can't download it."
                 .into(),
         ),
         Err(_) => Err(format!(
-            "\n  • Or sign in with the Microsoft account that owns Minecraft: Horizon then \
+            "\n  • Or sign in with the Microsoft account that owns Minecraft: NIVRORA then \
              downloads {v} from Mojang itself."
         )),
     }
@@ -1667,7 +1667,7 @@ fn java(
     let runtime = data_dir().join("minecraft").join("runtime");
     let home = mojang::java_runtime(&component, &runtime, 8, &fetch, &mojang::CANCEL, log)
         .map_err(|e| {
-        format!("{missing}\n  • Horizon also tried to download Minecraft's own Java from Mojang, but: {e}")
+        format!("{missing}\n  • NIVRORA also tried to download Minecraft's own Java from Mojang, but: {e}")
     })?;
     find(major, &[home]).map(|jdk| jdk.home())
 }
@@ -2228,7 +2228,7 @@ pub fn client_command(tag: &str) -> Command {
     }
     // PipeWire remembers volume and mute per application name. The game's own name is
     // "PipeWire ALSA [horizon-client]", shared with development and test runs, where
-    // muting it once left every later game silent: played from here it is "Horizon".
+    // muting it once left every later game silent: played from here it is "NIVRORA".
     if std::env::var_os("PIPEWIRE_PROPS").is_none() {
         cmd.env(
             "PIPEWIRE_PROPS",
@@ -2465,7 +2465,7 @@ pub fn release_notes(tag: Option<&str>) -> Result<Release, String> {
         Some(tag) => releases
             .into_iter()
             .find(|r| r.tag == tag)
-            .ok_or_else(|| format!("No Horizon release is tagged {tag}.")),
+            .ok_or_else(|| format!("No NIVRORA release is tagged {tag}.")),
         None => releases
             .into_iter()
             .next()
@@ -3743,12 +3743,12 @@ pub fn {f}("
     #[test]
     fn a_crash_after_the_vulkan_adapter_line_and_before_the_first_frame_is_a_start_crash() {
         let start = [
-            "Horizon: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
+            "NIVRORA: resources loaded in 11.3s; 35723 block states, 1658 items, 67 biomes",
             "Horizon renderer: Intel(R) HD Graphics 530 (Vulkan, IntegratedGpu)",
         ];
         assert!(vulkan_start_crashed(start));
         // A step line after the adapter keeps it a start crash.
-        let step = [start[1], "Horizon renderer: creating the pipelines"];
+        let step = [start[1], "NIVRORA renderer: creating the pipelines"];
         assert!(vulkan_start_crashed(step));
         // A crash after the first frame is the game's, not the renderer start's.
         let later = [start[1], "Horizon: first frame after 812 ms"];
