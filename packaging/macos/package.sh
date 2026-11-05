@@ -84,7 +84,7 @@ cat > "$out/dmg.json" <<JSON
   ]
 }
 JSON
-"${DMGBUILD:-dmgbuild}" -s "$out/dmg.json" Horizon "$dmg"
+"${DMGBUILD:-dmgbuild}" -s "$out/dmg.json" NIVRORA "$dmg"
 rm "$out/dmg.json"
 if [[ "$identity" != "-" ]]; then
   codesign --force --timestamp ${keychain[@]+"${keychain[@]}"} --sign "$identity" "$dmg"
