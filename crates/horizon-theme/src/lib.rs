@@ -324,7 +324,7 @@ pub const LIGHT: Palette = Palette {
     ink: 0x16181f,
     ink_soft: 0x3b3e49,
     muted: 0x646875,
-    accent: 0xa94475,
+    accent: 0xa53d70,
     on_accent: 0xffffff,
     danger: 0xb4372a,
     success: 0x1d7a48,
