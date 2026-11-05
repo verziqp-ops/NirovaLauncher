@@ -17,6 +17,31 @@ env:
   HORIZON_TELEMETRY_URL: "off"
 
 jobs:
+  brand-assets:
+    name: Render NIROVA platform icons
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: nirova-brand-assets
+          path: .
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install SVG renderer
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+      - name: Generate icons from the NIROVA master artwork
+        run: cargo run --locked -p xtask -- icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nirova-brand-assets
+          path: |
+            packaging/icons/
+            crates/horizon-theme/icons/nirova-64.png
+            docs/media/brand/icon-1024.png
+            docs/media/brand/icon-macos-1024.png
+            docs/media/brand/social/github-avatar-500.png
+            docs/media/brand/web/
+
   # The tests run once, on Linux: some of upstream's tests depend on the machine (the trash on
   # Windows, macOS on a hosted runner), and a build never waits for them.
   test:
@@ -42,6 +67,7 @@ jobs:
       - run: cargo test --release --locked
 
   build:
+    needs: [brand-assets]
     name: ${{ matrix.name }}
     strategy:
       fail-fast: false
