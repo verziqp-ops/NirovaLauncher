@@ -21,7 +21,7 @@ $ErrorActionPreference = "Stop"
 $Repo = "verziqp-ops/NIROVALauncher"
 $Asset = "nirova-launcher-windows-x64.zip"
 $Name = "NIROVA Launcher"
-$Dir = Join-Path $env:LOCALAPPDATA "Programs\NIROVALauncher"
+$Dir = Join-Path $env:LOCALAPPDATA "Programs\NIROVA"
 $Target = Join-Path $Dir "nirova-launcher.exe"
 
 function Say($text) { Write-Host "  $text" }
