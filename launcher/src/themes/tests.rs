@@ -55,6 +55,7 @@ fn colours_go_to_hsl_and_back() {
         let (h, s, l) = hsl(c);
         assert_eq!(from_hsl(h, s, l), c, "{c:06x}");
     }
+    assert_eq!(Accent::default(), Accent::PINK);
     assert_eq!(Accent::parse("Teal"), Some(Accent::TEAL));
     assert_eq!(Accent::parse("purple"), Some(Accent::VIOLET));
     assert_eq!(Accent::parse("chartreuse"), None);
