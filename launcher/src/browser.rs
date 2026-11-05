@@ -73,7 +73,7 @@ impl Kind {
 pub enum SourceId {
     Modrinth,
     CurseForge,
-    /// Horizon's own registry of reviewed mods, modpacks and resource packs ([`horizon`]).
+    /// NIROVA's own catalog of reviewed mods, modpacks and resource packs ([`horizon`]).
     Horizon,
 }
 
@@ -90,11 +90,11 @@ impl SourceId {
 /// How well a project runs in NIROVA.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Support {
-    /// Made for the version Horizon plays, and Horizon reads everything it uses.
+    /// Made for the version NIROVA plays, and NIROVA reads everything it uses.
     Works,
     /// It loads, with the limit said.
     Partial(String),
-    /// It can't run in Horizon: never offered for install.
+    /// It can't run in NIROVA: never offered for install.
     No(String),
 }
 
@@ -165,7 +165,7 @@ pub struct FileRef {
     pub name: String,
     pub size: u64,
     pub sha512: Option<String>,
-    /// What Horizon's registry lists.
+    /// What NIROVA's catalog lists.
     pub sha256: Option<String>,
     pub sha1: Option<String>,
     pub primary: bool,
@@ -268,9 +268,9 @@ pub trait Source: Send + Sync {
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
 /// What another source answers for shader packs: Horizon's own are on its registry only.
 pub const SHADERS_ON_HORIZON: &str =
-    "Horizon's shader packs are on Horizon's registry: pick NIROVA.";
+    "NIROVA's shader packs are in NIROVA's catalog: pick NIROVA.";
 
-/// The sources this launcher uses: Modrinth and Horizon's registry. CurseForge support is coming
+/// The sources this launcher uses: Modrinth and NIROVA's catalog. CurseForge support is coming
 /// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
 /// then.
 pub fn sources() -> Vec<Box<dyn Source>> {
@@ -282,14 +282,14 @@ pub fn source(id: SourceId) -> Option<Box<dyn Source>> {
     sources().into_iter().find(|s| s.id() == id)
 }
 
-/// How well a project of `kind` made for `game_versions` and `loaders` runs in Horizon.
+/// How well a project of `kind` made for `game_versions` and `loaders` runs in NIROVA.
 pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Support {
     if loaders.iter().any(|l| l == horizon::LOADER) {
-        // Made for NIROVA and reviewed: it runs when it is for the version Horizon plays.
+        // Made for NIROVA and reviewed: it runs when it is for the version NIROVA plays.
         return match newest_release(game_versions)
             .filter(|_| !game_versions.iter().any(|v| v == GAME))
         {
-            Some(other) => Support::No(format!("Made for Horizon on {other}.")),
+            Some(other) => Support::No(format!("Made for NIROVA on {other}.")),
             None => Support::Works,
         };
     }
@@ -307,9 +307,9 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
             }
         }
         Kind::Modpack => {
-            Support::Partial("Horizon runs the mods it can port, from your own downloads.".into())
+            Support::Partial("NIROVA runs the mods it can port, from your own downloads.".into())
         }
-        Kind::Shader => Support::No("Not one of Horizon's own shader packs.".into()),
+        Kind::Shader => Support::No("Not one of NIROVA's own shader packs.".into()),
         Kind::DataPack => {
             let made_for = match newest_release(game_versions) {
                 _ if game_versions.iter().any(|v| v == GAME) => String::new(),
@@ -324,7 +324,7 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
             } else if !game_versions.iter().any(|v| portable_version(v)) {
                 let newest = newest_release(game_versions).unwrap_or("an unknown version");
                 Support::No(format!(
-                    "Made for {newest}: Horizon ports mods made for 1.21 and later."
+                    "Made for {newest}: NIROVA ports mods made for 1.21 and later."
                 ))
             } else {
                 Support::Partial(
@@ -335,9 +335,9 @@ pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Supp
     }
 }
 
-/// What a data pack does in Horizon today, said before install; the install says it for the
+/// What a data pack does in NIROVA today, said before install; the install says it for the
 /// pack's own files (`crate::datapacks::coverage`).
-pub const DATAPACK_SUPPORT: &str = "Horizon runs a data pack's functions, function tags, \
+pub const DATAPACK_SUPPORT: &str = "NIROVA runs a data pack's functions, function tags, \
      predicates and item modifiers; not yet its recipes, loot tables, advancements, other tags \
      or worldgen.";
 
