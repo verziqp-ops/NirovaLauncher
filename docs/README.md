@@ -1,6 +1,6 @@
 # NIROVA — документація розробника
 
-Для гри використовуйте [лаунчер NIROVA](../launcher/README.md). Це технічна документація форку NIROVA; назви `horizon-*` у коді та окремих інструментах поки залишаються історичними технічними ідентифікаторами. Сторінки нижче призначені для розробників. What is being done now and next, the work board and how to help: [the hub](https://playhorizon.dev/hub) ([ROADMAP.md](../ROADMAP.md), [roadmap/README.md](../roadmap/README.md) for keeping it current).
+To play, use the [NIROVA launcher](../launcher/README.md). These pages document the NIROVA fork for developers; `horizon-*` crate names and some tool identifiers remain historical technical names. Current goals and work tracking: [ROADMAP.md](../ROADMAP.md) and [roadmap/README.md](../roadmap/README.md).
 
 ## Build and run
 
