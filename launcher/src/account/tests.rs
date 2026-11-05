@@ -1516,3 +1516,20 @@ fn fresh_install_has_a_guest_profile_but_guest_never_skips_ownership() {
     let _ = std::fs::remove_file(path);
 }
 
+
+#[test]
+fn licensed_account_keeps_the_guest_profile_available_in_the_picker() {
+    let store = MemoryStore::default();
+    let accounts = signed_in(&store, &secrets("minecraft-token", true));
+    let path = std::env::temp_dir().join(format!(
+        "nivrora-guest-picker-{}.json",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&path);
+    accounts.save_to(&path).unwrap();
+    let loaded = Accounts::load_from(&path);
+    assert_eq!(loaded.player(), Player::Microsoft(UUID.into()));
+    assert!(loaded.offline.iter().any(|name| name == "Player"));
+    let _ = std::fs::remove_file(path);
+}
+
