@@ -266,7 +266,7 @@ pub trait Source: Send + Sync {
 
 /// What the launcher says wherever CurseForge would be.
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
-/// What another source answers for shader packs: Horizon's own are on its registry only.
+/// What another source answers for shader packs: NIROVA's own are in its catalog only.
 pub const SHADERS_ON_HORIZON: &str =
     "NIROVA's shader packs are in NIROVA's catalog: pick NIROVA.";
 
