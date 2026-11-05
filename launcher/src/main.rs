@@ -1716,35 +1716,26 @@ fn version_tag(tag: &str) -> Div {
         )
 }
 
-/// Horizon's mark: two stems, their reflection below, and the horizon across in the accent.
+/// Nirova's mark: a compact N monogram in the launcher accent.
 fn mark(size: f32, t: &Theme) -> Div {
     let u = size / 16.;
-    let stem = |x: f32, y: f32, color: Hsla| {
+    let bar = |x: f32, y: f32, w: f32, h: f32, color: Hsla| {
         div()
             .absolute()
             .left(px(x * u))
             .top(px(y * u))
-            .w(px(2. * u))
-            .h(px(4. * u))
+            .w(px(w * u))
+            .h(px(h * u))
             .bg(color)
     };
     div()
         .relative()
         .flex_none()
         .size(px(size))
-        .child(stem(4., 3., t.ink))
-        .child(stem(10., 3., t.ink))
-        .child(stem(4., 8., t.ink.opacity(0.36)))
-        .child(stem(10., 8., t.ink.opacity(0.36)))
-        .child(
-            div()
-                .absolute()
-                .left(px(u))
-                .top(px(7. * u))
-                .w(px(14. * u))
-                .h(px(u))
-                .bg(t.accent),
-        )
+        // Two uprights and a bridge form a distinct Nirova monogram.
+        .child(bar(2., 2., 3., 12., t.ink))
+        .child(bar(11., 2., 3., 12., t.ink))
+        .child(bar(4., 6., 8., 3., t.accent))
 }
 
 /// The last thing the player did was press Tab: focused controls show a ring (a click focuses them
@@ -4802,8 +4793,8 @@ fn key_bindings() -> Vec<KeyBinding> {
 fn menus() -> Vec<Menu> {
     vec![
         Menu {
-            name: "Horizon Launcher".into(),
-            items: vec![MenuItem::action("Quit Horizon Launcher", Quit)],
+            name: "Nirova Launcher".into(),
+            items: vec![MenuItem::action("Quit Nirova Launcher", Quit)],
             disabled: false,
         },
         Menu {
