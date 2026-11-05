@@ -228,7 +228,7 @@ impl Launcher {
                         summary.map_or_else(|| tr("Modpack").into(), |p| p.summary()),
                     )
                 }
-                InstanceKind::Pack => (false, tr("From Horizon's registry").into()),
+                InstanceKind::Pack => (false, tr("From NIVRORA catalog").into()),
             };
             // Java instances have nothing of Horizon's to prepare: no state square.
             let state = (matches!(i.kind, InstanceKind::Default | InstanceKind::Own)
@@ -399,7 +399,7 @@ impl Launcher {
         let n = t.night;
         let from = self
             .selected_instance()
-            .map_or_else(|| "Horizon".into(), |i| i.name.clone());
+            .map_or_else(|| "NIVRORA".into(), |i| i.name.clone());
         let row = |label: &'static str, control: AnyElement| {
             div()
                 .flex()
@@ -781,7 +781,7 @@ impl Launcher {
 }
 
 impl Launcher {
-    /// Delete…, for every instance but Horizon's own (the game's home); not while a game runs.
+    /// Delete…, for every instance but NIVRORA's own (the game's home); not while a game runs.
     fn delete_button(&self, instance: &Instance, cx: &mut Context<Self>) -> Option<Stateful<Div>> {
         if instance.kind == InstanceKind::Default {
             return None;
