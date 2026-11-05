@@ -604,7 +604,6 @@
   "Export…": "导出…",
   "Add another account.": "添加其他账户。",
   "Launch…": "启动选项…",
-  "The results of benchmarks you run, for the community results on playhorizon.dev.": "The results of benchmarks you run, for the community results on playNIROVA.dev.",
   "Not ported: {item}": "未移植：{item}",
   "Modpacks": "整合包",
   "{name} moved to the trash.": "已将 {name} 移到回收站。",
@@ -657,5 +656,6 @@
   "This build of the launcher has no Microsoft sign-in (HORIZON_MSA_CLIENT_ID).": "此版本的启动器没有 Microsoft 登录(NIROVA_MSA_CLIENT_ID)。",
   "Offline launcher {version}": "离线启动器 {version}",
   "milk-blue": "乳蓝色",
-  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable."
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "你运行的基准测试结果；待 NIROVA 提供自己的结果服务后再发布。"
 }
