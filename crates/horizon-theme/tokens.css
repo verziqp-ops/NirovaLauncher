@@ -10,7 +10,7 @@
   --ink: #182a36;
   --ink-soft: #3e5665;
   --muted: #4b6271;
-  --accent: #a94475;
+  --accent: #a53d70;
   --on-accent: #ffffff;
   --danger: #a3301d;
   --success: #136336;
@@ -24,7 +24,7 @@
   --bevel: #ffffff;
   --lip: #c4d5df;
   --outline: #344c5c;
-  --face: #a94475;
+  --face: #a53d70;
   --face-bevel: #bc6d93;
   --face-lip: #6e2c4c;
   --on-face: #ffffff;
@@ -40,8 +40,8 @@
   --night-ink: #1b2a36;
   --night-ink-soft: #405363;
   --night-muted: #506776;
-  --night-accent: #a94475;
-  --night-accent-hi: #a94475;
+  --night-accent: #a53d70;
+  --night-accent-hi: #a53d70;
   --night-on-accent: #ffffff;
   --night-success: #136336;
   --night-warn: #7a4f00;
