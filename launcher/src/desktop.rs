@@ -16,39 +16,39 @@ use std::path::{Path, PathBuf};
 const ICONS: [(&str, &[u8]); 9] = [
     (
         "16x16",
-        include_bytes!("../../packaging/icons/hicolor/16x16/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/16x16/apps/nivrora.png"),
     ),
     (
         "24x24",
-        include_bytes!("../../packaging/icons/hicolor/24x24/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/24x24/apps/nivrora.png"),
     ),
     (
         "32x32",
-        include_bytes!("../../packaging/icons/hicolor/32x32/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/32x32/apps/nivrora.png"),
     ),
     (
         "48x48",
-        include_bytes!("../../packaging/icons/hicolor/48x48/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/48x48/apps/nivrora.png"),
     ),
     (
         "64x64",
-        include_bytes!("../../packaging/icons/hicolor/64x64/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/64x64/apps/nivrora.png"),
     ),
     (
         "128x128",
-        include_bytes!("../../packaging/icons/hicolor/128x128/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/128x128/apps/nivrora.png"),
     ),
     (
         "256x256",
-        include_bytes!("../../packaging/icons/hicolor/256x256/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/256x256/apps/nivrora.png"),
     ),
     (
         "512x512",
-        include_bytes!("../../packaging/icons/hicolor/512x512/apps/horizon.png"),
+        include_bytes!("../../packaging/icons/hicolor/512x512/apps/nivrora.png"),
     ),
     (
         "scalable",
-        include_bytes!("../../packaging/icons/hicolor/scalable/apps/horizon.svg"),
+        include_bytes!("../../packaging/icons/hicolor/scalable/apps/nivrora.svg"),
     ),
 ];
 
@@ -111,9 +111,9 @@ fn files(data: &Path, exe: &Path) -> Vec<(PathBuf, Vec<u8>)> {
     ];
     for (size, bytes) in ICONS {
         let name = if size == "scalable" {
-            "horizon.svg"
+            "nivrora.svg"
         } else {
-            "horizon.png"
+            "nivrora.png"
         };
         out.push((
             data.join("icons/hicolor")
@@ -271,10 +271,10 @@ mod tests {
         let _ = fs::remove_dir_all(&data);
         assert!(install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
         assert!(!install_in(&data, Path::new("/opt/a/horizon-launcher")).unwrap());
-        let png = data.join("icons/hicolor/48x48/apps/horizon.png");
+        let png = data.join("icons/hicolor/48x48/apps/nivrora.png");
         assert!(fs::read(&png).unwrap().starts_with(b"\x89PNG"));
         assert!(data
-            .join("icons/hicolor/scalable/apps/horizon.svg")
+            .join("icons/hicolor/scalable/apps/nivrora.svg")
             .exists());
         assert!(install_in(&data, Path::new("/opt/b/horizon-launcher")).unwrap());
         let entry = fs::read_to_string(data.join("applications").join(LAUNCHER_ENTRY)).unwrap();
