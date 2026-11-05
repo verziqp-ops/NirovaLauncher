@@ -31,10 +31,10 @@ cp "$binary" "$appdir/usr/bin/nirova-launcher"
 chmod 755 "$appdir/usr/bin/nirova-launcher"
 
 # Both places: AppRun's, and the one desktop environments read once the image is unpacked.
-cp "$here/nirova-launcher.desktop" "$appdir/nirova-launcher.desktop"
-cp "$here/nirova-launcher.desktop" "$appdir/usr/share/applications/nirova-launcher.desktop"
+cp "$here/nivrora-launcher.desktop" "$appdir/nirova-launcher.desktop"
+cp "$here/nivrora-launcher.desktop" "$appdir/usr/share/applications/nirova-launcher.desktop"
 cp -R "$here/../icons/hicolor/." "$appdir/usr/share/icons/hicolor/"
-cp "$here/../icons/hicolor/512x512/apps/nirova.png" "$appdir/nirova.png"
+cp "$here/../icons/hicolor/512x512/apps/nivrora.png" "$appdir/nirova.png"
 ln -s nirova.png "$appdir/.DirIcon"
 
 # Runs the packaged binary. It finds the packaged libraries through its own run path (set below),
