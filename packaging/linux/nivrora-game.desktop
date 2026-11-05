@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=NIVRORA
-Comment=NIVRORA game window
+Comment=NIVRORA Minecraft game window
 Exec=horizon-client
 Icon=nivrora
 Terminal=false
