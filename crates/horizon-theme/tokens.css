@@ -24,9 +24,9 @@
   --bevel: #ffffff;
   --lip: #c4d5df;
   --outline: #344c5c;
-  --face: #347b95;
-  --face-bevel: #5c9fb6;
-  --face-lip: #23566b;
+  --face: #a94475;
+  --face-bevel: #bc6d93;
+  --face-lip: #6e2c4c;
   --on-face: #ffffff;
   color-scheme: light;
   --night-sky-0: #e2eaf0;
@@ -171,8 +171,8 @@
     --lip: #0c131b;
     --outline: #080d12;
     --face: #f09bc3;
-    --face-bevel: #f7c2d9;
-    --face-lip: #b85f88;
+    --face-bevel: #f3b1d0;
+    --face-lip: #9c657f;
     --on-face: #17232c;
     color-scheme: dark;
     --night-sky-0: #111923;
@@ -223,8 +223,8 @@
   --lip: #0c131b;
   --outline: #080d12;
   --face: #f09bc3;
-  --face-bevel: #f7c2d9;
-  --face-lip: #b85f88;
+  --face-bevel: #f3b1d0;
+  --face-lip: #9c657f;
   --on-face: #17232c;
   color-scheme: dark;
   --night-sky-0: #111923;
