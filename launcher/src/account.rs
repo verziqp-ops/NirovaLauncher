@@ -20,14 +20,12 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The keychain service name every secret is stored under.
-pub const SERVICE: &str = "app.nivrora.launcher";
+pub const SERVICE: &str = "dev.playhorizon.launcher";
 const SCOPE: &str = "XboxLive.signin offline_access";
 pub const NOT_CONFIGURED: &str =
     "This build of the launcher has no Microsoft sign-in (NIVRORA_MSA_CLIENT_ID).";
 
-/// This fork plays without an account that owns the game: the owner gate stays open, as if the
-/// hidden developer option (`offline_without_owner`) were always on. Downloading the game from
-/// Mojang still needs an owner (`backend::download_for_owner`).
+/// Compatibility constant for old call sites. Guest profiles never bypass game ownership.
 pub const GATE_OPEN: bool = false;
 /// What every Play says while no account in the launcher owns the game.
 pub const NEEDS_OWNER: &str =
@@ -46,7 +44,9 @@ const RENEW_BEFORE: u64 = 3600;
 pub fn client_id() -> Option<String> {
     std::env::var("NIVRORA_MSA_CLIENT_ID")
         .ok()
+        .or_else(|| std::env::var("HORIZON_MSA_CLIENT_ID").ok())
         .or_else(|| option_env!("NIVRORA_MSA_CLIENT_ID").map(str::to_owned))
+        .or_else(|| option_env!("HORIZON_MSA_CLIENT_ID").map(str::to_owned))
         .map(|id| id.trim().to_owned())
         .filter(|id| !id.is_empty())
 }
@@ -1218,7 +1218,7 @@ impl Accounts {
         &mut self,
         store: &dyn SecretStore,
         who: Player,
-        offline_without_owner: bool,
+        _offline_without_owner: bool,
     ) -> Result<(), String> {
         match who {
             Player::Microsoft(uuid) => {
@@ -1444,7 +1444,7 @@ pub fn launch_for_game(
     client_id: Option<&str>,
     store: &dyn SecretStore,
     accounts: &mut Accounts,
-    offline_without_owner: bool,
+    _offline_without_owner: bool,
 ) -> Result<Launch, NoOwner> {
     match launch(ep, client_id, store, accounts) {
         Err(NoOwner) => Err(NoOwner),
