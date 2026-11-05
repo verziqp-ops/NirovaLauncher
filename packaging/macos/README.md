@@ -1,16 +1,16 @@
-# The macOS launcher: NIVRORA.app in a .dmg
+# The macOS launcher: NIROVA.app in a .dmg
 
 `package.sh BINARY VERSION OUTDIR` (run by `.github/workflows/launcher.yml` on macOS) makes:
 
-- `NIVRORA.app`: `Contents/MacOS/nivrora-launcher`, `Contents/Info.plist` (this folder's, bundle
-  id `app.nivrora.launcher`, macOS 11 or later), `Contents/Resources/nivrora.icns` (generated from NIVRORA's 512 px PNG app icon by `iconutil`).
-- `nivrora-launcher-macos-arm64.dmg`: the installer. Opening it shows the app and a link to
+- `NIROVA.app`: `Contents/MacOS/nirova-launcher`, `Contents/Info.plist` (this folder's, bundle
+  id `app.nirova.launcher`, macOS 11 or later), `Contents/Resources/nirova.icns` (generated from NIROVA's 512 px PNG app icon by `iconutil`).
+- `nirova-launcher-macos-arm64.dmg`: the installer. Opening it shows the app and a link to
   Applications over `background.png` / `background@2x.png` (drawn from `background.html`); the
   player drags one onto the other. Built by [dmgbuild](https://github.com/dmgbuild/dmgbuild),
   which writes the Finder layout without a GUI session.
-- `nivrora-launcher-macos-arm64.zip`: the same app, zipped with `ditto`. The launcher updates
-  itself from this: inside NIVRORA.app it replaces the whole bundle (copied beside it, then
-  swapped in by renaming, then restarted); a bare `nivrora-launcher` binary, as launchers before
+- `nirova-launcher-macos-arm64.zip`: the same app, zipped with `ditto`. The launcher updates
+  itself from this: inside NIROVA.app it replaces the whole bundle (copied beside it, then
+  swapped in by renaming, then restarted); a bare `nirova-launcher` binary, as launchers before
   the app shipped, finds the binary inside the zip and replaces only itself.
 
 ## Signing and notarization
@@ -19,7 +19,7 @@ Releases are signed with Ludovic's **Developer ID** ("Developer ID Application: 
 (YYJU63HSD4)"), with the hardened runtime and a secure timestamp, then **notarized** by Apple and
 **stapled**, so Gatekeeper opens them on any Mac without a warning, offline too:
 
-- the launcher (`package.sh`): NIVRORA.app is signed, notarized and stapled first, so the zip the
+- the launcher (`package.sh`): NIROVA.app is signed, notarized and stapled first, so the zip the
   launcher updates itself from and the .dmg both hold it stapled; then the .dmg is signed,
   notarized and stapled. The script ends with what Gatekeeper says of each, which must read
   `accepted` and `source=Notarized Developer ID`.
@@ -29,7 +29,7 @@ Releases are signed with Ludovic's **Developer ID** ("Developer ID Application: 
   ticket: Gatekeeper asks Apple online the first time each one runs.
 
 No entitlements are needed. The launcher checks an update's signature before swapping the new
-NIVRORA.app in, and again where it lands; when it doesn't hold, the old app is put back.
+NIROVA.app in, and again where it lands; when it doesn't hold, the old app is put back.
 
 The switch is the repository variable `MACOS_SIGN_IDENTITY`: set to the identity's name, the
 builds sign and notarize; empty (as in forks), they are signed **ad hoc** as before.
@@ -69,7 +69,7 @@ Signing by hand, as the workflow does:
 export MACOS_SIGN_IDENTITY="Developer ID Application: Ludovic Marie (YYJU63HSD4)"
 export MACOS_SIGN_KEYCHAIN=~/Library/Keychains/horizon-signing.keychain-db MACOS_NOTARY_PROFILE=horizon-notary
 packaging/macos/keychain.sh unlock
-packaging/macos/package.sh target/release/nivrora-launcher 0.0.0 out
+packaging/macos/package.sh target/release/nirova-launcher 0.0.0 out
 packaging/macos/keychain.sh lock
 ```
 
@@ -79,10 +79,10 @@ An ad hoc build (a fork's, or `package.sh` without `MACOS_SIGN_IDENTITY`) is con
 on Apple Silicon, but Gatekeeper doesn't know the developer. The first time it is opened after
 downloading:
 
-- macOS 14 and earlier: right-click (or Control-click) NIVRORA in Applications, choose **Open**,
+- macOS 14 and earlier: right-click (or Control-click) NIROVA in Applications, choose **Open**,
   then **Open** in the dialog.
 - macOS 15 and later: open it once (it is refused), then **System Settings › Privacy & Security**,
-  **Open Anyway** next to "NIVRORA was blocked", and confirm.
+  **Open Anyway** next to "NIROVA was blocked", and confirm.
 
 After that it opens normally, and its own updates don't ask again (they aren't downloaded by a
 browser, so they carry no quarantine flag).
