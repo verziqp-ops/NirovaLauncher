@@ -177,7 +177,6 @@
   "Nothing found that runs in Horizon. Show everything lists the rest.": "Не найдено ничего, что работает в NIROVA. «Показать всё» выведет остальное.",
   "The launcher goes down when the game starts, and comes back when it closes.": "Лаунчер сворачивается при запуске игры и возвращается, когда она закрывается.",
   "GameMode": "GameMode",
-  "While you play, the game sends an anonymous \"I'm playing\" ping once a minute, so the launcher can show how many people play Horizon right now. It holds: a random number made when the game starts and forgotten when it closes, the Horizon version, your OS (Linux, macOS or Windows), and whether you have a world open to LAN or friends. It doesn't hold: your account, your install ID, world or server names, or anything you do in the game, and the server doesn't keep your IP address. It is sent whatever the switches say.": "Во время игры игра раз в минуту отправляет анонимный пинг «Я играю», чтобы лаунчер мог показывать, сколько людей играют в NIROVA прямо сейчас. Он содержит: случайное число, создаваемое при запуске игры и забываемое при её закрытии, версию NIROVA, вашу ОС (Linux, macOS или Windows) и то, открыт ли у вас мир для локальной сети или друзей. Он не содержит: вашу учётную запись, идентификатор установки, имена миров или серверов, а также ничего из того, что вы делаете в игре, и сервер не сохраняет ваш IP-адрес. Он отправляется независимо от положения переключателей.",
   "When you report it on Discord, attach the crash report file (or paste it with Copy report) and say what you were doing.": "Сообщая об этом в Discord, приложите файл отчёта о сбое (или вставьте его через «Скопировать отчёт») и расскажите, что вы делали.",
   "Get my server": "Получить сервер",
   "New instance": "Новая сборка",
@@ -414,7 +413,7 @@
   "Filters": "Фильтры",
   "{count} followers": "{count} подписчиков",
   "Connect an AI agent": "Connect an AI agent",
-  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playNIROVA.dev says how long it is kept.",
+  "Each switch is off unless you turn it on. What it sends is below it; the privacy page on playhorizon.dev says how long it is kept.": "Каждый переключатель выключен, пока вы сами его не включите. Ниже указано, что он отправляет; в уведомлении о конфиденциальности проекта указано, как долго данные хранятся.",
   "Players": "Игроки",
   "simulation distance": "дистанция симуляции",
   "Updated": "Обновлённые",
@@ -669,5 +668,6 @@
   "Your game. Your settings.": "Твоя игра. Твои настройки.",
   "Russian (default)": "Русский (по умолчанию)",
   "milk-blue": "Молочно-голубой",
-  "NIROVA's rose-pink by default. Every colour keeps text easy to read.": "Розовый акцент NIROVA используется по умолчанию. Контраст текста остаётся доступным при любом цвете."
+  "NIROVA's rose-pink by default. Every colour keeps text easy to read.": "Розовый акцент NIROVA используется по умолчанию. Контраст текста остаётся доступным при любом цвете.",
+  "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "У NIROVA пока нет собственного сервиса телеметрии. Пинг о присутствии игроков не отправляется, а число игроков онлайн недоступно."
 }
