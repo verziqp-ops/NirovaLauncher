@@ -1277,9 +1277,12 @@ impl Accounts {
             .unwrap_or_default()
     }
 
-    /// The game's variables for the offline name that plays: its skin and cape.
+    /// The game's local skin and cape override for the profile that plays.
+    /// These overrides affect the local player's renderer; they do not upload textures to
+    /// Mojang or make other players' clients download them.
     pub fn look_env(&self) -> Vec<(&'static str, String)> {
-        match self.name_arg() {
+        let name = self.selected().map(|a| a.name.as_str()).or_else(|| self.name_arg());
+        match name {
             Some(name) => crate::skins::env(&crate::skins::dir(), name, &self.look(name)),
             None => Vec::new(),
         }
