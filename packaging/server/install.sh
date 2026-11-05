@@ -1,10 +1,10 @@
 #!/bin/sh
-# Installs horizon-server (docs/server.md) on Linux or macOS: the current Horizon Nightly for this computer (the
+# Installs Nirova's native server (docs/server.md) on Linux or macOS: the current Preview for this computer (the
 # only build Horizon ships; GitHub's latest release while there is none), downloaded from GitHub Releases and
 # checked against the SHA-256 GitHub publishes for it. On Linux that is
-# the server build (horizon-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
+# the server build (nirova-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
 #
-#   curl -fsSL https://raw.githubusercontent.com/horizon-rust/horizon/main/packaging/server/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/packaging/server/install.sh | sh
 ##   curl -fsSL .../install.sh | sh -s -- --version v1.0.0 --dir /opt/nirova --bin /usr/local/bin
 #   sh install.sh --archive horizon-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
 #
@@ -14,7 +14,7 @@
 # Nothing of Mojang's is downloaded.
 set -eu
 
-REPO=horizon-rust/horizon
+REPO=verziqp-ops/NirovaLauncher
 VERSION=latest
 DIR="${XDG_DATA_HOME:-$HOME/.local/share}/horizon"
 BIN="$HOME/.local/bin"
@@ -38,10 +38,10 @@ MACHINE=$(uname -m)
 # A shell under Rosetta 2 says x86_64 on Apple Silicon: the native build runs faster there.
 [ "$(uname -s)" = Darwin ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = 1 ] && MACHINE=arm64
 case "$(uname -s)-$MACHINE" in
-  Linux-x86_64) ASSETS="horizon-server-linux-x86_64.tar.gz horizon-linux-x86_64.tar.gz" ;;
-  Darwin-arm64) ASSETS=horizon-macos-arm64.zip ;;
+  Linux-x86_64) ASSETS="horizon-server-linux-x86_64.tar.gz nirova-game-linux-x86_64.tar.gz" ;;
+  Darwin-arm64) ASSETS=nirova-game-macos-arm64.zip ;;
   # Intel Macs: the Nightlies built since #1161.
-  Darwin-x86_64) ASSETS=horizon-macos-x64.zip ;;
+  Darwin-x86_64) ASSETS=nirova-game-macos-x64.zip ;;
   *) die "no Horizon release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
 esac
 
@@ -68,7 +68,7 @@ else
 
   TAG=$(printf '%s\n' "$JSON" | sed -n 's/^  "tag_name": "\([^"]*\)".*/\1/p' | head -n 1)
   [ -n "$TAG" ] || die "could not read the release's tag"
-  # A Nightly installs under its date and commit, as `horizon-server update` names it:
+  # A Preview installs under its date and commit, as `nirova-server update` names it:
   # "Nightly 2026-10-28 · 0c02067" is nightly-2026-10-28-0c02067.
   case "$TAG" in
     nightly|nightly-*)
@@ -122,7 +122,7 @@ done
   chmod +x "$BIN/$tool"
 done
 
-echo "Installed Horizon $TAG in $RELEASE; horizon-server and horizon-prepare are in $BIN."
+echo "Installed Nirova $TAG in $RELEASE; nirova-server and nirova-prepare are in $BIN."
 # The full game (releases before the server build) links ALSA and udev; minimal Linux images often lack them.
 if [ "$(uname -s)" = Linux ] && [ ! -e "$RELEASE/horizon-engine" ] && command -v ldd >/dev/null; then
   MISSING=$(ldd "$RELEASE/horizon-client" 2>/dev/null | awk '/not found/ { printf "%s ", $1 }')
