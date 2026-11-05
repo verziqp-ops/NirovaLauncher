@@ -134,13 +134,12 @@ Geist (400, 500, 600) and Geist Mono (400), bundled under the SIL Open Font Lice
 
 ## Surfaces
 
-- **Launcher** (`launcher/`): moving to the Night look below, screen by screen; screens not rebuilt
-  yet draw the Blocks parts in the night's colours (`Night::blocks`). A top bar (wordmark, the pages as
-  tabs, the account chip, Settings), a sidebar (the instances, the hosted servers, the launcher's
-  own version and channel at its foot), and the page over a stone texture. Home opens on a pixel
-  landscape banner with the hero, the version picker and Play; Mods holds the mod, resource pack
-  and modpack tabs; Versions and Patch notes are lists of panels; Settings is
-  grouped panels of rows. Dark by default, Light or System in Settings (Appearance).
+- **Launcher** (`launcher/`): the same Night/Dawn token set across the primary pages, secondary tabs,
+  dialogs and window chrome. The left navigation holds Home, Versions, Instances, Worlds and Settings;
+  Mods, Servers, Notes and import/export tools open from their relevant pages. Shared page primitives
+  use the same rounded surfaces, pill badges, segmented tabs, typography and rose-pink action colour.
+  Dark is the default; Light or System can be selected in Settings (Appearance). Russian is the
+  first-run language, with the other shipped translations selectable in Settings.
 - **Website** (horizon-rust/horizon-site): the Blocks look below. The same page structure as before (what it
   is, screenshots, parity, launcher, patch notes, community), headings in Pixelify Sans, lists as
   stacks of panels, the stone texture behind the page and NIROVA's pixel landscape (a dawn or a
@@ -151,7 +150,7 @@ Geist (400, 500, 600) and Geist Mono (400), bundled under the SIL Open Font Lice
 
 ## Blocks
 
-A blocky, Minecraft-like look in NIROVA's blue-gray, for the website and the redesigned launcher:
+A blocky, Minecraft-like look in NIROVA's blue-gray, retained by the website. The launcher keeps the icon assets but maps its legacy page helper API to the rounded Night/Dawn controls above:
 Minecraft's inventory rather than a document. Its colours are `horizon_theme::Blocks`
 (`BLOCKS_LIGHT`, `BLOCKS_DARK`), which `tokens.css` carries under the same names as before plus
 `--panel`, `--raised`, `--button`, `--well`, `--bevel`, `--lip`, `--outline` and the `--face`
@@ -163,7 +162,7 @@ of the main action. The game's menus keep `LIGHT` and `DARK`.
   letters upstream leaves out, О, П and І: the Latin O's glyph, the lowercase п lifted to that
   weight's cap height, and the Latin I's glyph, so a Russian or Ukrainian heading stays in the
   pixel face.
-- **Blocks, not rounded cards.** Every surface is square: a 2 px dark outline, a 2 px light bevel
+- **Blocks, not rounded cards (website only).** Every website surface is square: a 2 px dark outline, a 2 px light bevel
   along the top and a darker lip along the bottom. The main action is the rose-pink face with its own
   bevel and a 4 px lip; it sinks a pixel when pressed. Code and fields are sunk wells.
 - **Inventory tabs** switch the kinds in Mods: the open tab joins the panel under it.
