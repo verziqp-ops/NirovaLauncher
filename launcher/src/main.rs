@@ -2343,7 +2343,6 @@ impl Launcher {
     fn sidebar(&mut self, window: &Window, cx: &mut Context<Self>) -> Stateful<Div> {
         let t = self.theme;
         let n = t.night;
-        self.load_packs();
         let mut primary_nav = div().flex().flex_col().gap(px(3.)).pb(px(12.));
         for (page, label, icon) in Page::ALL {
             let selected = self.page == page;
