@@ -807,9 +807,9 @@ You can port a mod to NIROVA with your own AI agent on your own computer. NIROVA
 
 <details><summary>Technical</summary>
 
-A player runs their own agent locally with `horizon-ctl` and the MCP servers ([docs/agent-control.md](docs/agent-control.md)), `cargo horizon-mod`, `horizon-port-pack` and the parity harnesses as the check. NIROVA writes the guide (playhorizon.dev/docs/agents, [docs/modpacks.md](docs/modpacks.md)) and runs no agents, accounts or keys for players. The No AI switch turns all of it off.
+A player runs their own agent locally with `horizon-ctl` and the MCP servers ([docs/agent-control.md](docs/agent-control.md)), `cargo horizon-mod`, `horizon-port-pack` and the parity harnesses as the check. NIROVA writes the guide (docs/agent-control.md, [docs/modpacks.md](docs/modpacks.md)) and runs no agents, accounts or keys for players. The No AI switch turns all of it off.
 
-More: [https://playhorizon.dev/docs/agents](https://playhorizon.dev/docs/agents)
+More: [https://docs/agent-control.md](https://docs/agent-control.md)
 
 </details>
 
