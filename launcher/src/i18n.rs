@@ -117,10 +117,9 @@ impl Language {
             .unwrap_or(Language::Ukrainian)
     }
 
-    /// The system's language, as far as the launcher has it.
+    /// The launcher's first-run language. Players can choose another language in Settings.
     pub fn system() -> Self {
-        let locales: Vec<String> = sys_locale::get_locales().collect();
-        Self::pick(locales.iter().map(String::as_str))
+        Self::Ukrainian
     }
 
     /// The table, as shipped: English text to this language's.
