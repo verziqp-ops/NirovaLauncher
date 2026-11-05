@@ -1,15 +1,15 @@
 ; NIVRORA Launcher's Windows installer (Inno Setup 6), built by .github/workflows/launcher.yml:
-;   iscc /DAppVersion=1.2.0 /DSource=path\to\horizon-launcher.exe /Odist packaging\windows\setup.iss
+;   iscc /DAppVersion=1.2.0 /DSource=path\to\nivrora-launcher.exe /Odist packaging\windows\setup.iss
 ; It installs for this user only, without administrator rights, in the same place as install.ps1
 ; (%LOCALAPPDATA%\Programs\NIVRORA), so either one updates the other's install and the
 ; launcher's own updates replace the same file. Uninstalling keeps the game, worlds and settings
-; (%APPDATA%\horizon-launcher).
+; (%APPDATA%\nivrora-launcher).
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
 #ifndef Source
-  #define Source "..\..\launcher\target\release\horizon-launcher.exe"
+  #define Source "..\..\launcher\target\release\nivrora-launcher.exe"
 #endif
 #define AppName "NIVRORA Launcher"
 #define AppExe "nirova-launcher.exe"
@@ -31,7 +31,7 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputBaseFilename=NIVRORA-Setup
-SetupIconFile=..\icons\horizon.ico
+SetupIconFile=..\icons\nivrora.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
 WizardStyle=modern
