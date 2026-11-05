@@ -96,7 +96,7 @@ pub const NIGHT: Night = Night {
     dark: true,
 };
 
-/// The light appearance: the same sky at dawn, pale blue to peach, with the night's milk-blue.
+/// The light appearance: cool blue-gray sky and surfaces with a readable milk-blue accent.
 pub const DAWN: Night = Night {
     sky: [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb],
     page: 0xe7edf2,
