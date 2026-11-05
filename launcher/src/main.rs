@@ -1719,37 +1719,32 @@ fn version_tag(tag: &str) -> Div {
         )
 }
 
-/// Horizon's mark: two stems, their reflection below, and the horizon across in the accent.
+/// NIVRORA's own compact wordmark, used in the sidebar and app chrome.
 fn mark(size: f32, t: &Theme) -> Div {
-    let u = size / 16.;
-    let stem = |x: f32, y: f32, color: Hsla| {
-        div()
-            .absolute()
-            .left(px(x * u))
-            .top(px(y * u))
-            .w(px(2. * u))
-            .h(px(4. * u))
-            .bg(color)
-    };
     div()
         .relative()
         .flex_none()
         .size(px(size))
-        .child(stem(4., 3., t.ink))
-        .child(stem(10., 3., t.ink))
-        .child(stem(4., 8., t.ink.opacity(0.36)))
-        .child(stem(10., 8., t.ink.opacity(0.36)))
+        .rounded(px(7.))
+        .bg(t.plate)
+        .border_1()
+        .border_color(t.outline)
+        .flex()
+        .items_center()
+        .justify_center()
         .child(
             div()
-                .absolute()
-                .left(px(u))
-                .top(px(7. * u))
-                .w(px(14. * u))
-                .h(px(u))
-                .bg(t.accent),
+                .font_family(theme::DISPLAY_FONT)
+                .font_weight(FontWeight::BOLD)
+                .text_size(px(size * 0.72))
+                .line_height(px(size * 0.78))
+                .text_color(t.accent)
+                .child("N"),
         )
 }
 
+/// The last thing the player did was press Tab: focused controls show a ring (a click focuses them
+/// too, without one).
 /// The last thing the player did was press Tab: focused controls show a ring (a click focuses them
 /// too, without one).
 static KEYBOARD: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
