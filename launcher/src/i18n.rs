@@ -3,7 +3,7 @@
 //! Polish, Brazilian Portuguese, Japanese and Turkish. A table per language (`launcher/lang/<code>.json`) maps each English string to its
 //! translation; a string the table lacks shows in English.
 //!
-//! The language follows the system's unless the player picks one in Settings
+//! The first-run language defaults to Russian; the player can pick another language in Settings
 //! (`Settings::language`). Translations are maintained for Nivrora Launcher.
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
