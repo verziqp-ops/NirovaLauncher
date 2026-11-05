@@ -23,6 +23,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  brand-assets:
+    name: Render NIROVA game icons
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install SVG renderer
+        run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
+      - name: Generate icons from the NIROVA master artwork
+        run: cargo run --locked -p xtask -- icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nirova-game-brand-assets
+          path: |
+            crates/horizon-theme/icons/nirova-64.png
+
   pick:
     runs-on: ubuntu-latest
     outputs:
@@ -64,7 +80,7 @@ jobs:
 
   build:
     name: build ${{ matrix.name }}
-    needs: pick
+    needs: [pick, brand-assets]
     strategy:
       fail-fast: false
       matrix:
@@ -110,6 +126,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: nirova-game-brand-assets
+          path: .
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
