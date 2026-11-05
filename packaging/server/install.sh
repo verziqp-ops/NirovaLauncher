@@ -1,26 +1,24 @@
 #!/bin/sh
-# Installs Nirova's native server (docs/server.md) on Linux or macOS: the current Preview for this computer (the
-# only build Horizon ships; GitHub's latest release while there is none), downloaded from GitHub Releases and
-# checked against the SHA-256 GitHub publishes for it. On Linux that is
-# the server build (nirova-server-linux-x86_64.tar.gz), which needs neither ALSA nor udev.
+# Installs NIROVA's native server (docs/server.md) on Linux or macOS from GitHub Releases,
+# checking the published SHA-256 before extraction. The Linux server archive
+# (nirova-server-linux-x86_64.tar.gz) does not need ALSA or udev.
 #
 #   curl -fsSL https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/packaging/server/install.sh | sh
 ##   curl -fsSL .../install.sh | sh -s -- --version v1.0.0 --dir /opt/nirova --bin /usr/local/bin
 #   sh install.sh --archive nirova-server-linux-x86_64.tar.gz --version mybuild   (an archive you have)
 #
 # It needs curl, tar or unzip, and sha256sum or shasum; it never asks for sudo (pick folders you can write).
-# runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
-# runs it. The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
+# The game files you prepare from your own Minecraft stay in <dir>/game-files across updates.
 # Nothing of Mojang's is downloaded.
 set -eu
 
 REPO=verziqp-ops/NirovaLauncher
 VERSION=latest
-DIR="${XDG_DATA_HOME:-$HOME/.local/share}/horizon"
+DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nirova"
 BIN="$HOME/.local/bin"
 ARCHIVE=
 
-die() { echo "horizon install: $*" >&2; exit 1; }
+die() { echo "nirova install: $*" >&2; exit 1; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -42,7 +40,7 @@ case "$(uname -s)-$MACHINE" in
   Darwin-arm64) ASSETS="nirova-server-macos-arm64.zip horizon-macos-arm64.zip" ;;
   # Intel Macs: the Nightlies built since #1161.
   Darwin-x86_64) ASSETS="nirova-server-macos-x64.zip horizon-macos-x64.zip" ;;
-  *) die "no Horizon release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
+  *) die "no NIROVA server release for $(uname -s) $(uname -m) yet: build it from source (docs/server.md)" ;;
 esac
 
 TMP=$(mktemp -d)
@@ -89,7 +87,7 @@ else
   [ -n "$URL" ] || die "release $TAG has none of $ASSETS"
   [ -n "$DIGEST" ] || die "release $TAG publishes no SHA-256 for $ASSET"
 
-  echo "Downloading Horizon $TAG ($ASSET)..."
+  echo "Downloading NIROVA $TAG ($ASSET)..."
   curl -fL --progress-bar -o "$TMP/$ASSET" "$URL"
   GOT=$($SHA "$TMP/$ASSET" | cut -d' ' -f1)
   [ "$GOT" = "$DIGEST" ] || die "$ASSET doesn't match its SHA-256 (got $GOT, expected $DIGEST): not installed"
@@ -117,9 +115,6 @@ for pair in "nirova-server horizon-server" "nirova-prepare horizon-prepare"; do
   public=$1; internal=$2
   printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$internal" > "$BIN/$public"
   chmod +x "$BIN/$public"
-done
-  printf '#!/bin/sh\nexec "%s/current/%s" "$@"\n' "$DIR" "$tool" > "$BIN/$tool"
-  chmod +x "$BIN/$tool"
 done
 
 echo "Installed Nirova $TAG in $RELEASE; nirova-server and nirova-prepare are in $BIN."
