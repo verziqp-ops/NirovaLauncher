@@ -23,6 +23,8 @@ pub fn process_started() -> Instant {
 
 /// Frames further apart than this are the UI resting, not UI frame times.
 const IDLE_GAP: Duration = Duration::from_millis(250);
+/// Bound frame-time diagnostics during long sessions (about 8 minutes at 60 FPS).
+const MAX_UI_FRAME_SAMPLES: usize = 30_000;
 pub use horizon_launcher::backend::GAME_FIRST_FRAME;
 
 pub struct Perf {
@@ -119,7 +121,9 @@ impl Perf {
                 // The window may close before the optional report details finish.
                 let _ = sender.send(Machine::detect());
             });
-        } else if let Some(gap) = self.last_frame.map(|t| now - t).filter(|g| *g < IDLE_GAP) {
+        } else if self.ui_frames.len() < MAX_UI_FRAME_SAMPLES
+            && let Some(gap) = self.last_frame.map(|t| now - t).filter(|g| *g < IDLE_GAP)
+        {
             self.ui_frames.push(gap.as_secs_f32() * 1000.0);
         }
         self.last_frame = Some(now);
