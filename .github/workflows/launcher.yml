@@ -33,6 +33,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: launcher
+      - name: Resolve the launcher lockfile
+        run: cargo generate-lockfile
       - name: Libraries GPUI links to
         run: |
           sudo apt-get update
