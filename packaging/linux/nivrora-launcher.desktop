@@ -1,8 +1,14 @@
 [Desktop Entry]
 Type=Application
 Name=NIVRORA Launcher
-GenericName=Game launcher
-Comment=Install, prepare and play NIVRORA, Minecraft: Java Edition 26.3 rewritten in Rust
+Name[en]=NIVRORA Launcher
+Name[uk]=Лаунчер NIVRORA
+GenericName=Игровой лаунчер
+GenericName[en]=Game launcher
+GenericName[uk]=Ігровий лаунчер
+Comment=Установка и запуск Minecraft: Java Edition
+Comment[en]=Install and play Minecraft: Java Edition
+Comment[uk]=Встановлення та запуск Minecraft: Java Edition
 Exec=nivrora-launcher
 Icon=nivrora
 Terminal=false
