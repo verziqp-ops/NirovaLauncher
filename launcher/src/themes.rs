@@ -11,10 +11,16 @@ use std::path::{Path, PathBuf};
 
 /// An accent: a hue in degrees, or none for NIVRORA's milk-blue, whose tokens are the palette's own
 /// and stay untouched.
-#[derive(Clone, Copy, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct Accent {
     hue: Option<f32>,
+}
+
+impl Default for Accent {
+    fn default() -> Self {
+        Self::PINK
+    }
 }
 
 /// [`Accent::ALL`]'s names, in its order.
