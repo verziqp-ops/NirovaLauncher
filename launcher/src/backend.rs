@@ -1690,6 +1690,8 @@ pub fn java_game(
                 )
             })?;
             if guest {
+                // Play is a fresh user request even if an older download was cancelled.
+                mojang::CANCEL.store(false, std::sync::atomic::Ordering::Relaxed);
                 download_version_for_guest_in(&version.id, &version.sha1, &minecraft, log)?;
             } else {
                 download_version_for_owner_in(&version.id, &version.sha1, &minecraft, log)?;
