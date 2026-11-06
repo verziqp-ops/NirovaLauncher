@@ -3646,7 +3646,7 @@ mod tests {
     /// account the services said owns the game: never without one, and never past the gate by
     /// the developer option (`Settings::dev_offline`), whose pass has no owner.
     #[test]
-    fn mojang_downloads_only_for_an_owner() {
+    fn verified_owner_downloads_remain_gated() {
         let dir = std::env::temp_dir().join(format!("horizon-owner-only-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let pins = sources::Pins::read(&serde_json::json!({ "minecraft": {
@@ -3705,8 +3705,8 @@ mod tests {
         assert!(asked.lock().unwrap().is_empty());
         let _ = fs::remove_dir_all(&dir);
 
-        // In the sources: one call downloads the game, in `download_for`, and the only caller
-        // of that asks the strict gate. Game-file hosts appear nowhere else.
+        // There are two download paths: verified-owner downloads for the preparer,
+        // and the separate offline client installer using Mojang's public manifest.
         let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut files = vec![src.clone()];
         let mut sources = Vec::new();
@@ -3731,13 +3731,14 @@ mod tests {
                     .map(move |_| name.as_str())
             })
             .collect();
-        assert_eq!(calls, ["backend.rs"]);
+        assert_eq!(calls, ["backend.rs", "backend.rs"]);
         let backend = &sources.iter().find(|(n, ..)| n == "backend.rs").unwrap().2;
         let body = |f: &str| {
             let start = backend.find(&format!("\nfn {f}(")).unwrap();
             &backend[start..start + backend[start + 1..].find("\n}\n").unwrap()]
         };
         assert!(body("download_for").contains("mojang::download("));
+        assert!(body("download_version_for_guest_in").contains("mojang::download("));
         assert!(body("download_for_owner").contains("account::launch("));
         assert!(!body("download_for_owner").contains("launch_for_game("));
         // `download_for` is defined once and called once, by `download_for_owner`.
