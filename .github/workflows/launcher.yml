@@ -146,7 +146,9 @@ jobs:
       - name: Build the NIROVA macOS app and disk image
         if: runner.os == 'macOS'
         run: |
-          python3 -m pip install --disable-pip-version-check dmgbuild==1.6.5
+          python3 -m venv "$RUNNER_TEMP/dmgbuild-venv"
+          source "$RUNNER_TEMP/dmgbuild-venv/bin/activate"
+          python -m pip install --disable-pip-version-check dmgbuild==1.6.5
           out=target/release
           [[ -n "${{ matrix.target }}" ]] && out="target/${{ matrix.target }}/release"
           version="${NIROVA_LAUNCHER_VERSION:-$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)}"
