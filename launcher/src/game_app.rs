@@ -14,7 +14,7 @@ pub const APP: &str = "Horizon.app";
 /// The game, then horizon-ctl, which the game looks for beside itself (Copy Connection Details).
 const PROGRAMS: [&str; 2] = ["horizon-client", "horizon-ctl"];
 
-const ICON: &[u8] = include_bytes!("../../packaging/icons/horizon.icns");
+const ICON: &[u8] = include_bytes!("../../packaging/icons/nirova.icns");
 
 /// Its own identifier, so macOS keeps it apart from the launcher (dev.horizon.launcher); the
 /// games category lets macOS turn Game Mode on when it plays full screen.
@@ -23,7 +23,7 @@ const INFO_PLIST: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Horizon</string>
+	<string>NIROVA</string>
 	<key>CFBundleExecutable</key>
 	<string>horizon-client</string>
 	<key>CFBundleIconFile</key>
@@ -33,7 +33,7 @@ const INFO_PLIST: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Horizon</string>
+	<string>NIROVA</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>LSApplicationCategoryType</key>
@@ -52,7 +52,7 @@ pub fn ensure(version: &Path) -> io::Result<PathBuf> {
     fs::create_dir_all(&programs)?;
     fs::create_dir_all(contents.join("Resources"))?;
     write_if_changed(&contents.join("Info.plist"), INFO_PLIST.as_bytes())?;
-    write_if_changed(&contents.join("Resources/horizon.icns"), ICON)?;
+    write_if_changed(&contents.join("Resources/nirova.icns"), ICON)?;
     for (i, name) in PROGRAMS.into_iter().enumerate() {
         let (from, to) = (version.join(name), programs.join(name));
         // Releases before horizon-ctl shipped have only the game.
@@ -104,9 +104,9 @@ mod tests {
             &version.join("horizon-ctl")
         ));
         let plist = fs::read_to_string(version.join("Horizon.app/Contents/Info.plist")).unwrap();
-        assert!(plist.contains("<string>Horizon</string>"));
+        assert!(plist.contains("<string>NIROVA</string>"));
         assert_eq!(
-            fs::read(version.join("Horizon.app/Contents/Resources/horizon.icns")).unwrap(),
+            fs::read(version.join("Horizon.app/Contents/Resources/nirova.icns")).unwrap(),
             ICON
         );
 
