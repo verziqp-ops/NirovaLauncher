@@ -244,10 +244,10 @@ pub fn trust_and_capabilities(id: &str) -> Vec<String> {
         return Vec::new();
     };
     let mut lines = vec![if official(p) {
-        "Made by Horizon".to_owned()
+        "Officially listed by the external catalog".to_owned()
     } else {
         format!(
-            "Made by {}. Not made or endorsed by the Horizon project ({POLICY})",
+            "Made by {}. Not endorsed by the external catalog operator ({POLICY})",
             p.authors.join(", ")
         )
     }];
@@ -262,7 +262,7 @@ pub fn trust_and_capabilities(id: &str) -> Vec<String> {
         if let Some(v) = p.versions.first() {
             let pin = v.api.split('/').nth(1).unwrap_or_default();
             lines.push(format!(
-                "Built by the launcher on Horizon {}",
+                "Built by the launcher for game API {}",
                 &pin[..pin.len().min(7)]
             ));
         }
