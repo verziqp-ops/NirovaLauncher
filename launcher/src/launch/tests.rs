@@ -33,7 +33,7 @@ fn a_summary_says_what_runs() {
     };
     assert_eq!(
         launch.summary().unwrap(),
-        "runs ./sync.sh first, through nice -n 5, with 2 variables"
+        "сначала выполняет ./sync.sh, через nice -n 5, с 2 переменными"
     );
 }
 
@@ -187,7 +187,7 @@ fn the_linux_switches_act_only_where_their_tools_are() {
     assert!(!none.any() && all.any());
     assert_eq!(
         launch.summary().unwrap(),
-        "through nice, with GameMode, with MangoHud, on the dedicated GPU"
+        "через nice, с GameMode, с MangoHud, на дискретной видеокарте"
     );
     // Off switches aren't written.
     let text = serde_json::to_string(&Launch::default()).unwrap();
@@ -212,7 +212,7 @@ fn the_post_exit_command_runs_with_the_instance_variables() {
     };
     assert_eq!(
         launch.summary().unwrap(),
-        format!("runs {} after, with 1 variable", launch.post_exit)
+        format!("затем выполняет {}, с 1 переменной", launch.post_exit)
     );
     let vars = instance_vars("My Pack", "my-pack", &dir, Some(OsStr::new("java")));
     let names: Vec<&str> = vars.iter().map(|(k, _)| *k).collect();
