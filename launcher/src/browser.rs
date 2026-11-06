@@ -9,7 +9,7 @@
 pub mod curseforge;
 pub mod details;
 pub mod download;
-pub mod horizon;
+pub mod nirova;
 pub mod images;
 pub mod installed;
 pub mod java;
@@ -73,8 +73,9 @@ impl Kind {
 pub enum SourceId {
     Modrinth,
     CurseForge,
-    /// Legacy external catalog integration; the source is not operated by NIROVA.
-    Horizon,
+    /// NIROVA's own curated project catalog. Accept the old serialized key for existing installs.
+    #[serde(alias = "horizon")]
+    Nirova,
 }
 
 impl SourceId {
@@ -82,7 +83,7 @@ impl SourceId {
         match self {
             SourceId::Modrinth => "Modrinth",
             SourceId::CurseForge => "CurseForge",
-            SourceId::Horizon => "External Catalog",
+            SourceId::Nirova => "NIROVA Catalog",
         }
     }
 }
@@ -267,14 +268,14 @@ pub trait Source: Send + Sync {
 /// What the launcher says wherever CurseForge would be.
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
 /// Message shown when another source does not list NIROVA-compatible shader packs.
-pub const SHADERS_ON_HORIZON: &str =
-    "NIROVA-compatible shader packs are not listed by this source.";
+pub const SHADERS_ON_NIROVA: &str =
+    "NIROVA shader packs are not listed in this catalog.";
 
-/// The sources this launcher uses: Modrinth and an external community catalog. CurseForge support is coming
+/// The sources this launcher uses: Modrinth and NIROVA's own curated catalog. CurseForge support is coming
 /// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
 /// then.
 pub fn sources() -> Vec<Box<dyn Source>> {
-    vec![Box::new(modrinth::Modrinth), Box::new(horizon::Registry)]
+    vec![Box::new(modrinth::Modrinth), Box::new(nirova::Registry)]
 }
 
 /// The source of that id, when this launcher can use it.
