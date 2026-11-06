@@ -377,7 +377,7 @@ pub fn command(version: &Value, launch: &Launch) -> Result<Command, String> {
         ("auth_session", format!("token:{}:{}", p.token, p.uuid)),
         ("auth_xuid", p.xuid.clone()),
         ("clientid", String::new()),
-        ("user_type", "msa".into()),
+        ("user_type", if p.token.is_empty() { "legacy" } else { "msa" }.into()),
         ("user_properties", "{}".into()),
         ("version_name", id.to_string()),
         (
