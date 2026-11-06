@@ -1125,7 +1125,7 @@ impl Accounts {
         self.save_to(&Self::path())
     }
     pub(crate) fn load_from(path: &Path) -> Self {
-        let mut accounts = std::fs::read_to_string(path)
+        let mut accounts: Accounts = std::fs::read_to_string(path)
             .ok()
             .and_then(|t| serde_json::from_str(&t).ok())
             .unwrap_or_default();
