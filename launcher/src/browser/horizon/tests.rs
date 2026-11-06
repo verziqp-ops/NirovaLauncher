@@ -1,9 +1,9 @@
-//! The registry source against the sample index of `horizon_mods::index`
-//! (`crates/horizon-mods/tests/index/`), its files served from disk.
+//! The registry source against the sample index of `nirova_mods::index`
+//! (`crates/nirova-mods/tests/index/`), its files served from disk.
 use super::*;
 
 fn fixtures() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../crates/horizon-mods/tests/index")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../crates/nirova-mods/tests/index")
 }
 
 /// The sample index with its files on disk, as a local test registry lists them.
@@ -21,7 +21,7 @@ fn sample() -> Index {
 
 fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
-        "horizon-launcher-registry-{name}-{}",
+        "nirova-launcher-registry-{name}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&dir);
@@ -50,25 +50,25 @@ fn native_registry_entries_are_mods_that_say_they_run_native_code() {
     assert!(found.iter().any(|p| p.id == index.projects[0].id));
     let entry = |file: &str| {
         serde_json::from_value::<installed::Entry>(serde_json::json!({
-            "source": "horizon", "project": "p", "slug": "p", "title": "P", "kind": "mod",
+            "source": "nirova", "project": "p", "slug": "p", "title": "P", "kind": "mod",
             "version": "1", "number": "1", "file": file, "checksum": "", "page": ""
         }))
         .unwrap()
     };
     assert_eq!(
-        mod_id(&entry("horizon-native-mods/veinminer.hnmod")),
+        mod_id(&entry("nirova-native-mods/veinminer.hnmod")),
         Some("veinminer")
     );
-    assert_eq!(mod_id(&entry("horizon-mods/zoom.hmod")), Some("zoom"));
+    assert_eq!(mod_id(&entry("nirova-mods/zoom.hmod")), Some("zoom"));
 }
 
 #[test]
-fn only_horizons_own_projects_go_without_the_not_endorsed_line() {
+fn only_nirovas_own_projects_go_without_the_not_endorsed_line() {
     let mut p = sample().projects[0].clone();
-    p.authors = vec!["Horizon".into()];
-    p.source = "https://github.com/horizon-rust/horizon-mod-zoom".into();
+    p.authors = vec!["NIROVA".into()];
+    p.source = "https://github.com/nirova-rust/nirova-mod-zoom".into();
     assert!(official(&p));
-    p.source = "https://github.com/someone/horizon-mod-zoom".into();
+    p.source = "https://github.com/someone/nirova-mod-zoom".into();
     assert!(!official(&p), "the name alone doesn't make it official");
     p.authors = vec!["levzzz5154".into()];
     assert!(!official(&p));
@@ -107,7 +107,7 @@ fn searches_by_kind_and_words() {
     assert_eq!(order, [("zoom", 12_345), ("coords_hud", 80)]);
     let p = hud(&index);
     assert_eq!(p.support(), super::super::Support::Works);
-    assert_eq!(p.page, "https://playhorizon.dev/mods/coords_hud");
+    assert_eq!(p.page, "https://playnirova.dev/mods/coords_hud");
 }
 
 #[test]
@@ -118,12 +118,12 @@ fn installs_checked_turns_on_and_removes() {
     let e = install_from(&index, true, None, &p, &home, &|_, _| {}).unwrap_err();
     assert_eq!(e, format!("Coordinates HUD {NEEDS_PORT}."));
     let done = put(&index, true, &home).unwrap();
-    assert_eq!(done[0].file, "horizon-mods/coords_hud.hmod");
+    assert_eq!(done[0].file, "nirova-mods/coords_hud.hmod");
     assert_eq!(done[0].skipped, [format!("its code ({NEEDS_PORT})")]);
     assert_eq!(done[0].verdict.as_deref(), Some("Verified"));
     assert!(done[0].checksum.starts_with("SHA-256:e1135345"));
-    assert!(home.join("horizon-mods/coords_hud.hmod").is_file());
-    let list = fs::read_to_string(home.join("horizon-mods.txt")).unwrap();
+    assert!(home.join("nirova-mods/coords_hud.hmod").is_file());
+    let list = fs::read_to_string(home.join("nirova-mods.txt")).unwrap();
     assert_eq!(list, "mod.coords_hud:true\n");
     assert_eq!(
         fs::read_dir(home.join("mod-browser/downloads"))
@@ -145,33 +145,33 @@ fn installs_checked_turns_on_and_removes() {
     let said = turn_off_revoked(&revoked, &home);
     assert_eq!(said, ["Coordinates HUD was taken down and is off: Test."]);
     assert_eq!(
-        fs::read_to_string(home.join("horizon-mods.txt")).unwrap(),
+        fs::read_to_string(home.join("nirova-mods.txt")).unwrap(),
         ""
     );
 
     installed::remove(&home, "coords_hud").unwrap();
-    assert!(!home.join("horizon-mods/coords_hud.hmod").exists());
+    assert!(!home.join("nirova-mods/coords_hud.hmod").exists());
     assert!(installed::Installed::load(&home).entries.is_empty());
     fs::remove_dir_all(&home).unwrap();
 }
 
 #[test]
 fn a_mod_that_turned_native_keeps_its_hmod_until_removed() {
-    assert!(stays(true, "horizon-mods/coords_hud.hmod"));
-    assert!(!stays(false, "horizon-mods/coords_hud.hmod"));
-    assert!(!stays(true, "horizon-native-mods/coords_hud.hnmod"));
+    assert!(stays(true, "nirova-mods/coords_hud.hmod"));
+    assert!(!stays(false, "nirova-mods/coords_hud.hmod"));
+    assert!(!stays(true, "nirova-native-mods/coords_hud.hnmod"));
     let index = sample();
     let home = scratch("turned-native");
     put(&index, true, &home).unwrap();
     // As install_version leaves it after the native update.
     let mut list = installed::Installed::load(&home);
-    list.entries[0].file = "horizon-native-mods/coords_hud.hnmod".into();
+    list.entries[0].file = "nirova-native-mods/coords_hud.hnmod".into();
     list.save(&home).unwrap();
-    fs::create_dir_all(home.join("horizon-native-mods")).unwrap();
-    fs::write(home.join("horizon-native-mods/coords_hud.hnmod"), "").unwrap();
+    fs::create_dir_all(home.join("nirova-native-mods")).unwrap();
+    fs::write(home.join("nirova-native-mods/coords_hud.hnmod"), "").unwrap();
     installed::remove(&home, "coords_hud").unwrap();
-    assert!(!home.join("horizon-native-mods/coords_hud.hnmod").exists());
-    assert!(!home.join("horizon-mods/coords_hud.hmod").exists());
+    assert!(!home.join("nirova-native-mods/coords_hud.hnmod").exists());
+    assert!(!home.join("nirova-mods/coords_hud.hmod").exists());
     fs::remove_dir_all(&home).unwrap();
 }
 
@@ -185,8 +185,8 @@ fn installs_a_shader_pack_into_shaderpacks() {
     assert_eq!(done[0].file, "shaderpacks/glow-1.0.0.hshader");
     assert_eq!(done[0].kind, Kind::Shader);
     assert!(home.join("shaderpacks/glow-1.0.0.hshader").is_file());
-    // Not a mod: nothing turns on in horizon-mods.txt; the game's Shader Packs page picks it.
-    assert!(!home.join("horizon-mods.txt").exists());
+    // Not a mod: nothing turns on in nirova-mods.txt; the game's Shader Packs page picks it.
+    assert!(!home.join("nirova-mods.txt").exists());
 
     let mut revoked = index.clone();
     revoked.revoked.push(index::Revoked {
@@ -220,14 +220,14 @@ fn refuses_a_changed_file_a_taken_id_and_local_files_from_the_real_registry() {
     tampered.projects[0].versions[0].file.url = cozy;
     let e = put(&tampered, true, &home).unwrap_err();
     assert!(e.contains("larger than its source says"), "{e}");
-    assert!(!home.join("horizon-mods").exists());
+    assert!(!home.join("nirova-mods").exists());
 
     let e = put(&index, false, &home).unwrap_err();
     assert!(e.contains("file servers"), "{e}");
 
-    fs::create_dir_all(home.join("horizon-mods/coords_hud")).unwrap();
+    fs::create_dir_all(home.join("nirova-mods/coords_hud")).unwrap();
     let e = put(&index, true, &home).unwrap_err();
-    assert!(e.contains("already in horizon-mods"), "{e}");
+    assert!(e.contains("already in nirova-mods"), "{e}");
 
     let mut taken_down = index.clone();
     taken_down.revoked.push(index::Revoked {
@@ -245,9 +245,9 @@ fn refuses_a_changed_file_a_taken_id_and_local_files_from_the_real_registry() {
 fn registry_versions_run_when_made_for_this_game() {
     use super::super::{pick, support, Support};
     let v = |game: &str| vec![game.to_owned()];
-    let horizon = vec![LOADER.to_owned()];
-    assert_eq!(support(Kind::Mod, &v(GAME), &horizon), Support::Works);
-    assert!(!support(Kind::Mod, &v("26.2"), &horizon).installable());
+    let nirova = vec![LOADER.to_owned()];
+    assert_eq!(support(Kind::Mod, &v(GAME), &nirova), Support::Works);
+    assert!(!support(Kind::Mod, &v("26.2"), &nirova).installable());
     let index = sample();
     let versions = |id: &str| -> Vec<Version> {
         let p = index.project(id).unwrap();
@@ -289,14 +289,14 @@ fn owner_links_only_take_github_logins() {
 
 /// A version that calls mod API functions the game doesn't have is marked and skipped.
 #[test]
-fn versions_for_a_newer_horizon_are_not_installed() {
+fn versions_for_a_newer_nirova_are_not_installed() {
     let mut index = sample();
     index.projects[0].versions[0].api_level = Some(1);
     let p = index.project("coords_hud").unwrap();
     let e = newest(&index, p, Some(0)).unwrap_err();
     assert_eq!(
         e,
-        "Coordinates HUD needs a newer Horizon than the game you play: update it first."
+        "Coordinates HUD needs a newer NIROVA than the game you play: update it first."
     );
     assert!(newest(&index, p, Some(1)).is_ok());
     assert!(newest(&index, p, None).is_ok());
@@ -329,6 +329,6 @@ fn ratings_keep_only_what_is_well_formed() {
     assert!(parse_ratings(r#"{"projects": []}"#).is_empty());
     assert_eq!(
         rate_url("zoom"),
-        "https://playhorizon.dev/api/mods/auth/login?back=/mods/zoom"
+        "https://playnirova.dev/api/mods/auth/login?back=/mods/zoom"
     );
 }
