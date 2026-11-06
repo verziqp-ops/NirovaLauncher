@@ -165,7 +165,7 @@ pub struct FileRef {
     pub name: String,
     pub size: u64,
     pub sha512: Option<String>,
-    /// What NIROVA's catalog lists.
+    /// Checksum supplied by the project's external catalog.
     pub sha256: Option<String>,
     pub sha1: Option<String>,
     pub primary: bool,
