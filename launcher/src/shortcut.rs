@@ -19,7 +19,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub const DESKTOP_ENV: &str = "HORIZON_LAUNCHER_DESKTOP";
-const MAC_ICON: &[u8] = include_bytes!("../../packaging/icons/horizon.icns");
+const MAC_ICON: &[u8] = include_bytes!("../../packaging/icons/nirova.icns");
 /// The key a Linux shortcut names its instance with.
 const INSTANCE_KEY: &str = "X-Horizon-Instance";
 /// And a macOS one, in its Info.plist.
@@ -156,7 +156,7 @@ pub fn mac_app(exe: &Path, id: &str, name: &str) -> Vec<(&'static str, Vec<u8>, 
     vec![
         ("Contents/Info.plist", plist.into_bytes(), false),
         ("Contents/MacOS/play", script.into_bytes(), true),
-        ("Contents/Resources/horizon.icns", MAC_ICON.to_vec(), false),
+        ("Contents/Resources/nirova.icns", MAC_ICON.to_vec(), false),
     ]
 }
 
