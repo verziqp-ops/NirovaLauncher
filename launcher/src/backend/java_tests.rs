@@ -131,3 +131,33 @@ fn guest_discovers_an_installed_java_version_without_creating_game_files() {
     assert!(!selected.join("versions").exists());
     let _ = fs::remove_dir_all(&root);
 }
+
+#[test]
+fn java_version_download_folder_can_be_empty_and_is_persisted() {
+    let root = std::env::temp_dir().join(format!(
+        "nirova-java-version-folder-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&root);
+    let empty = root.join("versions-go-here");
+    let legacy = root.join("legacy-minecraft");
+    let mut settings = Settings::default();
+
+    let fallback = java_download_dir_for(&settings);
+    assert_eq!(fallback, data_dir().join("minecraft"));
+
+    fs::create_dir_all(legacy.join("versions")).unwrap();
+    settings.minecraft_dir = Some(legacy.clone());
+    assert_eq!(java_download_dir_for(&settings), legacy);
+
+    // A newly chosen directory is authoritative without a versions/ subfolder.
+    settings.java_versions_dir = Some(empty.clone());
+    assert_eq!(java_download_dir_for(&settings), empty);
+    assert!(!empty.join("versions").exists());
+    let saved = serde_json::to_string(&settings).unwrap();
+    let restored = Settings::parse(&saved);
+    assert_eq!(restored.java_versions_dir.as_deref(), Some(empty.as_path()));
+    assert_eq!(java_download_dir_for(&restored), empty);
+
+    let _ = fs::remove_dir_all(root);
+}
