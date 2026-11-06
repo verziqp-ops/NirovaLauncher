@@ -3966,7 +3966,7 @@ pub fn {f}("
     }
 
     #[test]
-    fn the_accent_is_violet_unless_picked_and_an_unknown_one_keeps_the_rest() {
+    fn the_accent_is_pink_unless_picked_and_an_unknown_one_keeps_the_rest() {
         use crate::themes::Accent;
         assert_eq!(Settings::parse("{}").accent, Accent::PINK);
         let teal =
@@ -4135,7 +4135,7 @@ pub fn {f}("
     #[test]
     fn only_an_appimage_file_counts() {
         use std::ffi::OsStr;
-        let mount = OsStr::new("/tmp/.mount_Horizon123");
+        let mount = OsStr::new("/tmp/.mount_NIROVA123");
         let exe = Path::new("/tmp/.mount_NIROVA123/usr/bin/nirova-launcher");
         assert_eq!(appimage_path_in(None, Some(mount), exe), None);
         assert_eq!(
