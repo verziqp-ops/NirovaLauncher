@@ -83,3 +83,23 @@ fn selected_jdk_reaches_external_preparers() {
     );
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn local_guest_version_needs_both_profile_and_client_jar() {
+    let root = std::env::temp_dir().join(format!(
+        "nirova-local-java-profile-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&root);
+    let version = root.join("versions").join("1.21.4");
+    fs::create_dir_all(&version).unwrap();
+    assert!(!local_java_version_ready(&root, "1.21.4"));
+    fs::write(
+        version.join("1.21.4.json"),
+        r#"{"id":"1.21.4","mainClass":"net.minecraft.client.main.Main"}"#,
+    ).unwrap();
+    assert!(!local_java_version_ready(&root, "1.21.4"));
+    fs::write(version.join("1.21.4.jar"), b"test jar").unwrap();
+    assert!(local_java_version_ready(&root, "1.21.4"));
+    let _ = fs::remove_dir_all(root);
+}
