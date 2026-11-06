@@ -1243,7 +1243,9 @@ impl Accounts {
     }
 
     /// Keeps an offline name (once, in any case); returns it as kept.
-    fn add_offline(&mut self, name: &str) -> Result<String, String> {
+    /// Saves a local guest nickname without claiming game ownership. Selecting it for Java Edition
+    /// still passes through the ownership check in `play_as_with`.
+    pub fn add_offline(&mut self, name: &str) -> Result<String, String> {
         let name = name.trim();
         if !valid_offline_name(name) {
             return Err(format!(
