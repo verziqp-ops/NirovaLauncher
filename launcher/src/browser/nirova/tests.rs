@@ -1,4 +1,4 @@
-//! The registry source against the sample index of `nirova_mods::index`
+//! The registry source against the sample index of `horizon_mods::index`
 //! (`crates/horizon-mods/tests/index/`), its files served from disk.
 use super::*;
 
@@ -66,7 +66,7 @@ fn native_registry_entries_are_mods_that_say_they_run_native_code() {
 fn only_nirovas_own_projects_go_without_the_not_endorsed_line() {
     let mut p = sample().projects[0].clone();
     p.authors = vec!["NIROVA".into()];
-    p.source = "https://github.com/nirova-rust/nirova-mod-zoom".into();
+    p.source = "https://github.com/verziqp-ops/NirovaLauncher".into();
     assert!(official(&p));
     p.source = "https://github.com/someone/nirova-mod-zoom".into();
     assert!(!official(&p), "the name alone doesn't make it official");
@@ -107,7 +107,7 @@ fn searches_by_kind_and_words() {
     assert_eq!(order, [("zoom", 12_345), ("coords_hud", 80)]);
     let p = hud(&index);
     assert_eq!(p.support(), super::super::Support::Works);
-    assert_eq!(p.page, "https://playnirova.dev/mods/coords_hud");
+    assert_eq!(p.page, SITE);
 }
 
 #[test]
@@ -306,29 +306,10 @@ fn versions_for_a_newer_nirova_are_not_installed() {
 }
 
 #[test]
-fn ratings_keep_only_what_is_well_formed() {
-    let text = r#"{"projects": {
-        "zoom": {"average": 4.25, "count": 12},
-        "minimap": {"average": 9, "count": 3},
-        "keystrokes": {"average": 3, "count": 0},
-        "Bad Id": {"average": 4, "count": 1},
-        "fps_overlay": {"average": "5", "count": 1}
-    }}"#;
-    let ratings = parse_ratings(text);
-    assert_eq!(
-        ratings.into_iter().collect::<Vec<_>>(),
-        [(
-            "zoom".to_owned(),
-            Rating {
-                average: 4.25,
-                count: 12
-            }
-        )]
-    );
-    assert!(parse_ratings("not json").is_empty());
-    assert!(parse_ratings(r#"{"projects": []}"#).is_empty());
+fn community_ratings_are_not_requested_until_nirova_operates_a_service() {
+    assert_eq!(rating("zoom"), None);
     assert_eq!(
         rate_url("zoom"),
-        "https://playnirova.dev/api/mods/auth/login?back=/mods/zoom"
+        "https://github.com/verziqp-ops/NirovaLauncher/issues/new?template=nirova-catalog-project.yml&title=zoom"
     );
 }
