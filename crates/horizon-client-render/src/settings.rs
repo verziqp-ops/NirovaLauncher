@@ -209,6 +209,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             fov: 70.0,
+            // Conservative first-run profile: reduce chunk, entity and cloud work on weak PCs.
             render_distance: 6,
             simulation_distance: 5,
             sensitivity: 0.5,
@@ -232,7 +233,7 @@ impl Default for Settings {
             biome_blend: 0,
             graphics_preset: "fast".into(),
             mipmap_levels: 0,
-            weather_radius: 10,
+            weather_radius: 4,
             chunk_fade: 0.75,
             vignette: true,
             autosave_indicator: true,
@@ -924,6 +925,12 @@ mod tests {
         assert_eq!(fresh.inactivity_fps_limit, empty.inactivity_fps_limit);
         assert_eq!(fresh.render_distance, empty.render_distance);
         assert_eq!(fresh.simulation_distance, empty.simulation_distance);
+        assert_eq!(fresh.render_distance, 6);
+        assert_eq!(fresh.simulation_distance, 5);
+        assert_eq!(fresh.graphics_preset, "fast");
+        assert_eq!(fresh.clouds, "false");
+        assert_eq!(fresh.mipmap_levels, 0);
+        assert_eq!(fresh.entity_distance, 0.5);
     }
     #[test]
     fn subtitle_options() {
