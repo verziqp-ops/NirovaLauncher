@@ -44,19 +44,13 @@ impl Default for JavaChoice {
 }
 
 impl JavaChoice {
-    /// The chosen version. Guests default to an existing local installation,
-    /// never an uninstalled release merely because it is newest on Mojang's list.
+    /// When no version is selected, default to the latest Mojang release from the
+    /// current catalogue; a guest can install it from the same Versions page.
     pub(super) fn minecraft(&self, versions: Option<&Versions>) -> Option<String> {
-        self.version.clone().or_else(|| {
-            if matches!(
-                account::Accounts::load().player(),
-                account::Player::Microsoft(_)
-            ) {
-                versions.map(|v| v.latest_release.clone())
-            } else {
-                imported_versions().into_iter().next()
-            }
-        })
+        self.version
+            .clone()
+            .or_else(|| versions.map(|v| v.latest_release.clone()))
+            .or_else(|| imported_versions().into_iter().next())
     }
 
     /// The name it gets when none is typed: "Vanilla 1.21.4", "Fabric 1.21.4".
@@ -220,8 +214,17 @@ impl Launcher {
         self.instances.java_installed = None;
         self.instances.java_installing = Some(version.id.clone());
         let id = version.id.clone();
+        let guest = matches!(
+            self.accounts.player(),
+            account::Player::Offline(_) | account::Player::GameName
+        );
+        horizon_launcher::mojang::CANCEL.store(false, Ordering::Relaxed);
         let task = cx.background_executor().spawn(async move {
-            backend::download_version_for_owner(&version.id, &version.sha1, &|_| {})
+            if guest {
+                backend::download_version_for_guest(&version.id, &version.sha1, &|_| {})
+            } else {
+                backend::download_version_for_owner(&version.id, &version.sha1, &|_| {})
+            }
         });
         cx.spawn(async move |this, cx| {
             let result = task.await;
@@ -494,7 +497,7 @@ impl Launcher {
             );
         }
         rows.child(shell::text(night::CAPTION, c(n.muted)).child(
-            "Minecraft Java Edition скачивается с официальных серверов Mojang при наличии              подтверждённой лицензии. Уже установленные версии можно использовать локально."
+            "Скачать версию можно прямо здесь. Гостевой профиль запускает одиночную игру и только серверы с поддержкой offline-mode; серверы с проверкой Microsoft требуют лицензию."
                 .to_string(),
         ))
     }
