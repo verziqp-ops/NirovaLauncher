@@ -1469,21 +1469,33 @@ fn download_for_owner(
     download_for(pins, dir, pass, !accounts.accounts.is_empty(), fetch, log)
 }
 
-/// Downloads Minecraft `id` (any version on Mojang's list, its version file's sha1 from it) into
-/// Horizon's own game folder, in the official launcher's layout, for an account that owns the
-/// game (asked again now). Returns that folder.
+/// Where Minecraft Java Edition versions should be saved. If the user explicitly picked
+/// an empty folder, keep that choice; never silently redirect the download elsewhere.
+fn java_download_dir_for(settings: &Settings) -> PathBuf {
+    settings
+        .java_versions_dir
+        .clone()
+        .or_else(|| settings
+            .minecraft_dir
+            .as_ref()
+            .filter(|dir| dir.join("versions").is_dir())
+            .cloned())
+        .unwrap_or_else(|| data_dir().join("minecraft"))
+}
+
+/// The configured Java download destination shown on the Versions page.
+pub fn java_download_dir() -> PathBuf {
+    java_download_dir_for(&Settings::load())
+}
+
+/// Downloads Minecraft `id` from Mojang with verified ownership and file hashes,
+/// into the directory selected on the Versions page.
 pub fn download_version_for_owner(
     id: &str,
     manifest_sha1: &str,
     log: &dyn Fn(String),
 ) -> Result<PathBuf, String> {
-    // Use the same folder Java instances use when launched. In particular, a Prism
-    // 'instances' folder is NOT a vanilla .minecraft root, so use NIROVA's store there.
-    let selected = Settings::load().minecraft_dir;
-    let dir = selected
-        .filter(|path| path.join("versions").is_dir())
-        .unwrap_or_else(|| data_dir().join("minecraft"));
-    download_version_for_owner_in(id, manifest_sha1, &dir, log)
+    download_version_for_owner_in(id, manifest_sha1, &java_download_dir(), log)
 }
 
 /// The same verified Mojang download, into the player's selected Minecraft folder.
@@ -1541,7 +1553,11 @@ fn find_local_java_folder(
 /// Paths that can supply already installed Minecraft Java Edition files.
 /// This intentionally does not manufacture a client jar or use a third party's credentials.
 fn existing_java_folders(selected: &Path) -> Vec<PathBuf> {
-    let mut result = vec![selected.to_path_buf(), data_dir().join("minecraft")];
+    let mut result = vec![
+        selected.to_path_buf(),
+        java_download_dir(),
+        data_dir().join("minecraft"),
+    ];
     if let Some(folders) = sources::Folders::current() {
         result.extend(
             sources::known_folders(sources::Os::current(), &folders)
@@ -1570,8 +1586,11 @@ pub fn java_game(
     })?;
     let player = account::java_player()?;
     let guest = player.token.is_empty();
-    let configured = Settings::load().minecraft_dir;
-    let selected = configured.unwrap_or_else(|| data_dir().join("minecraft"));
+    let settings = Settings::load();
+    let download_dir = java_download_dir_for(&settings);
+    let selected = settings.minecraft_dir
+        .filter(|path| path.join("versions").is_dir())
+        .unwrap_or_else(|| download_dir.clone());
     let minecraft = if guest {
         let sources = existing_java_folders(&selected);
         match find_local_java_folder(&selected, &game.minecraft, &sources) {
@@ -1585,12 +1604,13 @@ pub fn java_game(
                 }
                 root
             }
-            None => selected,
+            None => download_dir.clone(),
         }
-    } else if selected.join("versions").is_dir() {
-        selected
+    } else if local_java_version_ready(&download_dir, &game.minecraft) {
+        // A version installed using the Versions tab takes priority over old imports.
+        download_dir.clone()
     } else {
-        data_dir().join("minecraft")
+        selected
     };
     let id = mojang::relative(&game.minecraft)?;
     let natives = minecraft.join("natives").join(&id);
@@ -3372,6 +3392,10 @@ pub struct Settings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
     pub minecraft_dir: Option<PathBuf>,
+    /// Directory for Java Edition version downloads. May be an empty folder chosen on
+    /// Versions; unlike minecraft_dir, it does not need an existing versions/ layout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub java_versions_dir: Option<PathBuf>,
     /// A Minecraft client jar the player picked themselves: preparing uses it instead of
     /// looking through the launchers' folders.
     #[serde(default, skip_serializing_if = "Option::is_none")]
