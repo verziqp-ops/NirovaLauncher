@@ -44,11 +44,19 @@ impl Default for JavaChoice {
 }
 
 impl JavaChoice {
-    /// The Minecraft version it makes: the chosen one, else the newest release.
+    /// The chosen version. Guests default to an existing local installation,
+    /// never an uninstalled release merely because it is newest on Mojang's list.
     pub(super) fn minecraft(&self, versions: Option<&Versions>) -> Option<String> {
-        self.version
-            .clone()
-            .or_else(|| versions.map(|v| v.latest_release.clone()))
+        self.version.clone().or_else(|| {
+            if matches!(
+                account::Accounts::load().player(),
+                account::Player::Microsoft(_)
+            ) {
+                versions.map(|v| v.latest_release.clone())
+            } else {
+                imported_versions().into_iter().next()
+            }
+        })
     }
 
     /// The name it gets when none is typed: "Vanilla 1.21.4", "Fabric 1.21.4".
@@ -96,7 +104,8 @@ fn imported_versions() -> Vec<String> {
             let launchable = json["mainClass"].as_str().is_some()
                 || json["minecraftArguments"].as_str().is_some()
                 || json["inheritsFrom"].as_str().is_some();
-            launchable.then_some(id)
+            (launchable && backend::local_java_version_ready(&root, &id))
+                .then_some(id)
         })
         .collect::<Vec<_>>();
     found.sort_by(|a, b| b.cmp(a));
