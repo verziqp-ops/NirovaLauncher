@@ -87,7 +87,7 @@ fn imported_versions() -> Vec<String> {
                 return None;
             }
             let id = entry.file_name().into_string().ok()?;
-            if id.is_empty() || id.contains(['/', '\\\\']) {
+            if id.is_empty() || id.contains(['/', '\\']) {
                 return None;
             }
             let profile = path.join(format!("{id}.json"));
