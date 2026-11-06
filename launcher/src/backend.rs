@@ -1477,7 +1477,16 @@ pub fn download_version_for_owner(
     manifest_sha1: &str,
     log: &dyn Fn(String),
 ) -> Result<PathBuf, String> {
-    let dir = data_dir().join("minecraft");
+    download_version_for_owner_in(id, manifest_sha1, &data_dir().join("minecraft"), log)
+}
+
+/// The same verified Mojang download, into the player's selected Minecraft folder.
+fn download_version_for_owner_in(
+    id: &str,
+    manifest_sha1: &str,
+    dir: &Path,
+    log: &dyn Fn(String),
+) -> Result<PathBuf, String> {
     let fetch = |url: &str| -> Result<Vec<u8>, String> {
         let mut body = Vec::new();
         get(url)?
@@ -1487,9 +1496,27 @@ pub fn download_version_for_owner(
         Ok(body)
     };
     let pins = sources::Pins::for_version(id, manifest_sha1);
-    download_for_owner(&pins, &dir, &fetch, log)
+    download_for_owner(&pins, dir, &fetch, log)
         .map_err(|e| e.trim_start_matches("\n  • ").to_string())?;
-    Ok(dir)
+    Ok(dir.to_path_buf())
+}
+
+/// A local version profile is importable when its JSON and the client jar it resolves to exist.
+/// Loader profiles commonly inherit the base version's jar.
+fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
+    let file = minecraft.join("versions").join(id).join(format!("{id}.json"));
+    let Ok(profile) = crate::java_launch::read(&file) else {
+        return false;
+    };
+    let jar = profile["jar"]
+        .as_str()
+        .or_else(|| profile["inheritsFrom"].as_str())
+        .unwrap_or(id);
+    minecraft
+        .join("versions")
+        .join(jar)
+        .join(format!("{jar}.jar"))
+        .is_file()
 }
 
 /// The command that starts a Java instance's Minecraft, for an account that owns the game: its
@@ -1509,7 +1536,10 @@ pub fn java_game(
         )
     })?;
     let player = account::java_player()?;
-    let minecraft = data_dir().join("minecraft");
+    let configured = Settings::load().minecraft_dir;
+    let minecraft = configured
+        .filter(|path| path.join("versions").is_dir())
+        .unwrap_or_else(|| data_dir().join("minecraft"));
     let id = mojang::relative(&game.minecraft)?;
     let natives = minecraft.join("natives").join(&id);
     // Each version and loader profile is fetched once; it then starts offline too.
@@ -1521,9 +1551,18 @@ pub fn java_game(
     };
     let marker = downloaded(&game.minecraft)?;
     if !marker.is_file() {
-        let listed = crate::minecraft_versions::load()?;
-        let version = listed.find(&game.minecraft)?;
-        download_version_for_owner(&version.id, &version.sha1, log)?;
+        if !local_java_version_ready(&minecraft, &game.minecraft) {
+            let listed = crate::minecraft_versions::load()?;
+            let version = listed.find(&game.minecraft).map_err(|_| {
+                format!(
+                    "The imported profile {} is incomplete: its version JSON or client jar is missing.                      Select a complete installed profile, or choose an official Minecraft version.",
+                    game.minecraft
+                )
+            })?;
+            download_version_for_owner_in(&version.id, &version.sha1, &minecraft, log)?;
+        } else {
+            log(format!("Using imported Minecraft profile {}", game.minecraft));
+        }
         fs::write(&marker, "").map_err(|e| format!("{}: {e}", marker.display()))?;
     }
     let mut start = game.minecraft.clone();
