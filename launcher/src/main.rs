@@ -107,15 +107,14 @@ impl Page {
         }
     }
 
-    /// Every page, with its name and icon: the top bar shows all but Settings, which has its
-    /// own button.
-    const ALL: [(Page, &'static str, &'static str); 6] = [
-        (Page::Play, "Home", "home"),
-        (Page::Mods, "Mods", "package"),
-        (Page::Servers, "Servers", "server"),
-        (Page::Versions, "Versions", "archive"),
-        (Page::Notes, "Patch notes", "notes"),
-        (Page::Settings, "Settings", "sliders"),
+    /// Every top-level section, in the order shown in the navigation bar.
+    const ALL: [(Page, &'static str); 6] = [
+        (Page::Play, "Home"),
+        (Page::Mods, "Mods"),
+        (Page::Servers, "Servers"),
+        (Page::Versions, "Versions"),
+        (Page::Notes, "Patch notes"),
+        (Page::Settings, "Settings"),
     ];
 }
 
@@ -2262,7 +2261,7 @@ impl Launcher {
         let t = self.theme;
         let n = t.night;
         let mut nav = div().flex().flex_none().items_center().gap(px(4.));
-        for (page, label, _) in Page::ALL {
+        for (page, label) in Page::ALL {
             nav = nav.child(
                 shell::tab(format!("nav-{label}"), tr(label), self.page == page, &t).on_click(
                     cx.listener(move |this, _: &ClickEvent, _, cx| {
