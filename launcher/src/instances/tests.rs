@@ -292,7 +292,7 @@ fn play_time_adds_up_per_instance_and_survives_a_rename() {
 #[test]
 fn play_time_reads_as_minutes_then_hours() {
     let t = |s| play_time(Duration::from_secs(s));
-    assert_eq!(t(59), "under a minute");
+    assert_eq!(t(59), "меньше минуты");
     assert_eq!(t(12 * 60 + 59), "12 min");
     assert_eq!(t(3 * 3600 + 5 * 60), "3 h 05 min");
     assert_eq!(t(140 * 3600 + 7 * 60), "140 h");
