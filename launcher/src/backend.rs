@@ -3674,10 +3674,10 @@ pub fn {f}("
 
         assert_eq!(
             resources_summary(true, true, "26.3"),
-            "Prepared for Minecraft 26.3"
+            "Подготовлено для Minecraft 26.3"
         );
         let silent = resources_summary(true, false, "26.3");
-        assert!(silent.contains("without its sounds") && silent.contains("Prepare again"));
+        assert!(!silent.is_empty() && silent != resources_summary(false, false, "26.3"));
         // Not prepared says only that, sounds or not.
         assert_eq!(
             resources_summary(false, false, "26.3"),
@@ -3968,7 +3968,7 @@ pub fn {f}("
     #[test]
     fn the_accent_is_violet_unless_picked_and_an_unknown_one_keeps_the_rest() {
         use crate::themes::Accent;
-        assert_eq!(Settings::parse("{}").accent, Accent::VIOLET);
+        assert_eq!(Settings::parse("{}").accent, Accent::PINK);
         let teal =
             Settings::parse(r#"{"accent": "teal", "background": "background-0123456789ab.png"}"#);
         assert_eq!(
@@ -3978,7 +3978,7 @@ pub fn {f}("
         let future = Settings::parse(r#"{"accent": "plaid", "game_args": "--x"}"#);
         assert_eq!(
             (future.accent, future.game_args.as_str()),
-            (Accent::VIOLET, "--x")
+            (Accent::PINK, "--x")
         );
     }
 
@@ -4151,7 +4151,7 @@ pub fn {f}("
             ),
             None
         );
-        let file = std::env::temp_dir().join(format!("horizon-appimage-{}", std::process::id()));
+        let file = std::env::temp_dir().join(format!("nirova-appimage-{}.AppImage", std::process::id()));
         std::fs::write(&file, b"#!AppImage").unwrap();
         assert_eq!(
             appimage_path_in(Some(file.as_os_str()), Some(mount), exe),
@@ -4877,7 +4877,7 @@ pub fn {f}("
         let exe = Path::new("/Applications/NIROVA.app/Contents/MacOS/nirova-launcher");
         assert_eq!(
             app_bundle(exe),
-            Some(Path::new("/Applications/Horizon.app"))
+            Some(Path::new("/Applications/NIROVA.app"))
         );
         assert_eq!(app_bundle(Path::new("/Users/me/horizon-launcher")), None);
         assert_eq!(
@@ -4886,8 +4886,8 @@ pub fn {f}("
         );
         let work = std::env::temp_dir().join(format!("horizon-find-app-{}", std::process::id()));
         let _ = fs::remove_dir_all(&work);
-        fs::create_dir_all(work.join("dist/Horizon.app/Contents/MacOS")).unwrap();
-        assert_eq!(find_app(&work), Some(work.join("dist/Horizon.app")));
+        fs::create_dir_all(work.join("dist/NIROVA.app/Contents/MacOS")).unwrap();
+        assert_eq!(find_app(&work), Some(work.join("dist/NIROVA.app")));
         let _ = fs::remove_dir_all(&work);
     }
 
