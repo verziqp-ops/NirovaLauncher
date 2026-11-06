@@ -128,7 +128,7 @@ pub struct Rating {
 pub fn rating(_id: &str) -> Option<Option<Rating>> { None }
 
 /// The catalog report page.
-pub fn rate_url(id: &str) -> String { format!(\"{REPORT}&title={id}\") }
+pub fn rate_url(id: &str) -> String { format!("{REPORT}&title={id}") }
 
 /// The browser's kind for a catalog kind; None for one the launcher doesn't install yet
 /// (kinds newer than this launcher).
