@@ -1519,6 +1519,41 @@ fn download_version_for_owner_in(
     Ok(dir.to_path_buf())
 }
 
+/// Install publicly indexed Minecraft Java Edition files into the selected folder for
+/// an offline profile. This never obtains or fabricates Microsoft credentials; on servers
+/// requiring online-mode an offline identity is rejected as usual.
+pub fn download_version_for_guest(
+    id: &str,
+    manifest_sha1: &str,
+    log: &dyn Fn(String),
+) -> Result<PathBuf, String> {
+    download_version_for_guest_in(id, manifest_sha1, &java_download_dir(), log)
+}
+
+fn download_version_for_guest_in(
+    id: &str,
+    manifest_sha1: &str,
+    dir: &Path,
+    log: &dyn Fn(String),
+) -> Result<PathBuf, String> {
+    if id.is_empty() || !id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')) {
+        return Err(format!("Invalid Minecraft version ID: {id:?}"));
+    }
+    if manifest_sha1.len() != 40 || !manifest_sha1.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("The Minecraft version list has an invalid checksum.".into());
+    }
+    let pins = sources::Pins::for_version(id, manifest_sha1);
+    let fetch = |url: &str| -> Result<Vec<u8>, String> { get_bytes(url) };
+    let os = match sources::Os::current() {
+        sources::Os::Linux => "linux",
+        sources::Os::MacOs => "osx",
+        sources::Os::Windows => "windows",
+    };
+    log(format!("Installing Minecraft {id} from Mojang into {}", dir.display()));
+    mojang::download(&pins, dir, os, 8, &fetch, &mojang::CANCEL, log)?;
+    Ok(dir.to_path_buf())
+}
+
 /// A local version profile is importable when its JSON and the client jar it resolves to exist.
 /// Loader profiles commonly inherit the base version's jar.
 pub fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
@@ -1624,31 +1659,24 @@ pub fn java_game(
             .join(".downloaded"))
     };
     let marker = downloaded(&game.minecraft)?;
-    // Local guest profiles must have actual game files, not just an old .downloaded
-    // marker. An import never creates a runnable version by creating its directory.
-    if guest && !local_java_version_ready(&minecraft, &game.minecraft) {
-        return Err(format!(
-            "Minecraft {} is not installed in {}. Guest profiles need the version JSON              and client jar already present. Go to Instances > New instance and select              a version under 'Installed in .minecraft'. Changing the account to Ely.by              would not install the missing files.",
-            game.minecraft, minecraft.display()
-        ));
-    }
-    if !marker.is_file() {
+    // If missing, downloading and verifying an official version also works for guests:
+    // Java receives an offline identity, not an invented Microsoft access token.
+    if !marker.is_file() || !local_java_version_ready(&minecraft, &game.minecraft) {
         if !local_java_version_ready(&minecraft, &game.minecraft) {
-            if guest {
-                // The check above already gives a version- and folder-specific error.
-                unreachable!("guest local-version validation ran before installation");
-            }
             let listed = crate::minecraft_versions::load()?;
             let version = listed.find(&game.minecraft).map_err(|_| {
                 format!(
-                    "The imported profile {} is incomplete: its version JSON or client jar is missing. \
-                     Select a complete installed profile, or choose an official Minecraft version.",
-                    game.minecraft
+                    "The Minecraft {} profile is missing in {}, and no downloadable version was found.",
+                    game.minecraft, minecraft.display()
                 )
             })?;
-            download_version_for_owner_in(&version.id, &version.sha1, &minecraft, log)?;
+            if guest {
+                download_version_for_guest_in(&version.id, &version.sha1, &minecraft, log)?;
+            } else {
+                download_version_for_owner_in(&version.id, &version.sha1, &minecraft, log)?;
+            }
         } else {
-            log(format!("Using imported Minecraft profile {}", game.minecraft));
+            log(format!("Using installed Minecraft {}", game.minecraft));
         }
         fs::write(&marker, "").map_err(|e| format!("{}: {e}", marker.display()))?;
     }
