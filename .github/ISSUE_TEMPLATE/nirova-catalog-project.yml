@@ -1,0 +1,92 @@
+name: NIROVA catalog project
+description: Submit a project for review in the NIROVA catalog
+title: "[Catalog] "
+labels: ["catalog-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submissions are reviewed manually. Do not attach executable files here. Read docs/catalog-policy.md first.
+  - type: input
+    id: project_id
+    attributes:
+      label: Project ID
+      description: Lowercase letters, digits and underscores; 1–64 characters.
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Project name
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Project kind
+      options:
+        - mod
+        - native-mod
+        - modpack
+        - resourcepack
+        - shader
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source repository URL
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Release artifact URL
+      description: HTTPS link to the exact version file.
+    validations:
+      required: true
+  - type: input
+    id: game
+    attributes:
+      label: NIROVA game version
+      placeholder: "26.3"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Project version
+    validations:
+      required: true
+  - type: input
+    id: sha256
+    attributes:
+      label: SHA-256
+      description: Lowercase 64-character SHA-256 of the release artifact.
+    validations:
+      required: true
+  - type: input
+    id: size
+    attributes:
+      label: File size in bytes
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary and description
+    validations:
+      required: true
+  - type: input
+    id: license
+    attributes:
+      label: SPDX license identifier
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Capabilities and permissions
+      description: Explain what the project can read, write, access or execute.
+    validations:
+      required: true
