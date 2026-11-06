@@ -1555,7 +1555,8 @@ pub fn java_game(
             let listed = crate::minecraft_versions::load()?;
             let version = listed.find(&game.minecraft).map_err(|_| {
                 format!(
-                    "The imported profile {} is incomplete: its version JSON or client jar is missing.                      Select a complete installed profile, or choose an official Minecraft version.",
+                    "The imported profile {} is incomplete: its version JSON or client jar is missing. \
+                     Select a complete installed profile, or choose an official Minecraft version.",
                     game.minecraft
                 )
             })?;
