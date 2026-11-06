@@ -41,9 +41,9 @@ CloseApplications=force
 ShowLanguageDialog=no
 
 [Languages]
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 
 [Tasks]
