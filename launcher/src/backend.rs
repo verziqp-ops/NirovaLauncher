@@ -1519,6 +1519,33 @@ pub fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
         .is_file()
 }
 
+/// Find a complete locally installed version, first in the folder the player selected,
+/// then in default launcher folders on this computer. No network call or ownership claim.
+fn find_local_java_folder(
+    selected: &Path,
+    id: &str,
+    known: &[PathBuf],
+) -> Option<PathBuf> {
+    std::iter::once(selected)
+        .chain(known.iter().map(PathBuf::as_path))
+        .find(|root| local_java_version_ready(root, id))
+        .map(Path::to_path_buf)
+}
+
+/// Paths that can supply already installed Minecraft Java Edition files.
+/// This intentionally does not manufacture a client jar or use a third party's credentials.
+fn existing_java_folders(selected: &Path) -> Vec<PathBuf> {
+    let mut result = vec![selected.to_path_buf(), data_dir().join("minecraft")];
+    if let Some(folders) = sources::Folders::current() {
+        result.extend(
+            sources::known_folders(sources::Os::current(), &folders)
+                .into_iter()
+                .map(|(_, root)| root),
+        );
+    }
+    result
+}
+
 /// The command that starts a Java instance's Minecraft, for an account that owns the game: its
 /// version downloaded from Mojang the first time (then it starts offline too), the Java it needs
 /// (the instance's own, else one found here, else Mojang's, downloaded), and the game in the
@@ -1538,9 +1565,27 @@ pub fn java_game(
     let player = account::java_player()?;
     let guest = player.token.is_empty();
     let configured = Settings::load().minecraft_dir;
-    let minecraft = configured
-        .filter(|path| path.join("versions").is_dir())
-        .unwrap_or_else(|| data_dir().join("minecraft"));
+    let selected = configured.unwrap_or_else(|| data_dir().join("minecraft"));
+    let minecraft = if guest {
+        let sources = existing_java_folders(&selected);
+        match find_local_java_folder(&selected, &game.minecraft, &sources) {
+            Some(root) => {
+                if root != selected {
+                    log(format!(
+                        "Found installed Minecraft {} automatically in {}",
+                        game.minecraft,
+                        root.display()
+                    ));
+                }
+                root
+            }
+            None => selected,
+        }
+    } else if selected.join("versions").is_dir() {
+        selected
+    } else {
+        data_dir().join("minecraft")
+    };
     let id = mojang::relative(&game.minecraft)?;
     let natives = minecraft.join("natives").join(&id);
     // Each version and loader profile is fetched once; it then starts offline too.
