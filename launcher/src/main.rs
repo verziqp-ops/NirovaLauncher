@@ -2256,18 +2256,13 @@ fn megabytes(bytes: u64) -> String {
 // ----- Pages -------------------------------------------------------------------------------------
 
 impl Launcher {
-    /// The top bar: the mark and name over the sidebar (in the title bar on Windows and Linux
-    /// client-side decorations), the pages with their icons, then the account and Settings.
-    /// The top bar over the pages: their tabs, then the account chip and Settings. No plate: the
-    /// sky shows through, under a 1 px rule.
+    /// The top bar: six labeled sections, then the account chip. No plate: the sky shows
+    /// through, under a 1 px rule.
     fn topbar(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let n = t.night;
         let mut nav = div().flex().flex_none().items_center().gap(px(4.));
         for (page, label, _) in Page::ALL {
-            if page == Page::Settings {
-                continue;
-            }
             nav = nav.child(
                 shell::tab(format!("nav-{label}"), tr(label), self.page == page, &t).on_click(
                     cx.listener(move |this, _: &ClickEvent, _, cx| {
@@ -2337,17 +2332,6 @@ impl Launcher {
             .relative()
             .child(account)
             .children(self.account_menu(cx));
-        let settings = shell::icon_button(
-            "nav-Settings",
-            "sliders",
-            40.,
-            self.page == Page::Settings,
-            &t,
-        )
-        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-            this.go(Page::Settings);
-            cx.notify();
-        }));
         div()
             .flex()
             .flex_none()
@@ -2365,8 +2349,7 @@ impl Launcher {
                     .flex_none()
                     .items_center()
                     .gap(px(8.))
-                    .child(account)
-                    .child(settings),
+                    .child(account),
             )
     }
 
