@@ -123,6 +123,8 @@ impl Launcher {
 
     /// Opens a project's page and asks its source for the rest of it.
     pub(super) fn mods_open(&mut self, project: Project) {
+        // A direct browse click supersedes any installed-entry lookup still in flight.
+        self.mods.project_request = self.mods.project_request.wrapping_add(1);
         let key = (project.source, project.id.clone());
         let tx = self.mods.tx.clone();
         let p = project.clone();
