@@ -6,6 +6,11 @@ license = "MIT"
 description = "NIROVA Launcher: manage Minecraft versions, instances and profiles"
 autobins = false
 
+[lib]
+# Keep the existing Rust crate API name while the shipped executable is branded NIROVA.
+name = "horizon_launcher"
+path = "src/lib.rs"
+
 [[bin]]
 name = "nirova-launcher"
 path = "src/main.rs"
