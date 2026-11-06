@@ -15,7 +15,7 @@ use std::time::Duration;
 /// Where the NIROVA repository publishes its signed catalog index.
 pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/nivrora/full-rebrand-russian-home/catalog/index.json";
 /// Project pages in the NIROVA repository, `<SITE>/<id>`.
-const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/nivrora/full-rebrand-russian-home/catalog/projects";
+const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/nivrora/full-rebrand-russian-home/catalog";
 /// The report form of a project.
 const REPORT: &str = "https://github.com/verziqp-ops/NirovaLauncher/issues/new?title=Catalog%20report";
 /// The loader name the browser gives registry versions, so `support` and `pick` know them.
@@ -211,7 +211,7 @@ fn project_of(p: &index::Project) -> Option<Project> {
         summary: p.summary.clone(),
         author: p.authors.join(", "),
         downloads: p.downloads,
-        page: format!("{SITE}/{}", p.id),
+        page: SITE.to_owned(),
         icon: p.icon.clone(),
         license: p.license.clone(),
         kind: kind_of(&p.kind)?,
