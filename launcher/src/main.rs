@@ -3996,11 +3996,169 @@ impl Launcher {
             .children(error.map(|e| notice(e, &t)))
     }
 
+    /// Reuse or create a vanilla Java instance for a locally installed version and start it.
+    /// Guest names work offline; servers that require Microsoft authentication still refuse them.
+    fn play_java_version_from_versions(&mut self, version: String) {
+        if self.client.is_some() || self.starting_client.is_some() {
+            return;
+        }
+        let instance = self
+            .instances
+            .list
+            .iter()
+            .find(|instance| {
+                instance.java.as_ref().is_some_and(|java| {
+                    java.minecraft == version && java.loader.is_none()
+                })
+            })
+            .cloned()
+            .map(Ok)
+            .unwrap_or_else(|| {
+                instances::create_java(&format!("Vanilla {version}"), &version)
+            });
+        match instance {
+            Ok(instance) => {
+                self.select_instance(&instance);
+                self.reload_instances();
+                self.go(Page::Play);
+                self.play();
+            }
+            Err(e) => self.client_error = Some(e),
+        }
+    }
+
+    /// Public Minecraft Java Edition version catalogue, separate from NIROVA's own builds.
+    /// A guest can start a version already present locally, but the official download path
+    /// must still check Mojang ownership. No file is invented to simulate an installation.
+    fn java_versions_panel(&mut self, cx: &mut Context<Self>) -> Div {
+        if matches!(self.instances.versions, new_instance::VersionList::NotAsked) {
+            self.load_java_versions(cx);
+        }
+        let t = self.theme;
+        let mut panel = div()
+            .flex()
+            .flex_col()
+            .gap(px(12.))
+            .child(text(theme::HEADING).text_color(t.ink).child("Minecraft Java Edition"))
+            .child(
+                text(theme::UI)
+                    .text_color(t.muted)
+                    .child("Выбирайте версии здесь. Установленные можно запускать с гостевым ником. Для скачивания Minecraft Java Edition нужна подтверждённая лицензия."),
+            );
+        let search = self
+            .servers
+            .value(servers_page::Field::InstanceVersion)
+            .trim()
+            .to_lowercase();
+        panel = panel.child(self.field(
+            servers_page::Field::InstanceVersion,
+            "Поиск версии",
+            280.,
+            cx,
+        ));
+        let versions: Vec<horizon_launcher::minecraft_versions::Version> = match &self.instances.versions {
+            new_instance::VersionList::NotAsked | new_instance::VersionList::Loading => {
+                return panel.child(text(theme::UI).text_color(t.muted).child("Загрузка списка версий…"));
+            }
+            new_instance::VersionList::Failed(e) => {
+                return panel.child(text(theme::UI).text_color(t.danger).child(e.clone()));
+            }
+            new_instance::VersionList::Ready(versions) => versions
+                .all
+                .iter()
+                .filter(|v| search.is_empty() || v.id.to_lowercase().contains(&search))
+                .take(50)
+                .cloned()
+                .collect(),
+        };
+        if versions.is_empty() {
+            return panel.child(text(theme::UI).text_color(t.muted).child("Версии не найдены."));
+        }
+        let root = self.settings.minecraft_dir.clone();
+        let own = backend::data_dir().join("minecraft");
+        let mut rows = div().flex().flex_col().gap(px(6.));
+        for version in versions {
+            let id = version.id;
+            let installed = backend::local_java_version_ready(&own, &id)
+                || root.as_deref().is_some_and(|dir| backend::local_java_version_ready(dir, &id));
+            let kind = match version.kind {
+                horizon_launcher::minecraft_versions::Kind::Release => "Release",
+                horizon_launcher::minecraft_versions::Kind::Snapshot => "Snapshot",
+                horizon_launcher::minecraft_versions::Kind::OldBeta => "Beta",
+                horizon_launcher::minecraft_versions::Kind::OldAlpha => "Alpha",
+            };
+            let right: AnyElement = if self.instances.java_installing.as_deref() == Some(id.as_str()) {
+                text(theme::CAPTION).text_color(t.muted).child("Скачивание…").into_any_element()
+            } else if installed {
+                let playing = id.clone();
+                button(format!("java-play-{id}"), "Играть", Kind::Secondary, &t)
+                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.play_java_version_from_versions(playing.clone());
+                        cx.notify();
+                    }))
+                    .into_any_element()
+            } else {
+                let downloading = id.clone();
+                let install = button(format!("java-install-{id}"), "Скачать", Kind::Secondary, &t);
+                let install = if self.instances.java_installing.is_some() {
+                    disabled(install)
+                } else {
+                    install.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.install_java_version_id(downloading.clone(), cx);
+                        cx.notify();
+                    }))
+                };
+                install.into_any_element()
+            };
+            rows = rows.child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(12.))
+                    .px(px(12.))
+                    .py(px(10.))
+                    .bg(t.panel)
+                    .border_1()
+                    .border_color(t.outline)
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .flex_1()
+                            .min_w_0()
+                            .gap(px(3.))
+                            .child(text(theme::UI).text_color(t.ink).child(id))
+                            .child(
+                                text(theme::CAPTION)
+                                    .text_color(t.muted)
+                                    .child(format!(
+                                        "{kind} · {}{}",
+                                        version.released.get(..10).unwrap_or(""),
+                                        if installed { " · Установлена" } else { "" }
+                                    )),
+                            ),
+                    )
+                    .child(right),
+            );
+        }
+        panel = panel.child(rows);
+        if let Some(error) = &self.instances.java_install_error {
+            panel = panel.child(text(theme::UI).text_color(t.danger).child(error.clone()));
+        }
+        if let Some(id) = &self.instances.java_installed {
+            panel = panel.child(text(theme::UI).text_color(t.muted).child(format!(
+                "Minecraft {id} скачан. Нажмите «Играть»."
+            )));
+        }
+        panel
+    }
+
     fn versions_page(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
+        let java_panel = self.java_versions_panel(cx);
         let header = page_header(
             "Versions",
-            "Builds from GitHub. Each one installs into its own folder.",
+            "Minecraft Java Edition и собственные сборки NIROVA.",
             &t,
         );
         // Measured again when the installed versions change.
@@ -4027,6 +4185,8 @@ impl Launcher {
             .flex_col()
             .gap(px(32.))
             .child(header)
+            .child(java_panel)
+            .child(text(theme::HEADING).text_color(t.ink).child("Сборки NIROVA"))
             .children((used > 0).then(|| {
                 text(theme::UI).text_color(t.muted).child(trf(
                     "Installed versions use {size}.",
