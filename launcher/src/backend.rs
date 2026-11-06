@@ -1536,6 +1536,7 @@ pub fn java_game(
         )
     })?;
     let player = account::java_player()?;
+    let guest = player.token.is_empty();
     let configured = Settings::load().minecraft_dir;
     let minecraft = configured
         .filter(|path| path.join("versions").is_dir())
@@ -1552,6 +1553,12 @@ pub fn java_game(
     let marker = downloaded(&game.minecraft)?;
     if !marker.is_file() {
         if !local_java_version_ready(&minecraft, &game.minecraft) {
+            if guest {
+                return Err(format!(
+                    "Guest mode requires a complete local Minecraft {} installation.                      Select the existing .minecraft folder in Settings, or use an installed version.",
+                    game.minecraft
+                ));
+            }
             let listed = crate::minecraft_versions::load()?;
             let version = listed.find(&game.minecraft).map_err(|_| {
                 format!(
@@ -1571,7 +1578,15 @@ pub fn java_game(
         start = loader.kind.profile_id(&loader.version, &game.minecraft);
         let marker = downloaded(&start)?;
         if !marker.is_file() {
-            start = crate::loaders::install(loader, &game.minecraft, &minecraft, &get_bytes, log)?;
+            if guest && !local_java_version_ready(&minecraft, &start) {
+                return Err(format!(
+                    "Guest mode cannot download the {} loader profile. Import a complete                      installed version from your .minecraft folder first.",
+                    start
+                ));
+            }
+            if !guest {
+                start = crate::loaders::install(loader, &game.minecraft, &minecraft, &get_bytes, log)?;
+            }
             fs::write(downloaded(&start)?, "").map_err(|e| e.to_string())?;
         }
     }
