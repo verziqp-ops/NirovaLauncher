@@ -209,8 +209,8 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             fov: 70.0,
-            render_distance: 12,
-            simulation_distance: 12,
+            render_distance: 6,
+            simulation_distance: 5,
             sensitivity: 0.5,
             master_volume: 1.0,
             volumes: [1.0; 11],
@@ -220,18 +220,18 @@ impl Default for Settings {
             gamma: 0.5,
             // Vanilla's default, as for an options.txt without the key: a
             // capped frame rate leaves the cores idle when VSync is off.
-            max_fps: 120,
+            max_fps: 60,
             vsync: true,
             fullscreen: false,
             smooth_lighting: true,
-            clouds: "true".into(),
-            cloud_range: 128,
+            clouds: "false".into(),
+            cloud_range: 64,
             particles: 0,
-            entity_distance: 1.0,
-            entity_shadows: true,
-            biome_blend: 2,
-            graphics_preset: "fancy".into(),
-            mipmap_levels: 4,
+            entity_distance: 0.5,
+            entity_shadows: false,
+            biome_blend: 0,
+            graphics_preset: "fast".into(),
+            mipmap_levels: 0,
             weather_radius: 10,
             chunk_fade: 0.75,
             vignette: true,
@@ -918,7 +918,7 @@ mod tests {
     #[test]
     fn no_options_txt_paces_frames_like_an_empty_one() {
         let (fresh, empty) = (Settings::default(), Settings::parse(""));
-        assert_eq!(fresh.max_fps, 120);
+        assert_eq!(fresh.max_fps, 60);
         assert_eq!(fresh.max_fps, empty.max_fps);
         assert_eq!(fresh.vsync, empty.vsync);
         assert_eq!(fresh.inactivity_fps_limit, empty.inactivity_fps_limit);
