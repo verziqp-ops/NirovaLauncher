@@ -1574,6 +1574,30 @@ impl Launcher {
         .detach();
     }
 
+    /// Pick an independent destination for Minecraft Java Edition version downloads.
+    /// The directory can be empty: the downloader creates versions/, libraries/ and assets/.
+    fn choose_java_versions_folder(&mut self, cx: &mut Context<Self>) {
+        let paths = cx.prompt_for_paths(PathPromptOptions {
+            files: false,
+            directories: true,
+            multiple: false,
+            prompt: Some("Папка для скачивания версий Minecraft".into()),
+        });
+        cx.spawn(async move |this, cx| {
+            if let Ok(Ok(Some(mut paths))) = paths.await {
+                if let Some(path) = paths.pop() {
+                    let _ = this.update(cx, |this, cx| {
+                        this.settings.java_versions_dir = Some(path);
+                        this.settings.save();
+                        this.instances.java_install_error = None;
+                        cx.notify();
+                    });
+                }
+            }
+        })
+        .detach();
+    }
+
     /// Picks a Minecraft client jar to prepare from; preparing checks it is the right one.
     fn choose_jar(&mut self, cx: &mut Context<Self>) {
         let paths = cx.prompt_for_paths(PathPromptOptions {
@@ -4044,6 +4068,39 @@ impl Launcher {
                 text(theme::UI)
                     .text_color(t.muted)
                     .child("Выбирайте версии здесь. Установленные можно запускать с гостевым ником. Для скачивания Minecraft Java Edition нужна подтверждённая лицензия."),
+            )
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(12.))
+                    .px(px(12.))
+                    .py(px(10.))
+                    .bg(t.panel)
+                    .border_1()
+                    .border_color(t.outline)
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .flex_1()
+                            .min_w_0()
+                            .gap(px(4.))
+                            .child(text(theme::CAPTION).text_color(t.muted).child("Папка загрузки версий"))
+                            .child(
+                                text(theme::UI)
+                                    .text_color(t.ink)
+                                    .truncate()
+                                    .child(backend::java_download_dir().display().to_string()),
+                            ),
+                    )
+                    .child(
+                        button("choose-java-download-dir", "Выбрать папку…", Kind::Secondary, &t)
+                            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                                this.choose_java_versions_folder(cx);
+                                cx.notify();
+                            })),
+                    ),
             );
         let search = self
             .servers
@@ -4075,11 +4132,13 @@ impl Launcher {
             return panel.child(text(theme::UI).text_color(t.muted).child("Версии не найдены."));
         }
         let root = self.settings.minecraft_dir.clone();
+        let download_root = backend::java_download_dir();
         let own = backend::data_dir().join("minecraft");
         let mut rows = div().flex().flex_col().gap(px(6.));
         for version in versions {
             let id = version.id;
-            let installed = backend::local_java_version_ready(&own, &id)
+            let installed = backend::local_java_version_ready(&download_root, &id)
+                || backend::local_java_version_ready(&own, &id)
                 || root.as_deref().is_some_and(|dir| backend::local_java_version_ready(dir, &id));
             let kind = match version.kind {
                 horizon_launcher::minecraft_versions::Kind::Release => "Release",
