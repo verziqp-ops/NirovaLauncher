@@ -91,7 +91,7 @@ pub fn badge(label: impl Into<SharedString>, color: Hsla, t: &Theme) -> Div {
         .h(px(22.))
         .px(px(10.))
         .bg(color.opacity(tint))
-        .rounded(px(0.))
+        .rounded(px(theme::RADIUS))
         .child(
             pixel(12., FontWeight::MEDIUM)
                 .text_color(color)
@@ -114,7 +114,7 @@ pub fn tabs<T: Copy + PartialEq + 'static>(
         .gap(px(4.))
         .p(px(4.))
         .bg(t.plate_soft)
-        .rounded(px(0.))
+        .rounded(px(theme::RADIUS))
         .children(options.iter().map(|&(value, label, icon_name)| {
             let open = current == value;
             let pick = on_pick.clone();
@@ -126,7 +126,7 @@ pub fn tabs<T: Copy + PartialEq + 'static>(
                 .gap(px(8.))
                 .h(px(32.))
                 .px(px(12.))
-                .rounded(px(0.))
+                .rounded(px(theme::RADIUS))
                 .cursor_pointer()
                 .when(open, |d| d.bg(t.ink))
                 .child(icon(icon_name, 16., if open { t.page } else { t.muted }))

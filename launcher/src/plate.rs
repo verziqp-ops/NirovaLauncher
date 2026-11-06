@@ -10,15 +10,15 @@ pub fn alpha(c: u32, a: f32) -> Rgba {
     rgba(c << 8 | (a * 255.).round() as u32)
 }
 
-/// A plate: `card` at its opacity, each corner cut in two [`crate::theme::night::PIXEL_CORNER`] steps, with its
-/// 1 px `stroke` along the edge. Its content goes in as children, as on any div.
+/// A softly rounded card at the chosen panel opacity, with a thin border.
+/// Pixel-stepped controls use `cut` separately.
 pub fn plate(n: &Night) -> Div {
-    cut(
-        0.,
-        0,
-        Some(alpha(n.card, n.card_alpha)),
-        Some((alpha(n.stroke, n.stroke_alpha), 1.)),
-    )
+    div()
+        .relative()
+        .rounded(px(crate::theme::RADIUS_PLATE))
+        .bg(alpha(n.card, n.card_alpha))
+        .border_1()
+        .border_color(alpha(n.stroke, n.stroke_alpha))
 }
 
 /// A box of any size whose corners are cut in `steps` steps of `step` px: `fill` inside, and a

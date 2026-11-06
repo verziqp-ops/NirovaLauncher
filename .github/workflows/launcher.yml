@@ -183,6 +183,21 @@ jobs:
           & $iscc /Q "/DAppVersion=$version" "/DSource=$PWD\target\release\nirova-launcher.exe" "/O$PWD\..\dist" ..\packaging\windows\setup.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Get-ChildItem ..\dist
+      - name: Scan Windows outputs with Microsoft Defender when available
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $scan = Join-Path $env:RUNNER_TEMP 'nirova-defender-scan'
+          New-Item -ItemType Directory -Force $scan | Out-Null
+          Copy-Item target/release/nirova-launcher.exe $scan
+          Copy-Item ../dist/NIROVA-Setup.exe $scan
+          & ../tools/windows/scan-defender.ps1 -Folder $scan -Report ../dist/defender-scan.json
+      - name: Upload Windows security diagnostics
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nirova-defender-report
+          path: dist/defender-scan.json
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset }}
@@ -224,12 +239,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: The signature, checked as launchers check it
         run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag "$NIROVA_RELEASE_TAG" dist
+      - name: Select release notes for this version
+        run: |
+          version="${NIROVA_RELEASE_TAG#launcher@}"
+          notes="docs/releases/launcher-$version.md"
+          test -f "$notes"
+          echo "NIROVA_RELEASE_NOTES=$notes" >> "$GITHUB_ENV"
       - uses: softprops/action-gh-release@v2
         with:
           name: NIROVA Launcher ${{ env.NIROVA_RELEASE_TAG }}
           tag_name: ${{ env.NIROVA_RELEASE_TAG }}
           target_commitish: ${{ github.sha }}
-          body_path: docs/releases/launcher-1.4.0.md
+          body_path: ${{ env.NIROVA_RELEASE_NOTES }}
           files: |
             dist/*
             install.ps1
@@ -238,7 +259,7 @@ jobs:
           generate_release_notes: true
 
       - name: Remove the superseded empty release after successful publication
-        if: env.NIROVA_RELEASE_TAG == 'launcher@1.4.0'
+        if: env.NIROVA_RELEASE_TAG == 'launcher@1.4.0' || env.NIROVA_RELEASE_TAG == 'launcher@1.4.1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

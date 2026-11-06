@@ -1820,7 +1820,9 @@ fn button(
         .text_size(px(15.))
         .font_weight(FontWeight::MEDIUM)
         .cursor_pointer()
-        .child(hover_layer(&id, hover, 0., 0.));
+        .rounded(px(theme::RADIUS))
+        .overflow_hidden()
+        .child(hover_layer(&id, hover, 0., theme::RADIUS));
     let base = match kind {
         Kind::Primary => base
             .border_2()
@@ -2515,7 +2517,7 @@ impl Launcher {
                 .h(px(theme::night::PLAY))
                 .pl(px(14.))
                 .pr(px(12.))
-                .rounded(px(0.))
+                .rounded(px(theme::RADIUS))
                 .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
                 .border_1()
                 .border_color(plate::alpha(n.stroke, n.stroke_alpha))
@@ -2548,7 +2550,7 @@ impl Launcher {
                 .left_0()
                 .w(px(300.))
                 .p(px(6.))
-                .rounded(px(0.))
+                .rounded(px(theme::RADIUS))
                 .border_1()
                 .border_color(plate::alpha(n.stroke, 2. * n.stroke_alpha))
                 .bg(t.surface)
@@ -3090,7 +3092,7 @@ impl Launcher {
                     .flex_none()
                     .mt(px(11.))
                     .size(px(6.))
-                    .rounded(px(0.))
+                    .rounded(px(theme::RADIUS))
                     .bg(t.danger),
             )
             .child(body)
