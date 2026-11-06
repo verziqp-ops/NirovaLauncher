@@ -17,7 +17,7 @@ pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/Nirov
 /// Project pages in the NIROVA repository, `<SITE>/<id>`.
 const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/nivrora/full-rebrand-russian-home/catalog";
 /// The report form of a project.
-const REPORT: &str = "https://github.com/verziqp-ops/NirovaLauncher/issues/new?title=Catalog%20report";
+const REPORT: &str = "https://github.com/verziqp-ops/NirovaLauncher/issues/new?template=nirova-catalog-project.yml";
 /// The loader name the browser gives registry versions, so `support` and `pick` know them.
 pub const LOADER: &str = "nirova";
 /// How long a fetched index is used before it is fetched again.
