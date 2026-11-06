@@ -49,6 +49,8 @@ pub(super) enum Event {
     About(HashMap<String, Vec<String>>),
     /// Registry files taken down that the launcher turned off.
     TakenDown(Vec<String>),
+    /// A project resolved from an installed entry before opening its in-launcher details.
+    Project(u64, Result<Project, String>),
     /// A project page's part, an image or a filter's values (`mods_project`).
     Loaded(super::mods_project::Loaded),
 }
@@ -69,6 +71,8 @@ pub(super) struct Mods {
     everything: bool,
     /// Which search is the current one; answers for older ones are dropped.
     search: u64,
+    /// Installed-project lookups are dropped when a newer page is opened.
+    project_request: u64,
     searching: bool,
     searched: bool,
     results: Vec<Project>,
@@ -160,6 +164,7 @@ impl Mods {
             focused: false,
             everything: false,
             search: 0,
+            project_request: 0,
             searching: false,
             searched: false,
             results: Vec::new(),
@@ -315,6 +320,7 @@ impl Launcher {
         let mut changed = false;
         let mut to_check = Vec::new();
         let mut loaded = Vec::new();
+        let mut projects = Vec::new();
         let mut done = false;
         while let Ok(event) = self.mods.rx.try_recv() {
             changed = true;
@@ -335,6 +341,10 @@ impl Launcher {
                     }
                 }
                 Event::Found(..) => {}
+                Event::Project(request, result) if request == m.project_request => {
+                    projects.push(result);
+                }
+                Event::Project(..) => {}
                 Event::Progress(line, f) => {
                     if let Some(busy) = &mut m.busy {
                         busy.1 = line;
@@ -396,6 +406,12 @@ impl Launcher {
         }
         for l in loaded {
             self.mods_loaded(l);
+        }
+        for result in projects {
+            match result {
+                Ok(project) => self.mods_open(project),
+                Err(error) => self.mods.message = Some(Err(error)),
+            }
         }
         changed
     }
@@ -474,6 +490,20 @@ impl Launcher {
 
     /// Turns a Horizon mod the browser installed on or off, as the game's Options > Mods does;
     /// in a Java instance, renames its file.
+    /// Resolves an installed entry through its original source, then opens the same details page
+    /// used by online search results (description, gallery, versions and compatibility).
+    pub(super) fn mods_open_installed(&mut self, source: SourceId, id: String) {
+        self.mods.project_request = self.mods.project_request.wrapping_add(1);
+        let request = self.mods.project_request;
+        let tx = self.mods.tx.clone();
+        std::thread::spawn(move || {
+            let result = browser::source(source)
+                .ok_or_else(|| format!("{} isn't set up.", source.label()))
+                .and_then(|source| source.project(&id));
+            let _ = tx.send(Event::Project(request, result));
+        });
+    }
+
     pub(super) fn mods_switch(&mut self, e: &installed::Entry) {
         let home = self.mods.home();
         if self.mods.java.is_some() {
@@ -1295,18 +1325,20 @@ impl Launcher {
                         })),
                 );
             }
-            if !e.page.is_empty() {
-                let page = e.page.clone();
-                right = right.child(
-                    button(
-                        SharedString::from(format!("mods-installed-page-{}", e.project)),
-                        "Page",
-                        Kind::Ghost,
-                        &t,
-                    )
-                    .on_click(move |_, _, cx| cx.open_url(&page)),
-                );
-            }
+            let source = e.source;
+            let project = e.project.clone();
+            right = right.child(
+                button(
+                    SharedString::from(format!("mods-installed-open-{}", e.project)),
+                    tr("Open"),
+                    Kind::Ghost,
+                    &t,
+                )
+                .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                    this.mods_open_installed(source, project.clone());
+                    cx.notify();
+                })),
+            );
             if is_native {
                 let folder = self.mods.home().join(native_mods::INSTALLED);
                 right = right.child(
