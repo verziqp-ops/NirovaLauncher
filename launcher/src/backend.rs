@@ -1587,6 +1587,7 @@ pub fn java_game(
     let player = account::java_player()?;
     let guest = player.token.is_empty();
     let settings = Settings::load();
+    let preferred_download_dir = settings.java_versions_dir.is_some();
     let download_dir = java_download_dir_for(&settings);
     let selected = settings.minecraft_dir
         .filter(|path| path.join("versions").is_dir())
@@ -1606,8 +1607,9 @@ pub fn java_game(
             }
             None => download_dir.clone(),
         }
-    } else if local_java_version_ready(&download_dir, &game.minecraft) {
-        // A version installed using the Versions tab takes priority over old imports.
+    } else if preferred_download_dir || local_java_version_ready(&download_dir, &game.minecraft) {
+        // Downloads and launches use the explicitly chosen version folder, even before
+        // that folder has a versions/ directory. Existing files take priority too.
         download_dir.clone()
     } else {
         selected
