@@ -529,6 +529,18 @@ fn any_owner_opens_the_gate_and_the_one_who_plays_brings_the_session() {
 }
 
 #[test]
+fn a_guest_nickname_can_be_saved_without_claiming_game_ownership() {
+    let store = MemoryStore::default();
+    let mut accounts = Accounts::default();
+    assert_eq!(accounts.add_offline("Builder_1").unwrap(), "Builder_1");
+    assert_eq!(accounts.offline, ["Builder_1"]);
+    assert!(!accounts.has_owner(&store));
+    assert!(accounts
+        .play_as(&store, Player::Offline("Builder_1".into()))
+        .is_err());
+}
+
+#[test]
 fn offline_names_cannot_bypass_the_minecraft_ownership_gate() {
     let store = MemoryStore::default();
     let mut accounts = Accounts::default();
