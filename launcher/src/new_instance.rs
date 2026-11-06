@@ -172,6 +172,77 @@ impl Launcher {
         .detach();
     }
 
+    /// Download the selected official Java Edition version directly from the instance dialog.
+    /// backend::download_version_for_owner enforces ownership and verifies Mojang checksums.
+    /// Work runs away from the UI so large downloads cannot freeze the launcher.
+    pub(super) fn install_java_version(&mut self, cx: &mut Context<Self>) {
+        if self.instances.java_installing.is_some() {
+            return;
+        }
+        let selected = match &self.instances.dialog {
+            Some(dialog) => dialog.java.minecraft(match &self.instances.versions {
+                VersionList::Ready(v) => Some(v),
+                _ => None,
+            }),
+            None => return,
+        };
+        let selected = match selected {
+            Some(id) => id,
+            None => {
+                self.instances.java_install_error =
+                    Some("Выберите версию Minecraft из списка.".into());
+                return;
+            }
+        };
+        let version = match &self.instances.versions {
+            VersionList::Ready(versions) => match versions.find(&selected) {
+                Ok(v) => v.clone(),
+                Err(e) => {
+                    self.instances.java_install_error = Some(format!(
+                        "{selected} уже есть только в локальной установке. {e}"
+                    ));
+                    return;
+                }
+            },
+            _ => {
+                self.instances.java_install_error =
+                    Some("Сначала загрузите список версий Minecraft.".into());
+                return;
+            }
+        };
+        self.instances.java_install_error = None;
+        self.instances.java_installed = None;
+        self.instances.java_installing = Some(version.id.clone());
+        let id = version.id.clone();
+        let task = cx.background_executor().spawn(async move {
+            // Only a verified owner may download the commercial Java Edition.
+            // The existing resumable downloader checks all Mojang SHA-1 digests.
+            backend::download_version_for_owner(
+                &version.id,
+                &version.sha1,
+                &|_| {},
+            )
+        });
+        cx.spawn(async move |this, cx| {
+            let result = task.await;
+            let _ = this.update(cx, |this, cx| {
+                this.instances.java_installing = None;
+                match result {
+                    Ok(_) => {
+                        this.instances.java_installed = Some(id.clone());
+                        this.instances.java_install_error = None;
+                        this.change(|choice| choice.version = Some(id));
+                    }
+                    Err(e) => {
+                        this.instances.java_install_error = Some(e);
+                    }
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
     /// The tabs over a new instance's dialog: NIROVA, Vanilla, Modded.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
@@ -392,8 +463,40 @@ impl Launcher {
                     .child(card(Loader::Quilt)),
             );
         }
+        // Direct installation without having to create and start an instance first.
+        // The backend checks ownership and SHA-1, and reuses verified downloaded files.
+        let install_button = button(
+            "install-java-version",
+            if self.instances.java_installing.is_some() {
+                "Скачивание…"
+            } else {
+                "Скачать выбранную версию"
+            },
+            Kind::Secondary,
+            &t,
+        );
+        let install_button = if self.instances.java_installing.is_some() || chosen.is_none() {
+            disabled(install_button)
+        } else {
+            install_button.on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                this.install_java_version(cx);
+                cx.notify();
+            }))
+        };
+        rows = rows.child(div().flex().flex_col().gap(px(8.)).child(install_button));
+        if let Some(version) = &self.instances.java_installed {
+            rows = rows.child(
+                shell::text(night::CAPTION, c(n.muted))
+                    .child(format!("Minecraft {version} скачан. Можно создать инстанс.")),
+            );
+        }
+        if let Some(error) = &self.instances.java_install_error {
+            rows = rows.child(
+                shell::text(night::UI, c(n.danger)).child(error.clone()),
+            );
+        }
         rows.child(shell::text(night::CAPTION, c(n.muted)).child(
-            tr("Play downloads the game from Mojang for your account the first time, with the Java it needs.")
+            "Minecraft Java Edition скачивается с официальных серверов Mojang при наличии              подтверждённой лицензии. Уже установленные версии можно использовать локально."
                 .to_string(),
         ))
     }
