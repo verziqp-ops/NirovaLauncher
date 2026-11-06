@@ -47,7 +47,7 @@ pub(super) fn content_root(
     dev: &[std::path::PathBuf],
 ) -> std::path::PathBuf {
     use horizon_client::mod_content::{self, ContentMod};
-    use horizon_mods::{Capability, Content, Package};
+    use horizon_mods::{Capability, Content, Manifest, Package};
     let here = std::env::current_dir().unwrap_or_default();
     let mut paths = horizon_mods::find(&here.join(mod_list::DIR));
     paths.retain(|p| !dev.contains(p));
@@ -55,17 +55,25 @@ pub(super) fn content_root(
     let mut known = None;
     let mut mods: Vec<ContentMod> = Vec::new();
     for path in &paths {
+        // Most installed mods are inactive or native-code-only. Check their
+        // manifest first, instead of inflating up to 32 MiB of unused WASM
+        // per package just to decide whether its content is needed.
+        let Ok(manifest) = Manifest::read_from(path) else {
+            continue;
+        };
+        let on = enabled.contains(&manifest.id) || dev.contains(path);
+        if !on
+            || !manifest.capabilities.contains(&Capability::Registries)
+            || mods.iter().any(|c| c.id == manifest.id)
+        {
+            continue;
+        }
+        // Enabled content mods still go through the existing full package
+        // validation before their data/assets are registered.
         let Ok(package) = Package::read(path) else {
             continue;
         };
         let m = &package.manifest;
-        let on = enabled.contains(&m.id) || dev.contains(path);
-        if !on
-            || !m.capabilities.contains(&Capability::Registries)
-            || mods.iter().any(|c| c.id == m.id)
-        {
-            continue;
-        }
         let content = match Content::read(path, m) {
             Ok(content) => content,
             Err(e) => {
