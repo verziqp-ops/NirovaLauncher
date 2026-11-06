@@ -883,9 +883,7 @@ impl Launcher {
         }
         let header = page_header(
             "Mods",
-            "Mods and shader packs supported by NIROVA from its own reviewed registry, and \
-             resource packs from Modrinth. Each file is checked against its source's checksum \
-             before it reaches your game folder.",
+            "Native mods and shader packs from an external community catalog, and resource packs from Modrinth. Each file is checked against its source's checksum before it reaches your game folder.",
             &t,
         );
         let this = cx.entity().downgrade();
