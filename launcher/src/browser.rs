@@ -9,7 +9,7 @@
 pub mod curseforge;
 pub mod details;
 pub mod download;
-pub mod nirova;
+pub mod horizon;
 pub mod images;
 pub mod installed;
 pub mod java;
@@ -73,9 +73,8 @@ impl Kind {
 pub enum SourceId {
     Modrinth,
     CurseForge,
-    /// NIROVA's own curated project catalog. Accept the old serialized key for existing installs.
-    #[serde(alias = "horizon")]
-    Nirova,
+    /// Legacy external catalog integration; the source is not operated by NIROVA.
+    Horizon,
 }
 
 impl SourceId {
@@ -83,7 +82,7 @@ impl SourceId {
         match self {
             SourceId::Modrinth => "Modrinth",
             SourceId::CurseForge => "CurseForge",
-            SourceId::Nirova => "NIROVA Catalog",
+            SourceId::Horizon => "External Catalog",
         }
     }
 }
@@ -166,7 +165,7 @@ pub struct FileRef {
     pub name: String,
     pub size: u64,
     pub sha512: Option<String>,
-    /// Checksum supplied by the project's NIROVA catalog.
+    /// Checksum supplied by the project's external catalog.
     pub sha256: Option<String>,
     pub sha1: Option<String>,
     pub primary: bool,
@@ -268,14 +267,14 @@ pub trait Source: Send + Sync {
 /// What the launcher says wherever CurseForge would be.
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
 /// Message shown when another source does not list NIROVA-compatible shader packs.
-pub const SHADERS_ON_NIROVA: &str =
-    "NIROVA shader packs are not listed in this catalog.";
+pub const SHADERS_ON_HORIZON: &str =
+    "NIROVA-compatible shader packs are not listed by this source.";
 
-/// The sources this launcher uses: Modrinth and NIROVA's own curated catalog. CurseForge support is coming
+/// The sources this launcher uses: Modrinth and an external community catalog. CurseForge support is coming
 /// soon: its API needs a paid key, so no search or install goes to it; `curseforge` is kept for
 /// then.
 pub fn sources() -> Vec<Box<dyn Source>> {
-    vec![Box::new(modrinth::Modrinth), Box::new(nirova::Registry)]
+    vec![Box::new(modrinth::Modrinth), Box::new(horizon::Registry)]
 }
 
 /// The source of that id, when this launcher can use it.
@@ -285,7 +284,7 @@ pub fn source(id: SourceId) -> Option<Box<dyn Source>> {
 
 /// How well a project of `kind` made for `game_versions` and `loaders` runs in NIROVA.
 pub fn support(kind: Kind, game_versions: &[String], loaders: &[String]) -> Support {
-    if loaders.iter().any(|l| l == nirova::LOADER) {
+    if loaders.iter().any(|l| l == horizon::LOADER) {
         // Made for NIROVA and reviewed: it runs when it is for the version NIROVA plays.
         return match newest_release(game_versions)
             .filter(|_| !game_versions.iter().any(|v| v == GAME))
@@ -377,7 +376,7 @@ pub fn pick(kind: Kind, versions: &[Version], everything: bool) -> Option<&Versi
         .filter(|v| v.blocked.is_none() && v.file().is_some());
     if versions
         .iter()
-        .any(|v| v.loaders.iter().any(|l| l == nirova::LOADER))
+        .any(|v| v.loaders.iter().any(|l| l == horizon::LOADER))
     {
         return usable.find(|v| v.game_versions.iter().any(|g| g == GAME));
     }
