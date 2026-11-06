@@ -294,6 +294,38 @@ impl Manifest {
         }
         Ok(m)
     }
+    /// Read only a mod's manifest, without decompressing or allocating its
+    /// optional code component. Use this when deciding which installed mods
+    /// are enabled; `Package::read` still validates and reads enabled mods.
+    pub fn read_from(path: &Path) -> Result<Self, String> {
+        // A manifest is small. This cap also prevents a malformed archive from
+        // consuming unbounded memory while merely listing installed mods.
+        const MAX_MANIFEST_BYTES: u64 = 1 << 20;
+        let mut bytes = Vec::new();
+        if path.is_dir() {
+            let file = std::fs::File::open(path.join(MANIFEST))
+                .map_err(|e| format!("{MANIFEST}: {e}"))?;
+            file.take(MAX_MANIFEST_BYTES + 1)
+                .read_to_end(&mut bytes)
+                .map_err(|e| format!("{MANIFEST}: {e}"))?;
+        } else {
+            let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+            let mut zip = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+            let manifest = zip
+                .by_name(MANIFEST)
+                .map_err(|e| format!("{MANIFEST}: {e}"))?;
+            manifest
+                .take(MAX_MANIFEST_BYTES + 1)
+                .read_to_end(&mut bytes)
+                .map_err(|e| format!("{MANIFEST}: {e}"))?;
+        }
+        if bytes.len() as u64 > MAX_MANIFEST_BYTES {
+            return Err(format!("{MANIFEST}: exceeds 1 MiB"));
+        }
+        let text =
+            std::str::from_utf8(&bytes).map_err(|_| format!("{MANIFEST}: not UTF-8"))?;
+        Self::parse(text)
+    }
     /// The namespaces the mod's content owns: its id, then `namespaces`.
     pub fn owned_namespaces(&self) -> impl Iterator<Item = &str> {
         std::iter::once(self.id.as_str()).chain(self.namespaces.iter().map(String::as_str))
@@ -510,6 +542,27 @@ capabilities = ["game-read", "hud"]
         let p = Package::read(&path).unwrap();
         assert_eq!(p.manifest.id, "coords_hud");
         assert_eq!(p.wasm.as_deref(), Some(&b"\0asm"[..]));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn manifest_only_read_skips_unused_mod_code() {
+        let dir = std::env::temp_dir().join(format!(
+            "horizon-mods-manifest-only-{}", std::process::id()
+        ));
+        let folder = dir.join("inactive_mod");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join(MANIFEST), EXAMPLE).unwrap();
+        // This path is intentionally not a valid component file. Reading the
+        // whole package would fail, while browsing an inactive mod must not
+        // open its code at all.
+        std::fs::create_dir_all(folder.join(WASM)).unwrap();
+        assert_eq!(Manifest::read_from(&folder).unwrap().id, "coords_hud");
+        assert!(Package::read(&folder).is_err());
+
+        let packed = dir.join("inactive.hmod");
+        std::fs::write(&packed, Package::write(EXAMPLE, b"unused wasm bytes").unwrap()).unwrap();
+        assert_eq!(Manifest::read_from(&packed).unwrap().id, "coords_hud");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
