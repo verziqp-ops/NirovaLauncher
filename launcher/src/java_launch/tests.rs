@@ -66,6 +66,38 @@ fn modern() -> Value {
 }
 
 #[test]
+fn a_guest_uses_offline_launch_arguments_without_a_microsoft_token() {
+    let dir = scratch("guest-arguments");
+    let (mc, game, natives) = (dir.join("mc"), dir.join("game"), dir.join("natives"));
+    let java = dir.join("java");
+    let player = Player {
+        name: "Builder_1".into(),
+        uuid: "00000000500080000000000000000000".into(),
+        token: String::new(),
+        xuid: String::new(),
+    };
+    let launch = Launch {
+        minecraft: &mc,
+        game_dir: &game,
+        natives: &natives,
+        java: &java,
+        memory_mb: 2048,
+        jvm_args: &[],
+        player: &player,
+        os: os_name(),
+        window: None,
+        server: None,
+    };
+    let args = args(&command(&modern(), &launch).unwrap());
+    let after = |key: &str| args.iter().position(|v| v == key).map(|i| args[i+1].as_str());
+    assert_eq!(after("--username"), Some("Builder_1"));
+    assert_eq!(after("--userType"), Some("legacy"));
+    assert_eq!(after("--accessToken"), Some(""));
+    assert_eq!(after("--uuid"), Some(player.uuid.as_str()));
+    let _ = fs::remove_dir_all(dir);
+}
+
+#[test]
 fn a_modern_version_gets_its_rules_placeholders_and_classpath() {
     let dir = scratch("modern");
     let (mc, game, natives) = (dir.join("mc"), dir.join("game"), dir.join("natives"));
