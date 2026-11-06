@@ -209,7 +209,7 @@ impl Mods {
     pub(super) fn checking(&self, p: &Project) -> bool {
         self.java_for(p.kind).is_none()
             && p.kind == PackKind::Mod
-            && p.source != SourceId::Horizon
+            && p.source != SourceId::Nirova
             && matches!(
                 self.checks.get(&(p.source, p.id.clone())),
                 None | Some(Checking::Running)
@@ -224,7 +224,7 @@ impl Mods {
             return Support::Works;
         }
         let metadata = p.support();
-        if p.kind != PackKind::Mod || p.source == SourceId::Horizon || !metadata.installable() {
+        if p.kind != PackKind::Mod || p.source == SourceId::Nirova || !metadata.installable() {
             return metadata;
         }
         match self.checks.get(&(p.source, p.id.clone())) {
@@ -250,7 +250,7 @@ fn count(n: u64) -> String {
 /// mean and how many; None while the ratings aren't known.
 pub(super) fn stars(id: &str, t: &theme::Theme) -> Option<Div> {
     let row = div().flex().items_center().gap(px(2.));
-    Some(match horizon::rating(id)? {
+    Some(match nirova::rating(id)? {
         None => row.text_color(t.muted).child(tr("No ratings yet")),
         Some(r) => {
             let lit = r.average.round() as usize;
@@ -428,9 +428,9 @@ impl Launcher {
                 .ok_or_else(|| format!("{} isn't set up.", source.label()))
                 .and_then(|s| s.search(&query));
             let about: HashMap<String, Vec<String>> = match (&result, source) {
-                (Ok(found), SourceId::Horizon) => found
+                (Ok(found), SourceId::Nirova) => found
                     .iter()
-                    .map(|p| (p.id.clone(), horizon::trust_and_capabilities(&p.id)))
+                    .map(|p| (p.id.clone(), nirova::trust_and_capabilities(&p.id)))
                     .collect(),
                 _ => HashMap::new(),
             };
@@ -442,23 +442,23 @@ impl Launcher {
     }
 
     /// Reads the NIROVA catalog index again when something installed came from it, and turns off
-    /// what it took down since (`horizon::turn_off_revoked`).
+    /// what it took down since (`nirova::turn_off_revoked`).
     fn mods_taken_down(&mut self) {
         if !self
             .mods
             .installed
             .iter()
-            .any(|e| e.source == SourceId::Horizon)
+            .any(|e| e.source == SourceId::Nirova)
         {
             return;
         }
         let tx = self.mods.tx.clone();
         let home = self.mods.home();
         std::thread::spawn(move || {
-            let Ok(index) = horizon::index() else {
+            let Ok(index) = nirova::index() else {
                 return;
             };
-            let lines = horizon::turn_off_revoked(&index, &home);
+            let lines = nirova::turn_off_revoked(&index, &home);
             if !lines.is_empty() {
                 let _ = tx.send(Event::TakenDown(lines));
             }
@@ -480,11 +480,11 @@ impl Launcher {
             }));
             return;
         }
-        let Some(id) = horizon::mod_id(e) else {
+        let Some(id) = nirova::mod_id(e) else {
             return;
         };
         let on = !java::is_enabled(&home, id);
-        let revoked = horizon::known_index().and_then(|index| {
+        let revoked = nirova::known_index().and_then(|index| {
             let hash = e.checksum.trim_start_matches("SHA-256:");
             index.revoked(&e.project, hash).map(|r| r.reason.clone())
         });
@@ -509,7 +509,7 @@ impl Launcher {
         }
         let todo: Vec<Project> = found
             .into_iter()
-            .filter(|p| p.kind == PackKind::Mod && p.source != SourceId::Horizon)
+            .filter(|p| p.kind == PackKind::Mod && p.source != SourceId::Nirova)
             .filter(|p| p.support().installable())
             .filter(|p| !m.checks.contains_key(&(p.source, p.id.clone())))
             .collect();
@@ -657,9 +657,9 @@ impl Launcher {
             return;
         }
         // The first native mod: the trust notice, before anything is installed.
-        let first_native = source == SourceId::Horizon
+        let first_native = source == SourceId::Nirova
             && !self.settings.native_mods_noticed
-            && horizon::is_native_mod(&id);
+            && nirova::is_native_mod(&id);
         if first_native {
             self.mods.native_notice = Some((source, id, known));
             return;
@@ -679,7 +679,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| "External Catalog".to_string(), |i| i.name.clone());
+            .map_or_else(|| "NIROVA Catalog".to_string(), |i| i.name.clone());
         let world = self.mods.world.clone().and_then(|path| {
             let (_, name) = self.mods.worlds.iter().find(|(p, _)| *p == path)?;
             Some((path, name.clone()))
@@ -727,11 +727,11 @@ impl Launcher {
                         ));
                     }
                     modpack = p.kind == PackKind::Modpack;
-                    if modpack && p.source == SourceId::Horizon {
-                        let pack = horizon::pack::install(&p.id, &progress)?;
+                    if modpack && p.source == SourceId::Nirova {
+                        let pack = nirova::pack::install(&p.id, &progress)?;
                         if let Some(url) = &p.icon {
                             horizon_launcher::instances::adopt_icon(
-                                &horizon::pack::home(&pack.work),
+                                &nirova::pack::home(&pack.work),
                                 url,
                             );
                         }
@@ -772,7 +772,7 @@ impl Launcher {
                             names.join(", ")
                         ));
                     }
-                    if p.source == SourceId::Horizon && p.kind == PackKind::Mod {
+                    if p.source == SourceId::Nirova && p.kind == PackKind::Mod {
                         return Ok(format!(
                             "Installed {} into the native mods folder and enabled it; checksum verified \
                              (Options > Mods in the game).",
@@ -883,7 +883,7 @@ impl Launcher {
         }
         let header = page_header(
             "Mods",
-            "Native mods and shader packs from an external community catalog, and resource packs from Modrinth. Each file is checked against its source's checksum before it reaches your game folder.",
+            "Native mods and shader packs from an NIROVA catalog, and resource packs from Modrinth. Each file is checked against its source's checksum before it reaches your game folder.",
             &t,
         );
         let this = cx.entity().downgrade();
@@ -932,8 +932,8 @@ impl Launcher {
         let java = self.mods.java_for(self.mods.kind).is_some();
         let source_note = (source_for(self.mods.kind) == SourceId::Modrinth && !java)
             .then(|| div().flex().child(self.mods_source_switch(cx)));
-        // The external catalog lists its own supported projects: no "everything" or Modrinth filters.
-        let registry = self.mods.source == SourceId::Horizon && !java;
+        // The NIROVA catalog lists its own supported projects: no "everything" or Modrinth filters.
+        let registry = self.mods.source == SourceId::Nirova && !java;
         let filters = (!registry).then(|| self.mods_filters(cx));
         let controls = div()
             .flex()
@@ -1245,8 +1245,8 @@ impl Launcher {
             let on = match &self.mods.java {
                 _ if e.kind != PackKind::Mod => None,
                 Some(_) => Some(java_instance::is_on(&self.mods.home(), e)),
-                None if e.source == SourceId::Horizon => Some(
-                    horizon::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
+                None if e.source == SourceId::Nirova => Some(
+                    nirova::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
                 ),
                 None => None,
             };
@@ -1556,8 +1556,8 @@ impl Launcher {
                     ),
                     &t,
                 );
-            } else if m.source == SourceId::Horizon {
-                tr("Nothing in the external catalog matches yet.")
+            } else if m.source == SourceId::Nirova {
+                tr("Nothing in the NIROVA catalog matches yet.")
             } else if m.everything {
                 tr("Nothing found.")
             } else {
@@ -1642,7 +1642,7 @@ impl Launcher {
                 .child(div().truncate().child(p.summary.clone()))
                 .child(by.join(" · "))
                 .children(
-                    (p.source == SourceId::Horizon)
+                    (p.source == SourceId::Nirova)
                         .then(|| stars(&p.id, &t))
                         .flatten(),
                 )
@@ -1654,7 +1654,7 @@ impl Launcher {
                 .children(
                     m.about
                         .get(&p.id)
-                        .filter(|_| p.source == SourceId::Horizon)
+                        .filter(|_| p.source == SourceId::Nirova)
                         .map(|lines| div().text_color(t.ink_soft).child(lines.join(" · "))),
                 );
             let open = p.clone();
@@ -1698,17 +1698,17 @@ impl Launcher {
     }
 }
 
-/// Where a kind's tab searches first: the external catalog, but Modrinth for resource packs and
+/// Where a kind's tab searches first: the NIROVA catalog, but Modrinth for resource packs and
 /// modpacks.
 fn source_for(kind: PackKind) -> SourceId {
     match kind {
         PackKind::ResourcePack | PackKind::Modpack => SourceId::Modrinth,
-        _ => SourceId::Horizon,
+        _ => SourceId::Nirova,
     }
 }
 
 impl Launcher {
-    /// The source switch: Modrinth or the external catalog, CurseForge shown as coming soon and not
+    /// The source switch: Modrinth or the NIROVA catalog, CurseForge shown as coming soon and not
     /// clickable, like the Microsoft account's "Coming soon".
     fn mods_source_switch(&self, cx: &mut Context<Self>) -> Stateful<Div> {
         let this = cx.entity().downgrade();
