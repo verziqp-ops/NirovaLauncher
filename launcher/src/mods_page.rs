@@ -72,7 +72,7 @@ pub(super) struct Mods {
     /// Which search is the current one; answers for older ones are dropped.
     search: u64,
     /// Installed-project lookups are dropped when a newer page is opened.
-    project_request: u64,
+    pub(super) project_request: u64,
     searching: bool,
     searched: bool,
     results: Vec<Project>,
@@ -342,7 +342,7 @@ impl Launcher {
                 }
                 Event::Found(..) => {}
                 Event::Project(request, result) if request == m.project_request => {
-                    projects.push(result);
+                    projects.push((request, result));
                 }
                 Event::Project(..) => {}
                 Event::Progress(line, f) => {
@@ -407,7 +407,10 @@ impl Launcher {
         for l in loaded {
             self.mods_loaded(l);
         }
-        for result in projects {
+        for (request, result) in projects {
+            if request != self.mods.project_request {
+                continue;
+            }
             match result {
                 Ok(project) => self.mods_open(project),
                 Err(error) => self.mods.message = Some(Err(error)),
