@@ -103,3 +103,31 @@ fn local_guest_version_needs_both_profile_and_client_jar() {
     assert!(local_java_version_ready(&root, "1.21.4"));
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn guest_discovers_an_installed_java_version_without_creating_game_files() {
+    let root = std::env::temp_dir().join(format!(
+        "nirova-guest-autodiscovery-{}",
+        std::process::id()
+    ));
+    let selected = root.join("empty-choice");
+    let installed = root.join("existing-minecraft");
+    let version = installed.join("versions").join("1.21.4");
+    let _ = fs::remove_dir_all(&root);
+    fs::create_dir_all(&selected).unwrap();
+    fs::create_dir_all(&version).unwrap();
+    fs::write(
+        version.join("1.21.4.json"),
+        r#"{"id":"1.21.4","mainClass":"net.minecraft.client.main.Main"}"#,
+    ).unwrap();
+    fs::write(version.join("1.21.4.jar"), b"existing locally installed jar").unwrap();
+
+    assert_eq!(
+        find_local_java_folder(&selected, "1.21.4", &[installed.clone()]),
+        Some(installed)
+    );
+    assert_eq!(find_local_java_folder(&selected, "1.20.1", &[]), None);
+    // Discovering a game must not fabricate a version in the selected folder.
+    assert!(!selected.join("versions").exists());
+    let _ = fs::remove_dir_all(&root);
+}
