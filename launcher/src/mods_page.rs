@@ -1158,11 +1158,12 @@ impl Launcher {
         let t = self.theme;
         let kind = self.mods.kind;
         // Each project's own icon (Modrinth's, asked for once), at the row's size.
-        let all_entries: Vec<&installed::Entry> = self
+        let all_entries: Vec<installed::Entry> = self
             .mods
             .installed
             .iter()
             .filter(|e| e.kind == kind)
+            .cloned()
             .collect();
         let all_native_entries = if kind == PackKind::Mod && self.mods.java.is_none() {
             self.native_files()
@@ -1180,7 +1181,7 @@ impl Launcher {
                     .iter()
                     .any(|e| native_status::is_native_file(&e.file)));
         let query = self.mods.text.text().trim().to_owned();
-        let entries: Vec<&installed::Entry> = all_entries
+        let entries: Vec<installed::Entry> = all_entries
             .into_iter()
             .filter(|e| {
                 installed_matches(
@@ -1210,7 +1211,7 @@ impl Launcher {
             if i >= entries.len() {
                 return self.native_mod_row(&native_entries[i - entries.len()], busy, cx);
             }
-            let e = entries[i];
+            let e = &entries[i];
             let key = (e.source, e.project.clone());
             let is_native = self.mods.java.is_none() && native_status::is_native_file(&e.file);
             let mut right = div().flex().items_center().gap(px(8.));
