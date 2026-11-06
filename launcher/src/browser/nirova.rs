@@ -451,7 +451,7 @@ fn relative(kind: Kind, id: &str, file_name: &str) -> Result<String, String> {
 
 /// Installs a registry project into the game folder `home`: its newest version for this game that
 /// the game the player runs can load, downloaded into `mod-browser/downloads/`, checked against
-/// the index, then moved into place. A mod is `nirova-mods/<id>.hmod`, turned on in
+/// the index, then moved into place. A mod is `horizon-mods/<id>.hmod`, turned on in
 /// `horizon-mods.txt` (the existing on-disk compatibility format).
 pub fn install(
     project: &Project,
@@ -630,8 +630,8 @@ fn stays(native: bool, old: &str) -> bool {
     native && old.ends_with(".hmod")
 }
 
-/// The mod id of an installed mod (`nirova-mods/<id>`, `nirova-mods/<id>.hmod` or
-/// `nirova-native-mods/<id>.hnmod`).
+/// The mod id of an installed mod (`horizon-mods/<id>`, `horizon-mods/<id>.hmod` or
+/// `horizon-native-mods/<id>.hnmod`).
 pub fn mod_id(entry: &installed::Entry) -> Option<&str> {
     if let Some(rest) = entry.file.strip_prefix(crate::native_mods::INSTALLED) {
         return rest.strip_prefix('/')?.strip_suffix(".hnmod");
