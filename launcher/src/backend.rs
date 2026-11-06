@@ -1503,7 +1503,7 @@ fn download_version_for_owner_in(
 
 /// A local version profile is importable when its JSON and the client jar it resolves to exist.
 /// Loader profiles commonly inherit the base version's jar.
-fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
+pub fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
     let file = minecraft.join("versions").join(id).join(format!("{id}.json"));
     let Ok(profile) = crate::java_launch::read(&file) else {
         return false;
@@ -1551,13 +1551,19 @@ pub fn java_game(
             .join(".downloaded"))
     };
     let marker = downloaded(&game.minecraft)?;
+    // Local guest profiles must have actual game files, not just an old .downloaded
+    // marker. An import never creates a runnable version by creating its directory.
+    if guest && !local_java_version_ready(&minecraft, &game.minecraft) {
+        return Err(format!(
+            "Minecraft {} is not installed in {}. Guest profiles need the version JSON              and client jar already present. Go to Instances > New instance and select              a version under 'Installed in .minecraft'. Changing the account to Ely.by              would not install the missing files.",
+            game.minecraft, minecraft.display()
+        ));
+    }
     if !marker.is_file() {
         if !local_java_version_ready(&minecraft, &game.minecraft) {
             if guest {
-                return Err(format!(
-                    "Guest mode requires a complete local Minecraft {} installation.                      Select the existing .minecraft folder in Settings, or use an installed version.",
-                    game.minecraft
-                ));
+                // The check above already gives a version- and folder-specific error.
+                unreachable!("guest local-version validation ran before installation");
             }
             let listed = crate::minecraft_versions::load()?;
             let version = listed.find(&game.minecraft).map_err(|_| {
