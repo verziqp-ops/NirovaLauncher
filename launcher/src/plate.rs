@@ -2,7 +2,7 @@
 //! The fill and the stroke are rectangles that don't overlap, so a translucent plate keeps one
 //! opacity, and the stroke follows the steps. One canvas paints them all: a plate costs two
 //! elements, however many steps it has.
-use crate::theme::night::{self, Night};
+use crate::theme::night::Night;
 use gpui::{canvas, div, point, prelude::*, px, rgba, Bounds, Div, Pixels, Rgba};
 
 /// `c` at opacity `a`.
@@ -10,12 +10,12 @@ pub fn alpha(c: u32, a: f32) -> Rgba {
     rgba(c << 8 | (a * 255.).round() as u32)
 }
 
-/// A plate: `card` at its opacity, each corner cut in two [`night::PIXEL_CORNER`] steps, with its
+/// A plate: `card` at its opacity, each corner cut in two [`crate::theme::night::PIXEL_CORNER`] steps, with its
 /// 1 px `stroke` along the edge. Its content goes in as children, as on any div.
 pub fn plate(n: &Night) -> Div {
     cut(
-        night::PIXEL_CORNER,
-        2,
+        0.,
+        0,
         Some(alpha(n.card, n.card_alpha)),
         Some((alpha(n.stroke, n.stroke_alpha), 1.)),
     )

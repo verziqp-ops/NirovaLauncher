@@ -15,6 +15,7 @@ permissions:
 
 env:
   HORIZON_TELEMETRY_URL: "off"
+  NIROVA_RELEASE_TAG: ${{ github.ref_name == 'nivrora/release-1.4.0' && 'launcher@1.4.0' || github.ref_name }}
 
 jobs:
   brand-assets:
@@ -129,10 +130,10 @@ jobs:
           fi
       # A tag launcher@1.2.3 is the launcher's version 1.2.3; other builds say Cargo.toml's.
       - name: Version from the tag
-        if: startsWith(github.ref, 'refs/tags/launcher@')
+        if: startsWith(github.ref, 'refs/tags/launcher@') || github.ref_name == 'nivrora/release-1.4.0'
         run: |
-          echo "NIROVA_LAUNCHER_VERSION=${GITHUB_REF_NAME#launcher@}" >> "$GITHUB_ENV"
-          echo "NIROVA_LAUNCHER_TAG=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+          echo "NIROVA_LAUNCHER_VERSION=${NIROVA_RELEASE_TAG#launcher@}" >> "$GITHUB_ENV"
+          echo "NIROVA_LAUNCHER_TAG=$NIROVA_RELEASE_TAG" >> "$GITHUB_ENV"
       - run: cargo build --release --locked ${LAUNCHER_FEATURES:+--features "$LAUNCHER_FEATURES"} ${{ matrix.target && format('--target {0}', matrix.target) || '' }}
       - name: Package
         run: |
@@ -194,7 +195,7 @@ jobs:
 
   release:
     needs: [test, build]
-    if: startsWith(github.ref, 'refs/tags/launcher@')
+    if: startsWith(github.ref, 'refs/tags/launcher@') || github.ref_name == 'nivrora/release-1.4.0'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -204,21 +205,42 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+          pattern: nirova-launcher-*
+      - uses: actions/download-artifact@v4
+        with:
+          name: NIROVA-Setup.exe
+          path: dist
+      - name: Require every platform before publication
+        run: |
+          for file in NIROVA-Setup.exe nirova-launcher-windows-x64.zip nirova-launcher-linux-x86_64.tar.gz nirova-launcher-macos-arm64.zip nirova-launcher-macos-arm64.dmg nirova-launcher-macos-x64.zip nirova-launcher-macos-x64.dmg; do
+            test -s "dist/$file" || { echo "::error::Missing $file"; exit 1; }
+          done
       - name: Sign the checksums (SHA256SUMS, SHA256SUMS.sig)
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
         run: |
           [[ -n "$RELEASE_SIGNING_KEY" ]] || { echo "::error::The RELEASE_SIGNING_KEY secret is not set"; exit 1; }
-          bash tools/ci/sign_release.sh "$GITHUB_REF_NAME" dist/*
+          bash tools/ci/sign_release.sh "$NIROVA_RELEASE_TAG" dist/*
       - uses: dtolnay/rust-toolchain@stable
       - name: The signature, checked as launchers check it
-        run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag "$GITHUB_REF_NAME" dist
+        run: cargo run --locked --quiet -p horizon-release-sign -- verify --tag "$NIROVA_RELEASE_TAG" dist
       - uses: softprops/action-gh-release@v2
         with:
-          name: NIROVA Launcher ${{ github.ref_name }}
+          name: NIROVA Launcher ${{ env.NIROVA_RELEASE_TAG }}
+          tag_name: ${{ env.NIROVA_RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          body_path: docs/releases/launcher-1.4.0.md
           files: |
             dist/*
             install.ps1
             install.sh
           make_latest: true
           generate_release_notes: true
+
+      - name: Remove the superseded empty release after successful publication
+        if: env.NIROVA_RELEASE_TAG == 'launcher@1.4.0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$NIROVA_RELEASE_TAG" --json assets --jq '.assets | length' | awk '$1 >= 9 { ok=1 } END { exit !ok }'
+          gh api --method DELETE repos/${{ github.repository }}/releases/435895421

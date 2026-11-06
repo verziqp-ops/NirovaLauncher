@@ -657,5 +657,7 @@
   "Offline launcher {version}": "Launcher hors ligne {version}",
   "milk-blue": "Bleu laiteux",
   "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
-  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Les résultats des benchmarks que vous lancez, lorsque NIROVA disposera de son propre service de résultats."
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Les résultats des benchmarks que vous lancez, lorsque NIROVA disposera de son propre service de résultats.",
+  "Panel opacity": "Opacité des panneaux",
+  "Animate background": "Animer le fond"
 }

@@ -657,5 +657,7 @@
   "Offline launcher {version}": "离线启动器 {version}",
   "milk-blue": "乳蓝色",
   "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.",
-  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "你运行的基准测试结果；待 NIROVA 提供自己的结果服务后再发布。"
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "你运行的基准测试结果；待 NIROVA 提供自己的结果服务后再发布。",
+  "Panel opacity": "面板不透明度",
+  "Animate background": "背景动画"
 }

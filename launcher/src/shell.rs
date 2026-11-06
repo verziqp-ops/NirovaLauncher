@@ -36,12 +36,12 @@ pub fn sidebar_plate(t: &Theme) -> Div {
 }
 
 /// A plate behind a selected row or tab: `card_hi`, its corners cut in `steps` pixel steps.
-fn selected(steps: usize, t: &Theme) -> Div {
+fn selected(_steps: usize, t: &Theme) -> Div {
     let n = t.night;
     cut(
-        night::PIXEL_CORNER,
-        steps,
-        Some(alpha(n.card_hi, n.card_hi_alpha)),
+        0.,
+        0,
+        Some(alpha(n.accent, 0.10)),
         Some((alpha(n.stroke, n.stroke_alpha * 1.5), 1.)),
     )
     .absolute()
@@ -83,7 +83,15 @@ pub fn row(id: impl Into<SharedString>, selected_now: bool, t: &Theme) -> Statef
         .px(px(8.))
         .cursor_pointer();
     let d = if selected_now {
-        d.child(selected(2, t))
+        d.child(selected(2, t)).child(
+            div()
+                .absolute()
+                .left_0()
+                .top(px(6.))
+                .bottom(px(6.))
+                .w(px(3.))
+                .bg(t.accent),
+        )
     } else {
         d.child(hovered(&id, 2, t))
     };
@@ -218,8 +226,8 @@ pub fn chip(id: impl Into<SharedString>, t: &Theme) -> Stateful<Div> {
         .cursor_pointer()
         .child(
             cut(
-                night::PIXEL_CORNER,
-                1,
+                0.,
+                0,
                 Some(alpha(n.card, n.card_alpha)),
                 Some((alpha(n.stroke, n.stroke_alpha), 1.)),
             )
@@ -261,7 +269,7 @@ pub fn action(id: impl Into<SharedString>, kind: Action, t: &Theme) -> Stateful<
         .text_size(px(night::UI.px))
         .cursor_pointer();
     let fill = |d: Div| d.absolute().top_0().left_0().size_full();
-    let round = move || fill(div()).rounded(px(night::RADIUS_CONTROL));
+    let round = move || fill(div()).rounded(px(0.));
     let d = match kind {
         Action::Main => d
             .h(px(night::PLAY))
@@ -269,27 +277,15 @@ pub fn action(id: impl Into<SharedString>, kind: Action, t: &Theme) -> Stateful<
             .text_size(px(night::TITLE.px))
             .font_weight(FontWeight::BOLD)
             .text_color(c(n.on_accent))
-            .child(fill(cut(
-                night::PIXEL_CORNER,
-                1,
-                Some(alpha(n.accent, 1.)),
-                None,
-            )))
+            .child(fill(cut(0., 0, Some(alpha(n.accent, 1.)), None)))
             .child(hover_fade(
                 &id,
-                move || {
-                    fill(cut(
-                        night::PIXEL_CORNER,
-                        1,
-                        Some(alpha(n.on_accent, 0.12)),
-                        None,
-                    ))
-                },
+                move || fill(cut(0., 0, Some(alpha(n.on_accent, 0.12)), None)),
                 |d, a| d.opacity(a),
             )),
         Action::Raised => d
             .h(px(theme::CONTROL))
-            .rounded(px(night::RADIUS_CONTROL))
+            .rounded(px(0.))
             .bg(alpha(n.card_hi, n.card_hi_alpha))
             .border_1()
             .border_color(alpha(n.stroke, n.stroke_alpha))
@@ -299,7 +295,7 @@ pub fn action(id: impl Into<SharedString>, kind: Action, t: &Theme) -> Stateful<
             })),
         Action::Quiet => d
             .h(px(theme::CONTROL))
-            .rounded(px(night::RADIUS_CONTROL))
+            .rounded(px(0.))
             .text_color(c(n.ink_soft))
             .child(hover_fade(&id, round, move |d, a| {
                 d.bg(alpha(n.card_hi, n.card_hi_alpha * 0.5 * a))

@@ -15,11 +15,149 @@ const STRIP: f32 = 120.;
 impl Launcher {
     /// The theme Settings ask for, under the window's own light or dark.
     pub(super) fn settings_theme(&self, window: &Window) -> Theme {
-        Theme::for_appearance(
+        let mut theme = Theme::for_appearance(
             self.settings.appearance,
             self.settings.accent,
             window.appearance(),
-        )
+        );
+        let opacity = self.settings.panel_opacity.unwrap_or(75).clamp(35, 100) as f32 / 100.;
+        theme.night.card_alpha = opacity;
+        theme.night.card_hi_alpha = opacity;
+        theme.panel.a = opacity;
+        theme.surface.a = opacity;
+        theme
+    }
+
+    pub(super) fn appearance_tiles(&self, cx: &mut Context<Self>) -> Div {
+        let t = self.theme;
+        let mut tiles = div().flex().gap(px(18.));
+        for (choice, label) in [
+            (backend::Appearance::Dark, "Dark"),
+            (backend::Appearance::Light, "Light"),
+            (backend::Appearance::System, "System"),
+        ] {
+            let selected = self.settings.appearance == choice;
+            let mut art = div().relative().size(px(100.)).overflow_hidden();
+            for y in 0..20 {
+                for x in 0..20 {
+                    let dark = choice == backend::Appearance::Dark
+                        || (choice == backend::Appearance::System && x + y < 20);
+                    let color = if y >= 16 {
+                        if (x + y) % 3 == 0 {
+                            0x705037
+                        } else {
+                            0x876044
+                        }
+                    } else if y >= 14 {
+                        if y == 14 {
+                            0x68ac47
+                        } else {
+                            0x4e8038
+                        }
+                    } else if dark && [(4, 3), (13, 4), (9, 8), (16, 10), (3, 11)].contains(&(x, y))
+                    {
+                        0xdce9ff
+                    } else if !dark
+                        && ((3..9).contains(&x) && (4..6).contains(&y)
+                            || (11..17).contains(&x) && (9..11).contains(&y))
+                    {
+                        0xe4f4ff
+                    } else if dark {
+                        0x141d3a
+                    } else {
+                        0x64baf2
+                    };
+                    art = art.child(
+                        div()
+                            .absolute()
+                            .left(px(x as f32 * 5.))
+                            .top(px(y as f32 * 5.))
+                            .size(px(5.))
+                            .bg(gpui::rgb(color)),
+                    );
+                }
+            }
+            tiles = tiles.child(
+                keyboard(div().id(SharedString::from(format!("theme-{label}"))), &t)
+                    .flex()
+                    .flex_col()
+                    .items_center()
+                    .gap(px(8.))
+                    .cursor_pointer()
+                    .child(
+                        div()
+                            .p(px(4.))
+                            .border_2()
+                            .border_color(if selected { t.accent } else { t.outline })
+                            .child(art),
+                    )
+                    .child(text(theme::UI).child(tr(label)))
+                    .on_click(cx.listener(move |this, _: &ClickEvent, window, cx| {
+                        this.settings.appearance = choice;
+                        this.settings.save();
+                        titlebar::apply_appearance(window, choice);
+                        this.theme = this.settings_theme(window);
+                        cx.notify();
+                    })),
+            );
+        }
+        tiles
+    }
+
+    pub(super) fn scenery_controls(&self, cx: &mut Context<Self>) -> Div {
+        let t = self.theme;
+        let mut levels = div().flex().gap(px(6.));
+        for value in [35u8, 50, 75, 100] {
+            levels = levels.child(
+                button(
+                    SharedString::from(format!("opacity-{value}")),
+                    format!("{value}%"),
+                    if self.settings.panel_opacity.unwrap_or(75) == value {
+                        Kind::Primary
+                    } else {
+                        Kind::Secondary
+                    },
+                    &t,
+                )
+                .on_click(cx.listener(move |this, _: &ClickEvent, window, cx| {
+                    this.settings.panel_opacity = Some(value);
+                    this.settings.save();
+                    this.theme = this.settings_theme(window);
+                    cx.notify();
+                })),
+            );
+        }
+        let animated = self.settings.animate_sky.unwrap_or(true);
+        div()
+            .flex()
+            .flex_col()
+            .child(index_row(
+                0,
+                tr("Panel opacity"),
+                None,
+                Some(levels.into_any_element()),
+                &t,
+            ))
+            .child(index_row(
+                0,
+                tr("Animate background"),
+                None,
+                Some(
+                    button(
+                        "animate-sky",
+                        if animated { "On" } else { "Off" },
+                        Kind::Secondary,
+                        &t,
+                    )
+                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.settings.animate_sky = Some(!animated);
+                        this.settings.save();
+                        cx.notify();
+                    }))
+                    .into_any_element(),
+                ),
+                &t,
+            ))
     }
 
     /// The picture behind Home, if the player keeps one.

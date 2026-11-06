@@ -669,5 +669,7 @@
   "milk-blue": "Молочно-голубой",
   "NIROVA's rose-pink by default. Every colour keeps text easy to read.": "Розовый акцент NIROVA используется по умолчанию. Контраст текста остаётся доступным при любом цвете.",
   "NIROVA does not currently have its own telemetry service. No live-player ping is sent, and live player counts are unavailable.": "У NIROVA пока нет собственного сервиса телеметрии. Пинг о присутствии игроков не отправляется, а число игроков онлайн недоступно.",
-  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Результаты запущенных вами тестов — когда у NIROVA появится собственный сервис публикации результатов."
+  "The results of benchmarks you run, for NIROVA's community results, when its own results service is available.": "Результаты запущенных вами тестов — когда у NIROVA появится собственный сервис публикации результатов.",
+  "Panel opacity": "Прозрачность панелей",
+  "Animate background": "Анимация фона"
 }

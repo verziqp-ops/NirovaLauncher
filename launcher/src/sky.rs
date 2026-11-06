@@ -4,8 +4,7 @@
 //!
 //! It costs almost nothing at rest: the sky's bands and the stars are plain quads, the sprites are
 //! baked once per appearance and scale into tiles whose size doesn't depend on the window, and a
-//! frame is asked for only when something on screen changes (a cloud moves one texel, a group of
-//! stars steps to its next brightness): a few frames a second. The sky stands still under reduced
+//! ambient motion is capped at twelve frames per second, with thirty during theme transitions. The sky stands still under reduced
 //! motion, and stops 10 s after the window loses focus ([`motion`]).
 use crate::art::bake;
 use gpui::{div, img, prelude::*, px, rgb, Div, RenderImage};
@@ -146,15 +145,8 @@ const NEAR: Skyline = Skyline {
     rows: 18,
 };
 
-/// The sun: its radius in texels, how far it stands above the near skyline's foot, and where
-/// across the window (a share of its width).
-const SUN_RADIUS: usize = 15;
-const SUN_RISE: usize = 8;
-const SUN_X: f32 = 0.72;
-
 /// The art's colours in one appearance, beside the night tokens' sky.
 struct Colors {
-    sun: [u32; 3],
     far: u32,
     near: u32,
     /// Clouds far to near, and each layer's lit band.
@@ -165,7 +157,6 @@ struct Colors {
 }
 
 const NIGHT_ART: Colors = Colors {
-    sun: [0x748c9e, 0x6e8799, 0x647d90],
     far: 0x1b2936,
     near: 0x141f2a,
     cloud: [0x253545, 0x2b3b4a, 0x324353],
@@ -175,13 +166,12 @@ const NIGHT_ART: Colors = Colors {
 };
 
 const DAWN_ART: Colors = Colors {
-    sun: [0xe8f1f5, 0xddeaf0, 0xcadbe4],
-    far: 0xc4d3dd,
-    near: 0xafc1cd,
+    far: 0x9eafbf,
+    near: 0x7f9f8c,
     cloud: [0xd4e0e7, 0xdce7ed, 0xe5edf2],
     lit: [0xe8f0f4, 0xf1f5f8, 0xffffff],
     shade: 0xbccdd7,
-    star: 0xffffff,
+    star: 0x8da7b8,
 };
 
 /// The stars' brightness steps and each group's period: a group steps through the levels in
@@ -191,7 +181,7 @@ const STAR_LEVELS: [f32; 4] = [0.95, 0.6, 0.3, 0.6];
 /// different layers share frames: two a second at most.
 const STAR_PERIODS: [f32; 4] = [4., 6., 8., 10.];
 
-/// The sky is static by default. Set `NIROVA_LAUNCHER_MOTION=full` to animate while focused,
+/// The sky animates while focused. Set `NIROVA_LAUNCHER_MOTION=full` to animate while focused,
 /// or `NIROVA_LAUNCHER_MOTION=always` for recordings.
 #[derive(Clone, Copy, PartialEq)]
 enum Motion {
@@ -212,7 +202,7 @@ fn motion() -> Motion {
         if objc2_app_kit::NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion() {
             return Motion::Still;
         }
-        Motion::Still
+        Motion::InFront
     });
     *MOTION
 }
@@ -246,7 +236,6 @@ struct Layers {
     clouds: [Arc<RenderImage>; 3],
     far: Arc<RenderImage>,
     near: Arc<RenderImage>,
-    sun: Arc<RenderImage>,
 }
 
 #[derive(Default)]
@@ -256,9 +245,16 @@ pub struct Sky {
     replaced: Vec<Arc<RenderImage>>,
     clock: Clock,
     unfocused: Option<Instant>,
+    disabled: bool,
+    phase: Option<f32>,
+    transition: Option<(Instant, f32, f32)>,
 }
 
 impl Sky {
+    pub fn set_animated(&mut self, enabled: bool) {
+        self.disabled = !enabled;
+    }
+
     /// The sky for a window of `w` by `h` logical pixels, and how long until it next changes
     /// (`None`: it stands still until something else redraws the window).
     pub fn render(
@@ -279,6 +275,25 @@ impl Sky {
             Motion::InFront => self.unfocused.is_none_or(|since| now - since < UNFOCUSED),
             Motion::Always => true,
         };
+        let run = run && !self.disabled;
+        let target = if n.dark { 1. } else { 0. };
+        let phase = self.phase.get_or_insert(target);
+        if self.transition.is_none_or(|(_, _, to)| to != target) {
+            self.transition = (*phase != target).then_some((now, *phase, target));
+        }
+        if let Some((since, from, to)) = self.transition {
+            let p = if run {
+                ((now - since).as_secs_f32() / 1.8).min(1.)
+            } else {
+                1.
+            };
+            *phase = from + (to - from) * (p * p * (3. - 2. * p));
+            if p >= 1. {
+                self.transition = None;
+            }
+        }
+        let phase = *phase;
+        let transitioning = self.transition.is_some();
         self.clock.set(run, now);
         let t = self.clock.at(now).as_secs_f32();
         let layers = self.layers(n.dark, scale);
@@ -291,7 +306,11 @@ impl Sky {
             .left_0()
             .size_full()
             .overflow_hidden();
-        for (top, height, c) in bands(n, h) {
+        let mut blended = *n;
+        let day = [0x8fc1ef, 0x9ac9f3, 0xa6d1f5, 0xb4daf6, 0xc4e2f4, 0xd4e9ef];
+        let night = [0x080f20, 0x0d182b, 0x122036, 0x17283e, 0x1d3045, 0x23384c];
+        blended.sky = std::array::from_fn(|i| horizon_theme::night::over(night[i], phase, day[i]));
+        for (top, height, c) in bands(&blended, h) {
             sky = sky.child(
                 div()
                     .absolute()
@@ -304,7 +323,12 @@ impl Sky {
         }
         for (g, period) in STAR_PERIODS.iter().enumerate() {
             let level = STAR_LEVELS[step(t, *period, g)];
-            let mut group = div().absolute().top_0().left_0().size_full().opacity(level);
+            let mut group = div()
+                .absolute()
+                .top_0()
+                .left_0()
+                .size_full()
+                .opacity(level * phase);
             for star in stars().iter().filter(|s| s.group == g) {
                 let (x, y) = (star.x * TEXEL, star.y * h * 0.5);
                 if x >= w {
@@ -324,7 +348,7 @@ impl Sky {
         }
         for (layer, image) in CLOUDS.iter().zip(&layers.clouds) {
             let strip = layer.period as f32 * TEXEL;
-            let shift = (t * layer.speed).floor() * TEXEL % strip;
+            let shift = t * layer.speed * TEXEL % strip;
             let top = snap(h * layer.top);
             let mut x = -shift;
             while x < w {
@@ -340,15 +364,34 @@ impl Sky {
             }
         }
         let foot = h;
-        let sun_w = (SUN_RADIUS * 2) as f32 * LAND;
-        sky = sky.child(
-            img(layers.sun.clone())
+        // Opposite halves of one orbit: the outgoing body sets sideways as the other rises.
+        for (moon, angle) in [
+            (false, phase * std::f32::consts::PI),
+            (true, (phase - 1.) * std::f32::consts::PI),
+        ] {
+            let x = w * (0.72 + 0.42 * angle.sin());
+            let y = h * (0.18 + 0.94 * (1. - angle.cos()) / 2.);
+            let size = 40.;
+            let mut body = div()
                 .absolute()
-                .left(px(snap(w * SUN_X - sun_w / 2.)))
-                .top(px(foot - (SUN_RISE + SUN_RADIUS) as f32 * LAND))
-                .w(px(sun_w))
-                .h(px(SUN_RADIUS as f32 * LAND)),
-        );
+                .left(px(snap(x)))
+                .top(px(snap(y)))
+                .size(px(size))
+                .bg(rgb(if moon { 0xc8ddf5 } else { 0xffdc85 }));
+            if moon {
+                for (x, y, size) in [(8., 6., 10.), (24., 20., 8.), (6., 28., 6.)] {
+                    body = body.child(
+                        div()
+                            .absolute()
+                            .left(px(x))
+                            .top(px(y))
+                            .size(px(size))
+                            .bg(rgb(0xa0bbd9)),
+                    );
+                }
+            }
+            sky = sky.child(body);
+        }
         for (line, image, lift) in [(&FAR, &layers.far, 2.), (&NEAR, &layers.near, 0.)] {
             let period = line.runs.iter().map(|r| r.0).sum::<usize>() as f32 * LAND;
             let top = foot - (line.rows as f32 + lift) * LAND;
@@ -384,7 +427,10 @@ impl Sky {
                 let quarter = p / STAR_LEVELS.len() as f32;
                 until_next(t / quarter + g as f32) * quarter
             });
-            let mut soonest = clouds.chain(stars).fold(f32::MAX, f32::min);
+            let mut soonest = clouds.chain(stars).fold(1. / 12., f32::min);
+            if transitioning {
+                soonest = 1. / 30.;
+            }
             if let (Some(since), Motion::InFront) = (self.unfocused, motion()) {
                 soonest = soonest.min((UNFOCUSED - (now - since)).as_secs_f32());
             }
@@ -405,11 +451,10 @@ impl Sky {
                 }),
                 far: skyline(&FAR, art.far, scale),
                 near: skyline(&NEAR, art.near, scale),
-                sun: bake(&sun(art), SUN_RADIUS * 2, SUN_RADIUS, LAND, scale),
             };
             if let Some((_, old)) = self.baked.replace((key, layers)) {
                 self.replaced
-                    .extend(old.clouds.into_iter().chain([old.far, old.near, old.sun]));
+                    .extend(old.clouds.into_iter().chain([old.far, old.near]));
             }
         }
         &self.baked.as_ref().expect("baked above").1
@@ -559,37 +604,57 @@ fn skyline(line: &Skyline, color: u32, scale: f32) -> Arc<RenderImage> {
     bake(&out, w, line.rows, LAND, scale)
 }
 
-/// The upper half of a sun cut by the horizon, in three bands of colour, its lower half sliced by
-/// rows of sky like Horizon's mark.
-fn sun(art: &Colors) -> Vec<[u8; 4]> {
-    let (r, w) = (SUN_RADIUS as f32, SUN_RADIUS * 2);
-    let mut out = vec![[0; 4]; w * SUN_RADIUS];
-    for y in 0..SUN_RADIUS {
-        let dy = r - y as f32 - 0.5;
-        let half = (r * r - dy * dy).sqrt().round() as usize;
-        let depth = y as f32 / r;
-        let sliced = depth > 0.5 && (SUN_RADIUS - y).is_multiple_of(3);
-        if sliced {
-            continue;
-        }
-        let c = art.sun[if depth < 0.4 {
-            0
-        } else if depth < 0.7 {
-            1
-        } else {
-            2
-        }];
-        for x in SUN_RADIUS - half..SUN_RADIUS + half {
-            out[y * w + x] = [(c >> 16) as u8, (c >> 8) as u8, c as u8, 255];
-        }
-    }
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use horizon_theme::night::{DAWN, NIGHT, UNCARDED_STOPS};
+
+    #[test]
+    fn theme_switch_reverses_without_resetting_the_orbit() {
+        if motion() == Motion::Still {
+            return;
+        }
+        let mut sky = Sky::default();
+        let now = Instant::now();
+        sky.render(&NIGHT, (1280., 800.), 1., true, now);
+        sky.render(&DAWN, (1280., 800.), 1., true, now);
+        sky.render(
+            &DAWN,
+            (1280., 800.),
+            1.,
+            true,
+            now + Duration::from_millis(900),
+        );
+        assert!((sky.phase.unwrap() - 0.5).abs() < 0.01);
+        sky.render(
+            &NIGHT,
+            (1280., 800.),
+            1.,
+            true,
+            now + Duration::from_millis(900),
+        );
+        assert!((sky.phase.unwrap() - 0.5).abs() < 0.01);
+        sky.render(
+            &NIGHT,
+            (1280., 800.),
+            1.,
+            true,
+            now + Duration::from_millis(2700),
+        );
+        assert_eq!(sky.phase, Some(1.));
+        assert!(sky.transition.is_none());
+    }
+
+    #[test]
+    fn disabled_animation_applies_theme_without_scheduling_frames() {
+        let mut sky = Sky::default();
+        sky.set_animated(false);
+        let now = Instant::now();
+        sky.render(&NIGHT, (1280., 800.), 1., true, now);
+        let (_, next) = sky.render(&DAWN, (1280., 800.), 1., true, now);
+        assert_eq!(sky.phase, Some(0.));
+        assert!(next.is_none());
+    }
 
     /// The sky's upper bands, behind text without a plate, hold the night tokens' text colours.
     fn uncarded_bands(n: &Night, h: f32) -> Vec<u32> {

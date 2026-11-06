@@ -9,8 +9,8 @@ mod cli;
 mod cli_tools;
 mod collection;
 mod console;
-mod crash_log;
 mod console_page;
+mod crash_log;
 mod cull;
 mod datapacks_page;
 mod dev_options;
@@ -57,10 +57,10 @@ mod while_playing;
 mod worlds_page;
 
 use gpui::{
-    actions, div, ease_out_quint, prelude::*, px, relative, size, Animation, AnimationExt,
-    AnyElement, App, Bounds, ClickEvent, Context, Div, ElementId, FocusHandle, FontWeight, Hsla,
-    KeyBinding, KeyDownEvent, Menu, MenuItem, MouseDownEvent, PathPromptOptions, Pixels, Point,
-    SharedString, Stateful, Subscription, Window, WindowBounds, WindowOptions,
+    actions, div, ease_out_quint, prelude::*, px, size, Animation, AnimationExt, AnyElement, App,
+    Bounds, ClickEvent, Context, Div, ElementId, FocusHandle, FontWeight, Hsla, KeyBinding,
+    KeyDownEvent, Menu, MenuItem, MouseDownEvent, PathPromptOptions, Pixels, Point, SharedString,
+    Stateful, Subscription, Window, WindowBounds, WindowOptions,
 };
 use horizon_launcher::account::{self, Accounts, SignIn, SignInState};
 use horizon_launcher::backend::{self, Job, Msg, Release, Running, Settings, Updates};
@@ -613,6 +613,7 @@ impl Launcher {
             this.open_instance_dialog(this.selected_instance().cloned());
         }
         // What the game and the launcher kept, if the player allows it and there is a server.
+        this.theme = this.settings_theme(window);
         telemetry::send_in_background();
         telemetry::watch_playing(this.tx.clone());
         telemetry::watch_official(this.tx.clone());
@@ -2369,11 +2370,22 @@ impl Launcher {
             primary_nav = primary_nav.child(
                 shell::row(format!("nirova-nav-{label}"), selected, &t)
                     .h(px(44.))
-                    .child(blocks::icon(icon, 20., shell::c(if selected { n.accent_hi } else { n.ink_soft })))
+                    .child(blocks::icon(
+                        icon,
+                        20.,
+                        shell::c(if selected { n.accent_hi } else { n.ink_soft }),
+                    ))
                     .child(
-                        shell::text(theme::night::UI, shell::c(if selected { n.ink } else { n.ink_soft }))
-                            .font_weight(if selected { FontWeight::SEMIBOLD } else { FontWeight::MEDIUM })
-                            .child(tr(label).to_string()),
+                        shell::text(
+                            theme::night::UI,
+                            shell::c(if selected { n.ink } else { n.ink_soft }),
+                        )
+                        .font_weight(if selected {
+                            FontWeight::SEMIBOLD
+                        } else {
+                            FontWeight::MEDIUM
+                        })
+                        .child(tr(label).to_string()),
                     )
                     .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                         this.go(page);
@@ -2439,7 +2451,10 @@ impl Launcher {
                 .id("launcher-version")
                 .px(px(8.))
                 .pt(px(6.))
-                .child(trf("NIROVA Launcher {version}", &[("version", backend::VERSION)]))
+                .child(trf(
+                    "NIROVA Launcher {version}",
+                    &[("version", backend::VERSION)],
+                ))
                 .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                     this.version_clicked();
                     cx.notify();
@@ -2500,7 +2515,7 @@ impl Launcher {
                 .h(px(theme::night::PLAY))
                 .pl(px(14.))
                 .pr(px(12.))
-                .rounded(px(theme::night::RADIUS_CONTROL))
+                .rounded(px(0.))
                 .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
                 .border_1()
                 .border_color(plate::alpha(n.stroke, n.stroke_alpha))
@@ -2533,7 +2548,7 @@ impl Launcher {
                 .left_0()
                 .w(px(300.))
                 .p(px(6.))
-                .rounded(px(theme::night::RADIUS_CONTROL))
+                .rounded(px(0.))
                 .border_1()
                 .border_color(plate::alpha(n.stroke, 2. * n.stroke_alpha))
                 .bg(t.surface)
@@ -2574,9 +2589,7 @@ impl Launcher {
                                 .when(latest, |d| {
                                     d.child(caps(tr("follows updates")).text_color(t.muted))
                                 })
-                                .when(selected, |d| {
-                                    d.child(div().size(px(6.)).rounded_full().bg(t.accent))
-                                }),
+                                .when(selected, |d| d.child(div().size(px(6.)).bg(t.accent))),
                         )
                         .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                             this.pin_version((!latest).then(|| tag.clone()));
@@ -2838,7 +2851,8 @@ impl Launcher {
             // The top bar shows who plays; a row only when there is something to do about it:
             // no account that owns the game (Play needs one), or offline.
             if self.owner_shown() == Some(false)
-                && matches!(self.accounts.player(), account::Player::Microsoft(_)) {
+                && matches!(self.accounts.player(), account::Player::Microsoft(_))
+            {
                 rows = rows.child(index_row(
                     5,
                     tr("Microsoft account"),
@@ -2931,8 +2945,14 @@ impl Launcher {
                             .flex()
                             .flex_col()
                             .gap(px(4.))
-                            .child(shell::text(theme::night::DISPLAY, shell::c(t.night.ink)).child("NIROVA"))
-                            .child(shell::text(theme::night::UI, shell::c(t.night.ink_soft)).child(tr("Your game. Your settings."))),
+                            .child(
+                                shell::text(theme::night::DISPLAY, shell::c(t.night.ink))
+                                    .child("NIROVA"),
+                            )
+                            .child(
+                                shell::text(theme::night::UI, shell::c(t.night.ink_soft))
+                                    .child(tr("Your game. Your settings.")),
+                            ),
                     ),
             )
             .child(
@@ -3079,12 +3099,12 @@ impl Launcher {
     fn instances_page(&mut self, cx: &mut Context<Self>) -> Div {
         self.load_packs();
         let t = self.theme;
-        let add = shell::icon_button("instances-add", "plus", 34., false, &t).on_click(cx.listener(
-            |this, _: &ClickEvent, _, cx| {
+        let add = shell::icon_button("instances-add", "plus", 34., false, &t).on_click(
+            cx.listener(|this, _: &ClickEvent, _, cx| {
                 this.open_instance_dialog(None);
                 cx.notify();
-            },
-        ));
+            }),
+        );
         let items = self.instance_items(|label| shell::heading(label, &t), cx);
         div()
             .flex()
@@ -3095,7 +3115,10 @@ impl Launcher {
                     .flex()
                     .items_center()
                     .justify_between()
-                    .child(shell::text(theme::night::DISPLAY, shell::c(t.night.ink)).child(tr("Instances").to_string()))
+                    .child(
+                        shell::text(theme::night::DISPLAY, shell::c(t.night.ink))
+                            .child(tr("Instances").to_string()),
+                    )
                     .child(add),
             )
             .children(items)
@@ -3218,35 +3241,28 @@ impl Launcher {
         let mono = |s: String| div().font_family(theme::MONO).child(s).into_any_element();
         let plain = |s: &str| div().child(tr(s).to_string()).into_any_element();
         let minecraft_folder = self.settings.minecraft_dir.as_deref().map_or_else(
-            || div().child(tr("Not selected: choose your existing Minecraft folder.")).into_any_element(),
-            |path| div().font_family(theme::MONO).child(short(path)).into_any_element(),
-        );
-        let choose_minecraft_folder = button("settings-choose-minecraft-folder", "Choose…", Kind::Secondary, &t)
-            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_folder(cx)));
-        let (accounts, n) = self.account_rows(cx);
-        let (offline, n) = self.offline_rows(n, cx);
-        let appearance = segments(
-            "appearance",
-            &[
-                (backend::Appearance::Dark, "Dark"),
-                (backend::Appearance::Light, "Light"),
-                (backend::Appearance::System, "System"),
-            ],
-            self.settings.appearance,
-            &t,
-            {
-                let this = cx.entity().downgrade();
-                move |choice, window, cx| {
-                    let _ = this.update(cx, |this, cx| {
-                        this.settings.appearance = choice;
-                        this.settings.save();
-                        titlebar::apply_appearance(window, choice);
-                        this.theme = this.settings_theme(window);
-                        cx.notify();
-                    });
-                }
+            || {
+                div()
+                    .child(tr("Not selected: choose your existing Minecraft folder."))
+                    .into_any_element()
+            },
+            |path| {
+                div()
+                    .font_family(theme::MONO)
+                    .child(short(path))
+                    .into_any_element()
             },
         );
+        let choose_minecraft_folder = button(
+            "settings-choose-minecraft-folder",
+            "Choose…",
+            Kind::Secondary,
+            &t,
+        )
+        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_folder(cx)));
+        let (accounts, n) = self.account_rows(cx);
+        let (offline, n) = self.offline_rows(n, cx);
+        let appearance = self.appearance_tiles(cx);
         let group = |label: &'static str, icon: &'static str| {
             section_title(label, icon, &t).mt(px(20.)).mb(px(12.))
         };
@@ -3299,6 +3315,7 @@ impl Launcher {
                         &t,
                     ))
                     .child(self.accent_row(cx))
+                    .child(self.scenery_controls(cx))
                     .child(self.home_background_row(cx))
                     .child(self.language_row(cx))
                     .child(self.while_playing_row(n + 3, cx))
@@ -4031,15 +4048,14 @@ impl Launcher {
             .list
             .iter()
             .find(|instance| {
-                instance.java.as_ref().is_some_and(|java| {
-                    java.minecraft == version && java.loader.is_none()
-                })
+                instance
+                    .java
+                    .as_ref()
+                    .is_some_and(|java| java.minecraft == version && java.loader.is_none())
             })
             .cloned()
             .map(Ok)
-            .unwrap_or_else(|| {
-                instances::create_java(&format!("Vanilla {version}"), &version)
-            });
+            .unwrap_or_else(|| instances::create_java(&format!("Vanilla {version}"), &version));
         match instance {
             Ok(instance) => {
                 self.select_instance(&instance);
@@ -4113,23 +4129,32 @@ impl Launcher {
             280.,
             cx,
         ));
-        let versions: Vec<horizon_launcher::minecraft_versions::Version> = match &self.instances.versions {
-            new_instance::VersionList::NotAsked | new_instance::VersionList::Loading => {
-                return panel.child(text(theme::UI).text_color(t.muted).child("Загрузка списка версий…"));
-            }
-            new_instance::VersionList::Failed(e) => {
-                return panel.child(text(theme::UI).text_color(t.danger).child(e.clone()));
-            }
-            new_instance::VersionList::Ready(versions) => versions
-                .all
-                .iter()
-                .filter(|v| search.is_empty() || v.id.to_lowercase().contains(&search))
-                .take(50)
-                .cloned()
-                .collect(),
-        };
+        let versions: Vec<horizon_launcher::minecraft_versions::Version> =
+            match &self.instances.versions {
+                new_instance::VersionList::NotAsked | new_instance::VersionList::Loading => {
+                    return panel.child(
+                        text(theme::UI)
+                            .text_color(t.muted)
+                            .child("Загрузка списка версий…"),
+                    );
+                }
+                new_instance::VersionList::Failed(e) => {
+                    return panel.child(text(theme::UI).text_color(t.danger).child(e.clone()));
+                }
+                new_instance::VersionList::Ready(versions) => versions
+                    .all
+                    .iter()
+                    .filter(|v| search.is_empty() || v.id.to_lowercase().contains(&search))
+                    .take(50)
+                    .cloned()
+                    .collect(),
+            };
         if versions.is_empty() {
-            return panel.child(text(theme::UI).text_color(t.muted).child("Версии не найдены."));
+            return panel.child(
+                text(theme::UI)
+                    .text_color(t.muted)
+                    .child("Версии не найдены."),
+            );
         }
         let root = self.settings.minecraft_dir.clone();
         let download_root = backend::java_download_dir();
@@ -4139,15 +4164,22 @@ impl Launcher {
             let id = version.id;
             let installed = backend::local_java_version_ready(&download_root, &id)
                 || backend::local_java_version_ready(&own, &id)
-                || root.as_deref().is_some_and(|dir| backend::local_java_version_ready(dir, &id));
+                || root
+                    .as_deref()
+                    .is_some_and(|dir| backend::local_java_version_ready(dir, &id));
             let kind = match version.kind {
                 horizon_launcher::minecraft_versions::Kind::Release => "Release",
                 horizon_launcher::minecraft_versions::Kind::Snapshot => "Snapshot",
                 horizon_launcher::minecraft_versions::Kind::OldBeta => "Beta",
                 horizon_launcher::minecraft_versions::Kind::OldAlpha => "Alpha",
             };
-            let right: AnyElement = if self.instances.java_installing.as_deref() == Some(id.as_str()) {
-                text(theme::CAPTION).text_color(t.muted).child("Скачивание…").into_any_element()
+            let right: AnyElement = if self.instances.java_installing.as_deref()
+                == Some(id.as_str())
+            {
+                text(theme::CAPTION)
+                    .text_color(t.muted)
+                    .child("Скачивание…")
+                    .into_any_element()
             } else if installed {
                 let playing = id.clone();
                 button(format!("java-play-{id}"), "Играть", Kind::Secondary, &t)
@@ -4187,15 +4219,15 @@ impl Launcher {
                             .min_w_0()
                             .gap(px(3.))
                             .child(text(theme::UI).text_color(t.ink).child(id))
-                            .child(
-                                text(theme::CAPTION)
-                                    .text_color(t.muted)
-                                    .child(format!(
-                                        "{kind} · {}{}",
-                                        version.released.get(..10).unwrap_or(""),
-                                        if installed { " · Установлена" } else { "" }
-                                    )),
-                            ),
+                            .child(text(theme::CAPTION).text_color(t.muted).child(format!(
+                                "{kind} · {}{}",
+                                version.released.get(..10).unwrap_or(""),
+                                if installed {
+                                    " · Установлена"
+                                } else {
+                                    ""
+                                }
+                            ))),
                     )
                     .child(right),
             );
@@ -4205,9 +4237,11 @@ impl Launcher {
             panel = panel.child(text(theme::UI).text_color(t.danger).child(error.clone()));
         }
         if let Some(id) = &self.instances.java_installed {
-            panel = panel.child(text(theme::UI).text_color(t.muted).child(format!(
-                "Minecraft {id} скачан. Нажмите «Играть»."
-            )));
+            panel = panel.child(
+                text(theme::UI)
+                    .text_color(t.muted)
+                    .child(format!("Minecraft {id} скачан. Нажмите «Играть».")),
+            );
         }
         panel
     }
@@ -4245,7 +4279,11 @@ impl Launcher {
             .gap(px(32.))
             .child(header)
             .child(java_panel)
-            .child(text(theme::HEADING).text_color(t.ink).child("Сборки NIROVA"))
+            .child(
+                text(theme::HEADING)
+                    .text_color(t.ink)
+                    .child("Сборки NIROVA"),
+            )
             .children((used > 0).then(|| {
                 text(theme::UI).text_color(t.muted).child(trf(
                     "Installed versions use {size}.",
@@ -4566,38 +4604,39 @@ impl Launcher {
 /// A thin bar. A known fraction eases from its previous value; an unknown one shuttles slowly.
 /// Progress: a plate-coloured track filling with the accent; work of unknown length shuttles.
 fn progress_bar(fraction: Option<(f32, f32)>, t: &Theme) -> Div {
-    // Night: a thin accent line on a plate's colour, square like the art.
     let n = t.night;
-    let bar = div()
-        .absolute()
-        .top_0()
-        .bottom_0()
-        .bg(plate::alpha(n.accent, 1.));
-    let track = div()
-        .relative()
+    let mut track = div()
+        .flex()
         .flex_1()
-        .h(px(6.))
-        .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
+        .gap(px(3.))
+        .h(px(10.))
         .overflow_hidden();
-    match fraction {
-        Some((from, to)) => {
-            let (from, to) = (from.clamp(0.02, 1.), to.clamp(0.02, 1.));
-            track.child(bar.left_0().with_animation(
-                ElementId::named_usize("bar", (to * 1000.) as usize),
-                Animation::new(theme::MOVE).with_easing(ease_out_quint()),
-                move |d, p| d.w(relative(from + (to - from) * p)),
-            ))
-        }
-        None => track.child(
-            bar.w(relative(0.3)).with_animation(
-                "shuttle",
-                Animation::new(Duration::from_millis(1600))
-                    .repeat()
-                    .with_easing(gpui::ease_in_out),
-                |d, p| d.left(relative(-0.3 + 1.3 * p)),
-            ),
-        ),
+    for i in 0..24 {
+        let segment = div()
+            .flex_1()
+            .h_full()
+            .bg(plate::alpha(n.card_hi, n.card_hi_alpha));
+        track = track.child(match fraction {
+            Some((_, to)) => segment
+                .when((i as f32) < to.clamp(0., 1.) * 24., |d| d.bg(t.accent))
+                .into_any_element(),
+            None => segment
+                .bg(t.accent)
+                .with_animation(
+                    ElementId::named_usize("download-segment", i),
+                    Animation::new(Duration::from_millis(1600)).repeat(),
+                    move |d, p| {
+                        d.opacity(if ((p * 24.) as usize + 24 - i) % 24 < 5 {
+                            1.
+                        } else {
+                            0.12
+                        })
+                    },
+                )
+                .into_any_element(),
+        });
     }
+    track
 }
 
 impl Render for Launcher {
@@ -4628,7 +4667,9 @@ impl Render for Launcher {
             Page::Play => self.play_page(cx),
             Page::Versions => self.versions_page(cx),
             Page::Instances => self.instances_page(cx),
-            Page::Worlds => self.worlds_section(cx).unwrap_or_else(|| div().child(tr("No worlds yet"))),
+            Page::Worlds => self
+                .worlds_section(cx)
+                .unwrap_or_else(|| div().child(tr("No worlds yet"))),
             Page::Mods => self.mods_page(cx),
             Page::Servers => self.servers_page(cx),
             Page::Notes => self.notes_page(cx),
@@ -4652,6 +4693,8 @@ impl Render for Launcher {
         if self.opening.is_none() && window.focused(cx).is_none() {
             window.focus(&self.root_focus, cx);
         }
+        self.sky
+            .set_animated(self.settings.animate_sky.unwrap_or(true));
         let (sky, next) = self.sky.render(
             &t.night,
             (size.width.into(), size.height.into()),
@@ -4951,6 +4994,9 @@ fn main() {
             cx.text_system()
                 .add_fonts(vec![
                     Cow::Borrowed(horizon_theme::fonts::GEIST_MONO),
+                    Cow::Borrowed(horizon_theme::fonts::PIXEL_MEDIUM),
+                    Cow::Borrowed(horizon_theme::fonts::PIXEL_SEMIBOLD),
+                    Cow::Borrowed(horizon_theme::fonts::PIXEL_BOLD),
                     Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_REGULAR),
                     Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_MEDIUM),
                     Cow::Borrowed(horizon_theme::fonts::BRICOLAGE_SEMIBOLD),

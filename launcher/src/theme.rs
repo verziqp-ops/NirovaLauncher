@@ -1,6 +1,6 @@
 //! The launcher's view of Nirova's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Nirova's rose-pink) in Bricolage Grotesque, with Geist Mono for paths and codes (all bundled, SIL
+//! Nirova's accent) in Pixelify Sans, with Geist Mono for paths and codes (all bundled, SIL
 //! Open Font License). Every screen uses the same Nirova palette and type scale, including the legacy page components.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
@@ -10,20 +10,20 @@ use std::time::Duration;
 
 pub use tokens::night::{self, Night};
 pub use tokens::{Step, CAPTION, DISPLAY, HEADING, LABEL, MICRO, TITLE, UI, WORDMARK};
-pub const FONT: &str = night::FONT;
-pub const DISPLAY_FONT: &str = night::DISPLAY_FONT;
+pub const FONT: &str = tokens::PIXEL;
+pub const DISPLAY_FONT: &str = tokens::PIXEL;
 pub const MONO: &str = tokens::MONO;
 /// What the Blocks parts set in their pixel face (headings, navigation, buttons) until their
 /// screens are rebuilt: the night's UI family.
-pub const PIXEL: &str = night::FONT;
+pub const PIXEL: &str = tokens::PIXEL;
 
 pub use tokens::{BLOCK_BEVEL as BEVEL, BLOCK_LIP as LIP};
 /// Shapes and controls, shared with the game's menus and the website.
 pub use tokens::{CONTROL_LARGE, DISABLED, FIELD, PRESSED, RISE, ROW, SEGMENT};
 
 /// Blocks have square corners: these stay for the places that ask for a radius.
-pub const RADIUS: f32 = 8.;
-pub const RADIUS_PLATE: f32 = 12.;
+pub const RADIUS: f32 = 0.;
+pub const RADIUS_PLATE: f32 = 0.;
 /// Buttons are a little taller than the quiet look's, for their lip.
 pub const CONTROL: f32 = 34.;
 /// The top bar, and the sidebar of instances and servers.
@@ -105,7 +105,7 @@ impl Theme {
         let dark = pinned_dark(choice).unwrap_or(system_dark);
         let mut night = if dark { night::NIGHT } else { night::DAWN };
         if dark {
-            night.sky = [0x111923, 0x172331, 0x1b2b3a, 0x202f3e, 0x243445, 0x293a4a];
+            night.sky = [0x080f20, 0x0d182b, 0x122036, 0x17283e, 0x1d3045, 0x23384c];
             night.page = 0x121b25;
             night.side = 0x182432;
             night.card = 0x1c2a38;
@@ -115,12 +115,12 @@ impl Theme {
             night.rule_alpha = 0.13;
             night.ink = 0xedf5fa;
             night.ink_soft = 0xc9d9e5;
-            night.muted = 0xb9cbd6;
+            night.muted = 0x9fb4c5;
             night.accent = 0xf09bc3;
             night.accent_hi = 0xf7c2d9;
             night.on_accent = 0x17232c;
         } else {
-            night.sky = [0xe2eaf0, 0xe6edf2, 0xebf0f4, 0xe5edf2, 0xdfe9ef, 0xd7e3eb];
+            night.sky = [0x8fc1ef, 0x9ac9f3, 0xa6d1f5, 0xb4daf6, 0xc4e2f4, 0xd4e9ef];
             night.page = 0xe7edf2;
             night.side = 0xdfe7ed;
             night.card = 0xf6f9fb;
@@ -135,7 +135,11 @@ impl Theme {
             night.accent_hi = 0xa53d70;
             night.on_accent = 0xffffff;
         }
-        Self::from(accent.apply(night.blocks()), night)
+        let palette = accent.apply(night.blocks());
+        night.accent = palette.face;
+        night.accent_hi = palette.accent;
+        night.on_accent = palette.on_face;
+        Self::from(palette, night)
     }
 
     fn from(p: tokens::Blocks, night: Night) -> Self {
@@ -143,13 +147,17 @@ impl Theme {
         // Keep the upstream Night data for its artwork and motion, but use one coherent
         // palette for every launcher control and panel.
         let dark = p.dark;
-        let (page, side, panel, raised, button, well, outline, rule,
-             ink, ink_soft, muted) = if dark {
-            (0x101720, 0x172230, 0x1D2B3A, 0x26384A, 0x30465A, 0x121D29,
-             0x40576B, 0x314457, 0xEDF5FA, 0xC9D9E5, 0x9FB4C5)
+        let (page, side, panel, raised, button, well, outline, rule, ink, ink_soft, muted) = if dark
+        {
+            (
+                0x101720, 0x172230, 0x1D2B3A, 0x26384A, 0x30465A, 0x121D29, 0x40576B, 0x314457,
+                0xEDF5FA, 0xC9D9E5, 0x9FB4C5,
+            )
         } else {
-            (0xF1F5F8, 0xE7EEF3, 0xFAFCFD, 0xE1EAF0, 0xD4E1E9, 0xF5F8FA,
-             0xC2D1DC, 0xD2DEE6, 0x1B2A36, 0x405363, 0x687D8D)
+            (
+                0xF1F5F8, 0xE7EEF3, 0xFAFCFD, 0xE1EAF0, 0xD4E1E9, 0xF5F8FA, 0xC2D1DC, 0xD2DEE6,
+                0x1B2A36, 0x405363, 0x687D8D,
+            )
         };
         let page = c(page);
         let side = c(side);

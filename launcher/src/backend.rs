@@ -14,8 +14,7 @@ use std::sync::{Arc, Mutex};
 pub const REPO: &str = "verziqp-ops/NirovaLauncher";
 /// Horizon's own repository: native mods' sources and commits this fork doesn't have come from it.
 pub const UPSTREAM_REPO: &str = "horizon-rust/horizon";
-pub const README_URL: &str =
-    "https://github.com/verziqp-ops/NirovaLauncher/blob/main/README.md";
+pub const README_URL: &str = "https://github.com/verziqp-ops/NirovaLauncher/blob/main/README.md";
 /// The players' page on connecting an AI agent (the website's docs/agents.md).
 pub const AGENT_DOCS_URL: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/docs";
 /// This launcher's version: the release workflow sets `NIROVA_LAUNCHER_VERSION` from the
@@ -1475,11 +1474,13 @@ fn java_download_dir_for(settings: &Settings) -> PathBuf {
     settings
         .java_versions_dir
         .clone()
-        .or_else(|| settings
-            .minecraft_dir
-            .as_ref()
-            .filter(|dir| dir.join("versions").is_dir())
-            .cloned())
+        .or_else(|| {
+            settings
+                .minecraft_dir
+                .as_ref()
+                .filter(|dir| dir.join("versions").is_dir())
+                .cloned()
+        })
         .unwrap_or_else(|| data_dir().join("minecraft"))
 }
 
@@ -1542,9 +1543,7 @@ fn download_version_for_guest_in(
         sources::Os::MacOs => "osx",
         sources::Os::Windows => "windows",
     };
-    download_version_for_guest_with(
-        id, manifest_sha1, dir, os, &fetch, &mojang::CANCEL, log,
-    )
+    download_version_for_guest_with(id, manifest_sha1, dir, os, &fetch, &mojang::CANCEL, log)
 }
 
 /// Injectable fetcher lets tests verify an actual offline-profile installation with
@@ -1560,7 +1559,9 @@ fn download_version_for_guest_with(
 ) -> Result<PathBuf, String> {
     if id.is_empty()
         || matches!(id, "." | "..")
-        || !id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+        || !id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
     {
         return Err(format!("Invalid Minecraft version ID: {id:?}"));
     }
@@ -1568,7 +1569,10 @@ fn download_version_for_guest_with(
         return Err("The Minecraft version list has an invalid checksum.".into());
     }
     let pins = sources::Pins::for_version(id, manifest_sha1);
-    log(format!("Installing Minecraft {id} from Mojang into {}", dir.display()));
+    log(format!(
+        "Installing Minecraft {id} from Mojang into {}",
+        dir.display()
+    ));
     mojang::download(&pins, dir, os, 8, fetch, cancel, log)?;
     Ok(dir.to_path_buf())
 }
@@ -1576,7 +1580,10 @@ fn download_version_for_guest_with(
 /// A local version profile is importable when its JSON and the client jar it resolves to exist.
 /// Loader profiles commonly inherit the base version's jar.
 pub fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
-    let file = minecraft.join("versions").join(id).join(format!("{id}.json"));
+    let file = minecraft
+        .join("versions")
+        .join(id)
+        .join(format!("{id}.json"));
     let Ok(profile) = crate::java_launch::read(&file) else {
         return false;
     };
@@ -1593,11 +1600,7 @@ pub fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
 
 /// Find a complete locally installed version, first in the folder the player selected,
 /// then in default launcher folders on this computer. No network call or ownership claim.
-fn find_local_java_folder(
-    selected: &Path,
-    id: &str,
-    known: &[PathBuf],
-) -> Option<PathBuf> {
+fn find_local_java_folder(selected: &Path, id: &str, known: &[PathBuf]) -> Option<PathBuf> {
     std::iter::once(selected)
         .chain(known.iter().map(PathBuf::as_path))
         .find(|root| local_java_version_ready(root, id))
@@ -1643,7 +1646,8 @@ pub fn java_game(
     let settings = Settings::load();
     let preferred_download_dir = settings.java_versions_dir.is_some();
     let download_dir = java_download_dir_for(&settings);
-    let selected = settings.minecraft_dir
+    let selected = settings
+        .minecraft_dir
         .filter(|path| path.join("versions").is_dir())
         .unwrap_or_else(|| download_dir.clone());
     let minecraft = if guest {
@@ -1713,7 +1717,8 @@ pub fn java_game(
                 ));
             }
             if !guest {
-                start = crate::loaders::install(loader, &game.minecraft, &minecraft, &get_bytes, log)?;
+                start =
+                    crate::loaders::install(loader, &game.minecraft, &minecraft, &get_bytes, log)?;
             }
             fs::write(downloaded(&start)?, "").map_err(|e| e.to_string())?;
         }
@@ -2187,7 +2192,11 @@ pub fn game_home() -> PathBuf {
     let data = dirs::data_dir().unwrap_or_else(std::env::temp_dir);
     let nirova = data.join("nirova");
     let legacy = data.join("horizon");
-    if nirova.exists() || !legacy.exists() { nirova } else { legacy }
+    if nirova.exists() || !legacy.exists() {
+        nirova
+    } else {
+        legacy
+    }
 }
 
 /// Whether No AI is on: every AI feature hidden and off (`horizon_core::no_ai`, kept in the
@@ -2913,7 +2922,8 @@ fn launcher_asset_running_from(appimage: bool) -> Option<&'static str> {
 /// a debug build never replaces itself.
 pub fn self_update_allowed() -> bool {
     !cfg!(debug_assertions)
-        && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE").is_none_or(|v| v.is_empty() || v == "0")
+        && std::env::var_os("HORIZON_LAUNCHER_NO_SELF_UPDATE")
+            .is_none_or(|v| v.is_empty() || v == "0")
 }
 
 /// The version in `nirova-launcher --version`'s output (`nirova-launcher 0.1.5`).
@@ -3506,6 +3516,12 @@ pub struct Settings {
     /// (`themes::keep_background`). Unset shows the NIROVA graphite-blue background.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub background: Option<String>,
+    /// Panel opacity in percent; older installations retain the default of 75%.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub panel_opacity: Option<u8>,
+    /// Ambient sky animation. Unset enables it unless reduced motion is requested.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub animate_sky: Option<bool>,
     /// The window's language. Unset uses Russian as the NIROVA default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<crate::i18n::Language>,
@@ -4151,7 +4167,10 @@ pub fn {f}("
         let future = Settings::parse(r#"{"language": "eo", "game_args": "--x"}"#);
         assert_eq!((future.language, future.game_args.as_str()), (None, "--x"));
         let saved = serde_json::to_value(Settings::default()).unwrap();
-        assert!(saved.get("language").is_none(), "unset is left out; runtime default is Russian");
+        assert!(
+            saved.get("language").is_none(),
+            "unset is left out; runtime default is Russian"
+        );
     }
 
     #[test]
@@ -4340,7 +4359,8 @@ pub fn {f}("
             ),
             None
         );
-        let file = std::env::temp_dir().join(format!("nirova-appimage-{}.AppImage", std::process::id()));
+        let file =
+            std::env::temp_dir().join(format!("nirova-appimage-{}.AppImage", std::process::id()));
         std::fs::write(&file, b"#!AppImage").unwrap();
         assert_eq!(
             appimage_path_in(Some(file.as_os_str()), Some(mount), exe),
@@ -5064,10 +5084,7 @@ pub fn {f}("
     #[test]
     fn finds_the_app_bundle_around_the_binary() {
         let exe = Path::new("/Applications/NIROVA.app/Contents/MacOS/nirova-launcher");
-        assert_eq!(
-            app_bundle(exe),
-            Some(Path::new("/Applications/NIROVA.app"))
-        );
+        assert_eq!(app_bundle(exe), Some(Path::new("/Applications/NIROVA.app")));
         assert_eq!(app_bundle(Path::new("/Users/me/horizon-launcher")), None);
         assert_eq!(
             app_bundle(Path::new("/x/Contents/MacOS/nirova-launcher")),
