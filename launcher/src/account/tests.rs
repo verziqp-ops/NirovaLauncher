@@ -529,32 +529,32 @@ fn any_owner_opens_the_gate_and_the_one_who_plays_brings_the_session() {
 }
 
 #[test]
-fn offline_names_play_without_an_owner_in_this_fork() {
-    assert!(GATE_OPEN);
+fn offline_names_cannot_bypass_the_minecraft_ownership_gate() {
     let store = MemoryStore::default();
     let mut accounts = Accounts::default();
-    accounts
+    assert!(accounts
         .play_as(&store, Player::Offline("Builder_1".into()))
-        .unwrap();
-    assert_eq!(accounts.offline, ["Builder_1"]);
-    assert_eq!(accounts.player(), Player::Offline("Builder_1".into()));
-    // Signing the last owner out keeps the name, which still plays.
-    let mut accounts = signed_in(&store, &secrets("mc-token", true));
-    accounts
-        .play_as(&store, Player::Offline("Builder_2".into()))
-        .unwrap();
-    accounts.remove(&store, UUID).unwrap();
+        .is_err());
     assert!(!accounts.has_owner(&store));
-    // `launch` itself still tells there is no owner (downloads need one)...
-    let (_, ep) = mock(|m| m.owns_game = false);
-    assert!(launch(&ep, Some("test-client"), &store, &mut accounts).is_err());
-    // ...but the game starts offline, with or without the developer option.
-    for option in [false, true] {
-        let pass = launch_for_game(&ep, Some("test-client"), &store, &mut accounts, option).unwrap();
-        assert!(pass.session.is_none() && pass.owner.is_none());
-    }
+
+    let mut accounts = signed_in(&store, &secrets("mc-token", true));
+    assert!(accounts
+        .play_as_with(&store, Player::Offline("Builder_2".into()), true)
+        .is_err());
+    assert!(accounts.has_owner(&store));
 }
 
+#[test]
+fn the_developer_option_does_not_bypass_minecraft_ownership() {
+    let store = MemoryStore::default();
+    let mut accounts = Accounts::default();
+    assert!(accounts
+        .play_as_with(&store, Player::Offline("Builder_1".into()), true)
+        .is_err());
+    assert!(accounts.player().is_none());
+    let (_, ep) = mock(|_| {});
+    assert!(launch_for_game(&ep, Some("test-client"), &store, &mut accounts, true).is_err());
+}
 #[test]
 fn the_developer_option_plays_offline_names_without_an_owner() {
     let store = MemoryStore::default();
