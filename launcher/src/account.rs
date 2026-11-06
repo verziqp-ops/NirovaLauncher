@@ -25,7 +25,7 @@ const SCOPE: &str = "XboxLive.signin offline_access";
 pub const NOT_CONFIGURED: &str =
     "This build of the launcher has no Microsoft sign-in (NIROVA_MSA_CLIENT_ID).";
 
-/// Compatibility constant for old call sites. Guest profiles never bypass game ownership.
+/// Compatibility constant for legacy callers. Guest mode never grants download ownership.
 pub const GATE_OPEN: bool = false;
 /// What every Play says while no account in the launcher owns the game.
 pub const NEEDS_OWNER: &str =
@@ -1097,7 +1097,7 @@ pub enum Player {
 }
 
 const OFFLINE_NEEDS_OWNER: &str =
-    "Offline names need a Microsoft account that owns Minecraft: Java Edition in the launcher.";
+    "Offline names cannot authenticate on online-mode servers.";
 
 /// The secrets an account keeps in `store`, if it still has them there.
 fn secrets_in(store: &dyn SecretStore, uuid: &str) -> Option<Secrets> {
@@ -1211,11 +1211,11 @@ impl Accounts {
         self.play_as_with(store, who, false)
     }
 
-    /// [`Self::play_as`] with a legacy flag retained for API compatibility. Guest profiles
-    /// never bypass the Minecraft ownership check.
+    /// [`Self::play_as`] with a legacy flag retained for API compatibility. Guest
+    /// identities can be selected locally without authenticating with Microsoft.
     pub fn play_as_with(
         &mut self,
-        store: &dyn SecretStore,
+        _store: &dyn SecretStore,
         who: Player,
         _offline_without_owner: bool,
     ) -> Result<(), String> {
@@ -1227,9 +1227,6 @@ impl Accounts {
                 self.selected = Some(uuid);
             }
             Player::Offline(name) => {
-                if !self.has_owner(store) {
-                    return Err(OFFLINE_NEEDS_OWNER.into());
-                }
                 let name = self.add_offline(&name)?;
                 self.selected = None;
                 self.offline_selected = Some(name);
@@ -1243,8 +1240,7 @@ impl Accounts {
     }
 
     /// Keeps an offline name (once, in any case); returns it as kept.
-    /// Saves a local guest nickname without claiming game ownership. Selecting it for Java Edition
-    /// still passes through the ownership check in `play_as_with`.
+    /// Saves a local guest nickname without claiming game ownership or online authentication.
     pub fn add_offline(&mut self, name: &str) -> Result<String, String> {
         let name = name.trim();
         if !valid_offline_name(name) {
@@ -1436,8 +1432,8 @@ pub fn launch(
     }
 }
 
-/// The owner gate before the game starts. The legacy `offline_without_owner` argument is ignored;
-/// local guest names do not bypass Minecraft ownership. Downloads and launches use the same gate.
+/// Locally installed games may start with a guest identity (without a Microsoft session).
+/// The separate `launch` ownership gate still protects Mojang downloads and licensed sessions.
 pub fn launch_for_game(
     ep: &Endpoints,
     client_id: Option<&str>,
@@ -1445,10 +1441,10 @@ pub fn launch_for_game(
     accounts: &mut Accounts,
     _offline_without_owner: bool,
 ) -> Result<Launch, NoOwner> {
-    match launch(ep, client_id, store, accounts) {
-        Err(NoOwner) => Err(NoOwner),
-        pass => pass,
+    if !matches!(accounts.player(), Player::Microsoft(_)) {
+        return Ok(Launch::default());
     }
+    launch(ep, client_id, store, accounts)
 }
 
 /// Write the session for the game, readable by this user only, in a fresh file it deletes
@@ -1601,7 +1597,7 @@ impl SignIn {
 }
 
 /// The owner gate for the game about to start, then the selected account's session in a file.
-/// Legacy compatibility argument; it no longer bypasses the ownership check.
+/// Local guest sessions contain no Microsoft token. This is separate from Mojang downloads.
 pub fn session_for_game(
     game_home: &Path,
     offline_without_owner: bool,
@@ -1677,7 +1673,8 @@ fn session_file(game_home: &Path, pass: Launch) -> (Option<PathBuf>, Option<Stri
     }
 }
 
-/// Who plays the real Minecraft: Java Edition (a Java instance), past the owner gate itself
+/// Who plays Minecraft: Java Edition (a Java instance). A guest has an offline-only identity;
+/// Microsoft players continue through the ownership gate.
 /// ([`launch`]): the selected account when it owns the game, else one that does. With no answer
 /// from the services, an account that owned it plays with its last token. Mojang's game takes the
 /// token on its command line, as Mojang's launcher gives it; that command is never logged.
@@ -1699,6 +1696,29 @@ fn java_player_with(
     store: &dyn SecretStore,
     accounts: &mut Accounts,
 ) -> Result<crate::java_launch::Player, String> {
+    let guest_name = match accounts.player() {
+        Player::Offline(name) => Some(name),
+        Player::GameName => Some("Player".to_owned()),
+        Player::Microsoft(_) => None,
+    };
+    if let Some(name) = guest_name {
+        if !valid_offline_name(&name) {
+            return Err("Guest nickname must contain 3–16 ASCII letters, digits or _.".into());
+        }
+        // A stable local UUID. No token or authenticated session is fabricated.
+        use sha1::{Digest, Sha1};
+        let digest = Sha1::digest(format!("NIROVA-OfflinePlayer:{name}").as_bytes());
+        let mut uuid = [0u8; 16];
+        uuid.copy_from_slice(&digest[..16]);
+        uuid[6] = (uuid[6] & 0x0f) | 0x50;
+        uuid[8] = (uuid[8] & 0x3f) | 0x80;
+        return Ok(crate::java_launch::Player {
+            name,
+            uuid: uuid.iter().map(|byte| format!("{byte:02x}")).collect(),
+            token: String::new(),
+            xuid: String::new(),
+        });
+    }
     let pass = launch(ep, client_id, store, accounts).map_err(|e| e.to_string())?;
     let kept = || {
         let order = accounts.selected().into_iter().chain(&accounts.accounts);
