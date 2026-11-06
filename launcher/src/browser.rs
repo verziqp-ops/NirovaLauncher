@@ -267,7 +267,7 @@ pub trait Source: Send + Sync {
 /// What the launcher says wherever CurseForge would be.
 pub const CURSEFORGE_SOON: &str = "CurseForge support is coming soon.";
 /// Message shown when another source does not list NIROVA-compatible shader packs.
-pub const SHADERS_ON_HORIZON: &str =
+pub const SHADERS_ON_NIROVA: &str =
     "NIROVA-compatible shader packs are not listed by this source.";
 
 /// The sources this launcher uses: Modrinth and an external community catalog. CurseForge support is coming
