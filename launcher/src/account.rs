@@ -1649,10 +1649,9 @@ fn launch_as(
     );
     let pass = accounts
         .play_as(store, who.clone())
-        .and_then(|()| match launch(ep, client_id, store, accounts) {
-            // A local guest profile is not a substitute for verified game ownership.
-            Err(NoOwner) => Err(NoOwner.to_string()),
-            pass => pass.map_err(|e| e.to_string()),
+        .and_then(|()| {
+            launch_for_game(ep, client_id, store, accounts, false)
+                .map_err(|e| e.to_string())
         });
     (
         accounts.selected,
@@ -1674,10 +1673,8 @@ fn session_file(game_home: &Path, pass: Launch) -> (Option<PathBuf>, Option<Stri
 }
 
 /// Who plays Minecraft: Java Edition (a Java instance). A guest has an offline-only identity;
-/// Microsoft players continue through the ownership gate.
-/// ([`launch`]): the selected account when it owns the game, else one that does. With no answer
-/// from the services, an account that owned it plays with its last token. Mojang's game takes the
-/// token on its command line, as Mojang's launcher gives it; that command is never logged.
+/// Microsoft players continue through the ownership gate; with no response from the
+/// services, a previously verified owner may use the cached session.
 pub fn java_player() -> Result<crate::java_launch::Player, String> {
     let mut accounts = Accounts::load();
     let player = java_player_with(
