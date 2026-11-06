@@ -297,7 +297,7 @@ pub fn profile_home(work: &Path) -> PathBuf {
 
 /// Turns the game's command into this pack's profile: its own home (the player's options.txt
 /// copied in the first time, so keys and video settings carry over) and its carried-over mods.
-/// A modpack from Horizon's registry (`horizon-packs/<id>/`) plays its own profile the same way.
+/// A modpack from the NIROVA catalog (`horizon-packs/<id>/`) plays its own profile the same way.
 pub fn apply_profile(cmd: &mut Command, work: &Path) -> Result<(), String> {
     if horizon_pack::is_pack(work) {
         return horizon_pack::apply(cmd, work);
