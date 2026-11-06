@@ -4,6 +4,8 @@
 //! state. Results and cross-region messages are ordered at the tick barrier. This executor is
 //! infrastructure only: the live Game tick remains sequential until world ownership, RNG streams
 //! and cross-region effects can use this protocol without changing vanilla ordering.
+//! Regions sharing a border or corner must not run simultaneously: redstone and neighbor
+//! updates can cross these boundaries. Independent, distant regions may still run in parallel.
 
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -98,8 +100,51 @@ impl std::fmt::Display for RegionScheduleError {
 
 impl std::error::Error for RegionScheduleError {}
 
-/// A fixed-size worker executor. It schedules immutable region snapshots concurrently and
-/// returns outputs in the caller's canonical order.
+/// How many region helpers a client should allocate by default. Leave cores for the
+/// render thread and integrated server, and avoid a large number of per-tick workers
+/// (including stacks) on memory-constrained computers.
+pub fn recommended_workers(available_cores: usize) -> usize {
+    available_cores.saturating_sub(2).clamp(1, 4)
+}
+
+/// Regions that touch by an edge or corner may share immediate neighbor updates.
+/// Treat them as one sequential tick batch until proper region ownership and
+/// cross-boundary event barriers exist. Different dimensions do not overlap.
+fn touching_regions(left: RegionId, right: RegionId) -> bool {
+    left.dimension == right.dimension
+        && (i64::from(left.x) - i64::from(right.x)).abs() <= 1
+        && (i64::from(left.z) - i64::from(right.z)).abs() <= 1
+}
+
+/// Whether this batch contains touching regions (including duplicate region IDs).
+/// A set makes this linear in the number of regions instead of comparing every pair.
+fn contains_neighboring_regions<T>(jobs: &[RegionJob<T>]) -> bool {
+    let mut visited = std::collections::HashSet::with_capacity(jobs.len());
+    for job in jobs {
+        for dx in -1..=1i32 {
+            for dz in -1..=1i32 {
+                let Some(x) = job.region.x.checked_add(dx) else {
+                    continue;
+                };
+                let Some(z) = job.region.z.checked_add(dz) else {
+                    continue;
+                };
+                if visited.contains(&RegionId {
+                    dimension: job.region.dimension,
+                    x,
+                    z,
+                }) {
+                    return true;
+                }
+            }
+        }
+        visited.insert(job.region);
+    }
+    false
+}
+
+/// A bounded worker executor. Only truly separate immutable region snapshots may run
+/// concurrently; touching regions fall back to the canonical sequential order.
 pub struct RegionScheduler {
     workers: usize,
 }
@@ -112,9 +157,9 @@ impl RegionScheduler {
     }
 
     pub fn available() -> Self {
-        Self::new(
-            std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get),
-        )
+        let cores = std::thread::available_parallelism()
+            .map_or(1, std::num::NonZeroUsize::get);
+        Self::new(recommended_workers(cores))
     }
 
     pub fn workers(&self) -> usize {
@@ -155,7 +200,27 @@ impl RegionScheduler {
                 .take(jobs.len())
                 .collect::<Vec<Option<RegionResult<R>>>>(),
         );
-        let worker_count = self.workers.min(jobs.len());
+        // A conservative fallback avoids scheduling redstone-adjacent regions
+        // against the same tick. This is not yet regionized live-world ticking.
+        let worker_count = if contains_neighboring_regions(jobs) {
+            1
+        } else {
+            self.workers.min(jobs.len())
+        };
+        if worker_count == 1 {
+            return Ok(order
+                .into_iter()
+                .map(|index| {
+                    let job = &jobs[index];
+                    RegionResult {
+                        tick: job.tick,
+                        order: job.order,
+                        region: job.region,
+                        output: run(job),
+                    }
+                })
+                .collect());
+        }
 
         std::thread::scope(|scope| {
             for _ in 0..worker_count {
@@ -281,7 +346,8 @@ mod tests {
 
     #[test]
     fn workers_really_run_independently() {
-        let jobs = [job(1, 0, 0, 0, vec![1]), job(1, 1, 1, 0, vec![2])];
+        // Independent regions are separated by at least one entire region.
+        let jobs = [job(1, 0, 0, 0, vec![1]), job(1, 1, 3, 0, vec![2])];
         let barrier = Barrier::new(2);
         let result = RegionScheduler::new(2)
             .run(&jobs, |_| {
@@ -372,6 +438,56 @@ mod tests {
                 source_sequence: 7
             })
         );
+    }
+
+    #[test]
+    fn weak_computers_reserve_room_for_rendering_and_limit_worker_stacks() {
+        for (cores, expected) in [
+            (0, 1), (1, 1), (2, 1), (3, 1),
+            (4, 2), (5, 3), (6, 4), (16, 4),
+        ] {
+            assert_eq!(recommended_workers(cores), expected, "{cores} cores");
+        }
+    }
+
+    #[test]
+    fn adjacent_regions_and_corners_run_serially_in_vanilla_order() {
+        let jobs = [
+            job(5, 30, 0, 0, vec![1]),
+            job(5, 10, 1, 1, vec![2]),
+            job(5, 20, 2, 2, vec![3]),
+        ];
+        let origin = std::thread::current().id();
+        for workers in [1, 2, 8] {
+            let results = RegionScheduler::new(workers)
+                .run(&jobs, |job| {
+                    // A touching batch must use this same thread, not race two updates.
+                    assert_eq!(std::thread::current().id(), origin);
+                    job.order
+                })
+                .unwrap();
+            assert_eq!(
+                results.iter().map(|r| r.order).collect::<Vec<_>>(),
+                [10, 20, 30]
+            );
+        }
+        assert!(touching_regions(region(0, 0), region(1, 1)));
+        assert!(!touching_regions(region(0, 0), region(2, 0)));
+        assert!(!touching_regions(
+            RegionId { dimension: 0, x: 0, z: 0 },
+            RegionId { dimension: -1, x: 0, z: 0 }
+        ));
+    }
+
+    #[test]
+    fn one_region_executes_without_spawning_a_new_thread() {
+        let jobs = [job(5, 0, 0, 0, vec![9])];
+        let caller = std::thread::current().id();
+        let result = RegionScheduler::new(8).run(&jobs, |_| {
+            assert_eq!(std::thread::current().id(), caller);
+            9
+        });
+        assert_eq!(result.unwrap()[0].output, 9);
     }
 
     #[test]
