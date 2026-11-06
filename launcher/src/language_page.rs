@@ -112,9 +112,9 @@ mod tests {
     use horizon_launcher::i18n::{current, tr_in};
 
     #[test]
-    fn a_language_is_named_in_itself_and_the_system_choice_in_the_launchers_language() {
+    fn a_language_is_named_in_itself_and_the_default_choice_is_russian() {
         assert_eq!(choice_name(Some(Language::Russian)), "Русский");
         assert_eq!(choice_name(Some(Language::English)), "English");
-        assert_eq!(choice_name(None), tr_in(current(), "System"));
+        assert_eq!(choice_name(None), tr_in(current(), "Russian (default)"));
     }
 }

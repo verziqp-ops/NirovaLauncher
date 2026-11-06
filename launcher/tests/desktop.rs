@@ -28,7 +28,7 @@ fn desktop_entry(home: &Path, wrapper: Option<&str>, args: &[&str]) {
 fn menu_registration_preserves_the_package_wrapper() {
     let home = std::env::temp_dir().join(format!("horizon-desktop-wrapper-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
-    let entry = home.join("data/applications/horizon-launcher.desktop");
+    let entry = home.join("data/applications/nirova-launcher.desktop");
 
     // Migrate a registration that pointed at the private executable.
     desktop_entry(&home, None, &[]);
@@ -38,7 +38,7 @@ fn menu_registration_preserves_the_package_wrapper() {
         env!("CARGO_BIN_EXE_nirova-launcher")
     )));
 
-    let wrapper = "/usr/bin/horizon-launcher";
+    let wrapper = "/usr/bin/nirova-launcher";
     for _ in 0..2 {
         desktop_entry(&home, Some(wrapper), &[]);
         let text = std::fs::read_to_string(&entry).unwrap();

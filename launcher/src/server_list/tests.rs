@@ -270,10 +270,7 @@ fn a_moved_official_server_moves_the_players_entry_once() {
     let home = scratch("moved-present");
     offered_at(
         &home,
-        &[
-            ("Old", "horizon.bunchy7s.dev"),
-            ("New", "play.playhorizon.dev"),
-        ],
+        &[("Old", "horizon.bunchy7s.dev"), ("New", new)],
         "horizon.bunchy7s.dev",
     );
     add_official(&home, new, &["horizon.bunchy7s.dev".into()]).unwrap();

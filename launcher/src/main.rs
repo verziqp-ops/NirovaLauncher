@@ -1582,7 +1582,7 @@ impl Launcher {
             files: false,
             directories: true,
             multiple: false,
-            prompt: Some("Папка для скачивания версий Minecraft".into()),
+            prompt: Some(tr("Minecraft version download folder").to_string().into()),
         });
         cx.spawn(async move |this, cx| {
             if let Ok(Ok(Some(mut paths))) = paths.await {
@@ -3090,7 +3090,7 @@ impl Launcher {
                     .flex_none()
                     .mt(px(11.))
                     .size(px(6.))
-                    .rounded_full()
+                    .rounded(px(0.))
                     .bg(t.danger),
             )
             .child(body)
@@ -4083,7 +4083,7 @@ impl Launcher {
             .child(
                 text(theme::UI)
                     .text_color(t.muted)
-                    .child("Выберите версию и папку, нажмите «Скачать», затем «Играть». Гость может играть в одиночном мире и на серверах с offline-mode; Microsoft-авторизация для онлайн-серверов остаётся отдельной."),
+                    .child(tr("Choose a version and folder, select Download, then Play. Guests can play singleplayer and offline-mode servers; online servers use Microsoft sign-in.")),
             )
             .child(
                 div()
@@ -4102,7 +4102,7 @@ impl Launcher {
                             .flex_1()
                             .min_w_0()
                             .gap(px(4.))
-                            .child(text(theme::CAPTION).text_color(t.muted).child("Папка загрузки версий"))
+                            .child(text(theme::CAPTION).text_color(t.muted).child(tr("Version download folder")))
                             .child(
                                 text(theme::UI)
                                     .text_color(t.ink)
@@ -4111,7 +4111,7 @@ impl Launcher {
                             ),
                     )
                     .child(
-                        button("choose-java-download-dir", "Выбрать папку…", Kind::Secondary, &t)
+                        button("choose-java-download-dir", "Choose folder…", Kind::Secondary, &t)
                             .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                                 this.choose_java_versions_folder(cx);
                                 cx.notify();
@@ -4125,7 +4125,7 @@ impl Launcher {
             .to_lowercase();
         panel = panel.child(self.field(
             servers_page::Field::InstanceVersion,
-            "Поиск версии",
+            "Search versions",
             280.,
             cx,
         ));
@@ -4135,7 +4135,7 @@ impl Launcher {
                     return panel.child(
                         text(theme::UI)
                             .text_color(t.muted)
-                            .child("Загрузка списка версий…"),
+                            .child(tr("Loading versions…")),
                     );
                 }
                 new_instance::VersionList::Failed(e) => {
@@ -4153,7 +4153,7 @@ impl Launcher {
             return panel.child(
                 text(theme::UI)
                     .text_color(t.muted)
-                    .child("Версии не найдены."),
+                    .child(tr("No versions found.")),
             );
         }
         let root = self.settings.minecraft_dir.clone();
@@ -4173,34 +4173,38 @@ impl Launcher {
                 horizon_launcher::minecraft_versions::Kind::OldBeta => "Beta",
                 horizon_launcher::minecraft_versions::Kind::OldAlpha => "Alpha",
             };
-            let right: AnyElement = if self.instances.java_installing.as_deref()
-                == Some(id.as_str())
-            {
-                text(theme::CAPTION)
-                    .text_color(t.muted)
-                    .child("Скачивание…")
-                    .into_any_element()
-            } else if installed {
-                let playing = id.clone();
-                button(format!("java-play-{id}"), "Играть", Kind::Secondary, &t)
-                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                        this.play_java_version_from_versions(playing.clone());
-                        cx.notify();
-                    }))
-                    .into_any_element()
-            } else {
-                let downloading = id.clone();
-                let install = button(format!("java-install-{id}"), "Скачать", Kind::Secondary, &t);
-                let install = if self.instances.java_installing.is_some() {
-                    disabled(install)
+            let right: AnyElement =
+                if self.instances.java_installing.as_deref() == Some(id.as_str()) {
+                    text(theme::CAPTION)
+                        .text_color(t.muted)
+                        .child(tr("Downloading…"))
+                        .into_any_element()
+                } else if installed {
+                    let playing = id.clone();
+                    button(format!("java-play-{id}"), "Play", Kind::Secondary, &t)
+                        .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                            this.play_java_version_from_versions(playing.clone());
+                            cx.notify();
+                        }))
+                        .into_any_element()
                 } else {
-                    install.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                        this.install_java_version_id(downloading.clone(), cx);
-                        cx.notify();
-                    }))
+                    let downloading = id.clone();
+                    let install = button(
+                        format!("java-install-{id}"),
+                        "Download",
+                        Kind::Secondary,
+                        &t,
+                    );
+                    let install = if self.instances.java_installing.is_some() {
+                        disabled(install)
+                    } else {
+                        install.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                            this.install_java_version_id(downloading.clone(), cx);
+                            cx.notify();
+                        }))
+                    };
+                    install.into_any_element()
                 };
-                install.into_any_element()
-            };
             rows = rows.child(
                 div()
                     .flex()
@@ -4222,11 +4226,7 @@ impl Launcher {
                             .child(text(theme::CAPTION).text_color(t.muted).child(format!(
                                 "{kind} · {}{}",
                                 version.released.get(..10).unwrap_or(""),
-                                if installed {
-                                    " · Установлена"
-                                } else {
-                                    ""
-                                }
+                                if installed { tr(" · Installed") } else { "" }
                             ))),
                     )
                     .child(right),
@@ -4237,11 +4237,10 @@ impl Launcher {
             panel = panel.child(text(theme::UI).text_color(t.danger).child(error.clone()));
         }
         if let Some(id) = &self.instances.java_installed {
-            panel = panel.child(
-                text(theme::UI)
-                    .text_color(t.muted)
-                    .child(format!("Minecraft {id} скачан. Нажмите «Играть».")),
-            );
+            panel = panel.child(text(theme::UI).text_color(t.muted).child(trf(
+                "Minecraft {version} downloaded. Select Play.",
+                &[("version", id)],
+            )));
         }
         panel
     }
@@ -4251,7 +4250,7 @@ impl Launcher {
         let java_panel = self.java_versions_panel(cx);
         let header = page_header(
             "Versions",
-            "Minecraft Java Edition и собственные сборки NIROVA.",
+            tr("Minecraft Java Edition and NIROVA builds."),
             &t,
         );
         // Measured again when the installed versions change.
@@ -4282,7 +4281,7 @@ impl Launcher {
             .child(
                 text(theme::HEADING)
                     .text_color(t.ink)
-                    .child("Сборки NIROVA"),
+                    .child(tr("NIROVA builds")),
             )
             .children((used > 0).then(|| {
                 text(theme::UI).text_color(t.muted).child(trf(
@@ -4604,39 +4603,50 @@ impl Launcher {
 /// A thin bar. A known fraction eases from its previous value; an unknown one shuttles slowly.
 /// Progress: a plate-coloured track filling with the accent; work of unknown length shuttles.
 fn progress_bar(fraction: Option<(f32, f32)>, t: &Theme) -> Div {
-    let n = t.night;
-    let mut track = div()
-        .flex()
-        .flex_1()
-        .gap(px(3.))
-        .h(px(10.))
-        .overflow_hidden();
-    for i in 0..24 {
-        let segment = div()
-            .flex_1()
-            .h_full()
-            .bg(plate::alpha(n.card_hi, n.card_hi_alpha));
-        track = track.child(match fraction {
-            Some((_, to)) => segment
-                .when((i as f32) < to.clamp(0., 1.) * 24., |d| d.bg(t.accent))
-                .into_any_element(),
-            None => segment
-                .bg(t.accent)
-                .with_animation(
-                    ElementId::named_usize("download-segment", i),
-                    Animation::new(Duration::from_millis(1600)).repeat(),
-                    move |d, p| {
-                        d.opacity(if ((p * 24.) as usize + 24 - i) % 24 < 5 {
-                            1.
-                        } else {
-                            0.12
-                        })
-                    },
-                )
-                .into_any_element(),
-        });
-    }
-    track
+    let t = *t;
+    let track = div().relative().w_full().h_full();
+    let draw = move |d: Div, progress: f32| {
+        d.child(
+            gpui::canvas(
+                |_, _, _| {},
+                move |bounds, (), window, _| {
+                    let width: f32 = bounds.size.width.into();
+                    let count = ((width + 3.) / 13.).floor() as usize;
+                    for i in 0..count {
+                        let filled = match fraction {
+                            Some(_) => (i as f32) < progress * count as f32,
+                            None => ((progress * count as f32) as usize + count - i) % count < 5,
+                        };
+                        window.paint_quad(gpui::fill(
+                            Bounds::new(
+                                gpui::point(bounds.left() + px(i as f32 * 13.), bounds.top()),
+                                size(px(10.), px(10.)),
+                            ),
+                            if filled {
+                                t.accent
+                            } else {
+                                plate::alpha(t.night.card_hi, t.night.card_hi_alpha).into()
+                            },
+                        ));
+                    }
+                },
+            )
+            .absolute()
+            .top_0()
+            .left_0()
+            .size_full(),
+        )
+    };
+    div().flex_1().h(px(10.)).child(match fraction {
+        Some((_, to)) => draw(track, to.clamp(0., 1.)).into_any_element(),
+        None => track
+            .with_animation(
+                "download-segments",
+                Animation::new(Duration::from_millis(1600)).repeat(),
+                draw,
+            )
+            .into_any_element(),
+    })
 }
 
 impl Render for Launcher {
