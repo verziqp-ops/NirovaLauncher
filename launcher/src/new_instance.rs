@@ -70,6 +70,39 @@ pub(super) enum VersionList {
     Failed(String),
 }
 
+/// Locally installed Mojang/loader profiles in the selected .minecraft folder.
+/// Only folders with a readable launch profile are offered; no files are modified here.
+fn imported_versions() -> Vec<String> {
+    let root = backend::Settings::load()
+        .minecraft_dir
+        .unwrap_or_else(|| backend::data_dir().join("minecraft"));
+    let dir = root.join("versions");
+    let mut found = std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            if !path.is_dir() {
+                return None;
+            }
+            let id = entry.file_name().into_string().ok()?;
+            if id.is_empty() || id.contains(['/', '\\\\']) {
+                return None;
+            }
+            let profile = path.join(format!("{id}.json"));
+            let text = std::fs::read_to_string(profile).ok()?;
+            let json: serde_json::Value = serde_json::from_str(&text).ok()?;
+            let launchable = json["mainClass"].as_str().is_some()
+                || json["minecraftArguments"].as_str().is_some()
+                || json["inheritsFrom"].as_str().is_some();
+            launchable.then_some(id)
+        })
+        .collect::<Vec<_>>();
+    found.sort_by(|a, b| b.cmp(a));
+    found
+}
+
 impl Launcher {
     fn java_choice(&mut self) -> Option<&mut JavaChoice> {
         self.instances.dialog.as_mut().map(|d| &mut d.java)
@@ -270,6 +303,42 @@ impl Launcher {
             .child(heading("Minecraft version"))
             .child(filters)
             .child(list);
+        let imported_rows: Vec<_> = imported_versions()
+            .into_iter()
+            .filter(|id| search.is_empty() || id.to_lowercase().contains(&search))
+            .take(ROWS)
+            .map(|id| {
+                let selected = chosen.as_deref() == Some(id.as_str());
+                let picked = id.clone();
+                shell::row(format!("imported-mc-{id}"), selected, &t)
+                    .flex_none()
+                    .h(px(32.))
+                    .px(px(12.))
+                    .child(shell::text(night::UI, c(n.ink)).child(id))
+                    .child(shell::text(night::CAPTION, c(n.muted)).child(tr("Installed").to_string()))
+                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.change(|j| j.version = Some(picked.clone()));
+                        cx.notify();
+                    }))
+            })
+            .collect();
+        if !imported_rows.is_empty() {
+            rows = rows
+                .child(heading("Installed in .minecraft"))
+                .child(
+                    div()
+                        .id("imported-mc-versions")
+                        .flex()
+                        .flex_col()
+                        .h(px(6. * 32. + 8.))
+                        .p(px(4.))
+                        .overflow_y_scroll()
+                        .rounded(px(night::RADIUS_CONTROL))
+                        .border_1()
+                        .border_color(alpha(n.stroke, n.stroke_alpha))
+                        .children(imported_rows),
+                );
+        }
         if choice.kind == NewKind::Modded {
             let scale = self.scale;
             let logos = [Loader::Fabric, Loader::Quilt].map(|l| (l, self.loader_logo(l.id(), 24.)));
