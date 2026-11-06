@@ -34,7 +34,7 @@ pub(super) struct JavaChoice {
 impl Default for JavaChoice {
     fn default() -> Self {
         JavaChoice {
-            kind: NewKind::Horizon,
+            kind: NewKind::Vanilla,
             loader: Loader::Fabric,
             version: None,
             snapshots: false,
@@ -130,13 +130,13 @@ impl Launcher {
         .detach();
     }
 
-    /// The tabs over a new instance's dialog: Horizon, Vanilla, Modded.
+    /// The tabs over a new instance's dialog: NIROVA, Vanilla, Modded.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
         div().flex().gap(px(4.)).children(
             [
-                (NewKind::Horizon, "Horizon"),
+                (NewKind::Horizon, "NIROVA"),
                 (NewKind::Vanilla, "Vanilla"),
                 (NewKind::Modded, "Modded"),
             ]
