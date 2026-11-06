@@ -1536,21 +1536,40 @@ fn download_version_for_guest_in(
     dir: &Path,
     log: &dyn Fn(String),
 ) -> Result<PathBuf, String> {
-    if id.is_empty() || !id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')) {
-        return Err(format!("Invalid Minecraft version ID: {id:?}"));
-    }
-    if manifest_sha1.len() != 40 || !manifest_sha1.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err("The Minecraft version list has an invalid checksum.".into());
-    }
-    let pins = sources::Pins::for_version(id, manifest_sha1);
     let fetch = |url: &str| -> Result<Vec<u8>, String> { get_bytes(url) };
     let os = match sources::Os::current() {
         sources::Os::Linux => "linux",
         sources::Os::MacOs => "osx",
         sources::Os::Windows => "windows",
     };
+    download_version_for_guest_with(
+        id, manifest_sha1, dir, os, &fetch, &mojang::CANCEL, log,
+    )
+}
+
+/// Injectable fetcher lets tests verify an actual offline-profile installation with
+/// fake files and no Minecraft account or external network access.
+fn download_version_for_guest_with(
+    id: &str,
+    manifest_sha1: &str,
+    dir: &Path,
+    os: &str,
+    fetch: sources::Fetch,
+    cancel: &std::sync::atomic::AtomicBool,
+    log: &dyn Fn(String),
+) -> Result<PathBuf, String> {
+    if id.is_empty()
+        || matches!(id, "." | "..")
+        || !id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+    {
+        return Err(format!("Invalid Minecraft version ID: {id:?}"));
+    }
+    if manifest_sha1.len() != 40 || !manifest_sha1.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("The Minecraft version list has an invalid checksum.".into());
+    }
+    let pins = sources::Pins::for_version(id, manifest_sha1);
     log(format!("Installing Minecraft {id} from Mojang into {}", dir.display()));
-    mojang::download(&pins, dir, os, 8, &fetch, &mojang::CANCEL, log)?;
+    mojang::download(&pins, dir, os, 8, fetch, cancel, log)?;
     Ok(dir.to_path_buf())
 }
 
@@ -3738,7 +3757,8 @@ mod tests {
             &backend[start..start + backend[start + 1..].find("\n}\n").unwrap()]
         };
         assert!(body("download_for").contains("mojang::download("));
-        assert!(body("download_version_for_guest_in").contains("mojang::download("));
+        assert!(body("download_version_for_guest_with").contains("mojang::download("));
+        assert!(body("download_version_for_guest_in").contains("download_version_for_guest_with("));
         assert!(body("download_for_owner").contains("account::launch("));
         assert!(!body("download_for_owner").contains("launch_for_game("));
         // `download_for` is defined once and called once, by `download_for_owner`.
