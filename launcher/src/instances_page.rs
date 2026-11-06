@@ -319,7 +319,13 @@ impl Launcher {
         };
         let (java, name) = match (java, minecraft) {
             (Some(_), Some(None)) => {
-                d.error = Some(tr("Mojang's version list isn't here yet.").into());
+                d.error = Some(
+                    if matches!(self.accounts.player(), account::Player::Microsoft(_)) {
+                        tr("Mojang's version list isn't here yet.").to_string()
+                    } else {
+                        "No installed Minecraft version found in your selected .minecraft folder.                          Choose a folder with complete version files first.".to_string()
+                    },
+                );
                 return;
             }
             (Some(j), Some(Some(mc))) => {
