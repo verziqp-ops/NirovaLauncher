@@ -27,7 +27,7 @@ const INFO_PLIST: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 	<key>CFBundleExecutable</key>
 	<string>horizon-client</string>
 	<key>CFBundleIconFile</key>
-	<string>horizon</string>
+	<string>nirova</string>
 	<key>CFBundleIdentifier</key>
 	<string>dev.horizon.game</string>
 	<key>CFBundleInfoDictionaryVersion</key>
