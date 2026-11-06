@@ -178,3 +178,68 @@ fn guest_version_download_rejects_unsafe_version_names_without_touching_disk() {
     assert!(err.contains("invalid checksum"), "{err}");
     assert!(!root.exists());
 }
+
+#[test]
+fn guest_installer_creates_a_verified_playable_java_version_from_public_manifest() {
+    use std::collections::HashMap;
+    use std::sync::atomic::AtomicBool;
+
+    let root = std::env::temp_dir().join(format!(
+        "nirova-guest-mojang-install-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&root);
+    let client = b"test Minecraft client bytes";
+    let assets = br#"{"objects":{}}"#;
+    let manifest = serde_json::json!({
+        "id": "1.21.4",
+        "mainClass": "net.minecraft.client.main.Main",
+        "downloads": {
+            "client": {
+                "sha1": sources::sha1_hex(client),
+                "size": client.len(),
+                "url": "https://piston-data.mojang.com/guest-test.jar"
+            }
+        },
+        "assetIndex": {
+            "id": "guest-test",
+            "sha1": sources::sha1_hex(assets),
+            "url": "https://piston-meta.mojang.com/guest-assets.json"
+        },
+        "libraries": []
+    })
+    .to_string();
+    let manifest_sha1 = sources::sha1_hex(manifest.as_bytes());
+    let manifest_url = format!(
+        "https://piston-meta.mojang.com/v1/packages/{manifest_sha1}/1.21.4.json"
+    );
+    let files = HashMap::from([
+        (manifest_url, manifest.into_bytes()),
+        ("https://piston-data.mojang.com/guest-test.jar".to_owned(), client.to_vec()),
+        ("https://piston-meta.mojang.com/guest-assets.json".to_owned(), assets.to_vec()),
+    ]);
+    let asked = std::sync::Mutex::new(Vec::new());
+    let fetch = |url: &str| {
+        asked.lock().unwrap().push(url.to_owned());
+        files
+            .get(url)
+            .cloned()
+            .ok_or_else(|| format!("Mock does not have {url}"))
+    };
+    let cancel = AtomicBool::new(false);
+    let install = || download_version_for_guest_with(
+        "1.21.4", &manifest_sha1, &root, "windows", &fetch, &cancel, &|_| {}
+    );
+    assert_eq!(install().unwrap(), root);
+    assert_eq!(
+        fs::read(root.join("versions/1.21.4/1.21.4.jar")).unwrap(),
+        client,
+    );
+    assert!(local_java_version_ready(&root, "1.21.4"));
+    assert!(root.join("assets/indexes/guest-test.json").is_file());
+
+    asked.lock().unwrap().clear();
+    install().unwrap();
+    assert!(asked.lock().unwrap().is_empty(), "Complete files should be reused");
+    fs::remove_dir_all(root).unwrap();
+}
