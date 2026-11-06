@@ -698,8 +698,8 @@ pub fn before_play(home: &Path) {
     });
 }
 
-#[path = "horizon/pack.rs"]
+#[path = "nirova/pack.rs"]
 pub mod pack;
 #[cfg(test)]
-#[path = "horizon/tests.rs"]
+#[path = "nirova/tests.rs"]
 mod tests;
