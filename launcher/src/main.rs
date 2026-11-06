@@ -2813,7 +2813,8 @@ impl Launcher {
         {
             // The top bar shows who plays; a row only when there is something to do about it:
             // no account that owns the game (Play needs one), or offline.
-            if self.owner_shown() == Some(false) {
+            if self.owner_shown() == Some(false)
+                && matches!(self.accounts.player(), account::Player::Microsoft(_)) {
                 rows = rows.child(index_row(
                     5,
                     tr("Microsoft account"),
