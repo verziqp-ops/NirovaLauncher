@@ -10,7 +10,8 @@ use super::{
 use horizon_mods::index::{self, Index, Trust};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 /// Where the NIROVA repository publishes its signed catalog index.
 pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/catalog/index.json";
