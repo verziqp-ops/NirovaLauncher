@@ -144,10 +144,10 @@ impl Launcher {
         }
     }
 
-    /// Picks the dialog's kind; a Java one fetches Mojang's list the first time.
-    pub(super) fn pick_kind(&mut self, kind: NewKind, cx: &mut Context<Self>) {
-        self.change(|j| j.kind = kind);
-        if kind == NewKind::Horizon || !matches!(self.instances.versions, VersionList::NotAsked) {
+    /// Load the public Minecraft version catalogue once for both the Versions page and
+    /// the New instance dialog. The cached manifest is used if Mojang is unavailable.
+    pub(super) fn load_java_versions(&mut self, cx: &mut Context<Self>) {
+        if !matches!(self.instances.versions, VersionList::NotAsked) {
             return;
         }
         self.instances.versions = VersionList::Loading;
@@ -162,7 +162,6 @@ impl Launcher {
                     Ok(v) => VersionList::Ready(v),
                     Err(e) => VersionList::Failed(e),
                 };
-                // The newest release is known now: so is the name.
                 if before {
                     this.change(|_| {});
                 }
@@ -172,13 +171,16 @@ impl Launcher {
         .detach();
     }
 
-    /// Download the selected official Java Edition version directly from the instance dialog.
-    /// backend::download_version_for_owner enforces ownership and verifies Mojang checksums.
-    /// Work runs away from the UI so large downloads cannot freeze the launcher.
-    pub(super) fn install_java_version(&mut self, cx: &mut Context<Self>) {
-        if self.instances.java_installing.is_some() {
-            return;
+    /// Picks the dialog's kind; a Java one fetches Mojang's list the first time.
+    pub(super) fn pick_kind(&mut self, kind: NewKind, cx: &mut Context<Self>) {
+        self.change(|j| j.kind = kind);
+        if kind != NewKind::Horizon {
+            self.load_java_versions(cx);
         }
+    }
+
+    /// Install the version selected in New instance.
+    pub(super) fn install_java_version(&mut self, cx: &mut Context<Self>) {
         let selected = match &self.instances.dialog {
             Some(dialog) => dialog.java.minecraft(match &self.instances.versions {
                 VersionList::Ready(v) => Some(v),
@@ -186,21 +188,25 @@ impl Launcher {
             }),
             None => return,
         };
-        let selected = match selected {
-            Some(id) => id,
-            None => {
-                self.instances.java_install_error =
-                    Some("Выберите версию Minecraft из списка.".into());
-                return;
-            }
-        };
+        if let Some(id) = selected {
+            self.install_java_version_id(id, cx);
+        } else {
+            self.instances.java_install_error =
+                Some("Выберите версию Minecraft из списка.".into());
+        }
+    }
+
+    /// Start a verified Mojang download without blocking the window. Also used by Versions.
+    /// A local guest profile never grants a license or bypasses download ownership checks.
+    pub(super) fn install_java_version_id(&mut self, selected: String, cx: &mut Context<Self>) {
+        if self.instances.java_installing.is_some() {
+            return;
+        }
         let version = match &self.instances.versions {
             VersionList::Ready(versions) => match versions.find(&selected) {
                 Ok(v) => v.clone(),
                 Err(e) => {
-                    self.instances.java_install_error = Some(format!(
-                        "{selected} уже есть только в локальной установке. {e}"
-                    ));
+                    self.instances.java_install_error = Some(e);
                     return;
                 }
             },
@@ -215,13 +221,7 @@ impl Launcher {
         self.instances.java_installing = Some(version.id.clone());
         let id = version.id.clone();
         let task = cx.background_executor().spawn(async move {
-            // Only a verified owner may download the commercial Java Edition.
-            // The existing resumable downloader checks all Mojang SHA-1 digests.
-            backend::download_version_for_owner(
-                &version.id,
-                &version.sha1,
-                &|_| {},
-            )
+            backend::download_version_for_owner(&version.id, &version.sha1, &|_| {})
         });
         cx.spawn(async move |this, cx| {
             let result = task.await;
@@ -233,9 +233,7 @@ impl Launcher {
                         this.instances.java_install_error = None;
                         this.change(|choice| choice.version = Some(id));
                     }
-                    Err(e) => {
-                        this.instances.java_install_error = Some(e);
-                    }
+                    Err(e) => this.instances.java_install_error = Some(e),
                 }
                 cx.notify();
             });
