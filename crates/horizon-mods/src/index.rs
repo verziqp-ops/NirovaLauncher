@@ -224,7 +224,7 @@ impl Index {
         let head: Head = serde_json::from_str(text).map_err(|e| format!("not a mod index: {e}"))?;
         if head.schema > SCHEMA {
             return Err(format!(
-                "the mod index is schema {}; this build reads {SCHEMA}: update Horizon",
+                "the mod index is schema {}; this build reads {SCHEMA}: update NIROVA",
                 head.schema
             ));
         }
@@ -484,7 +484,7 @@ pub fn check_file(
     };
     if matches!(project.kind, Kind::Other(_)) {
         return Err(format!(
-            "this Horizon can't install a {} yet",
+            "NIROVA can't install a {} yet",
             project.kind.name()
         ));
     }
