@@ -35,7 +35,7 @@ impl Launcher {
             }
             Err(e) => self.sign_in_state = Some(SignInState::Done(Err(e))),
         }
-        // Keep the picker open on refusal so the player can read why this identity cannot play.
+        // Keep the picker open on errors so the player can read why selection failed.
         self.account_menu = !succeeded;
     }
 
@@ -302,8 +302,8 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Save a local guest nickname and switch between saved profiles. A local \
-                         nickname does not replace a Microsoft account that owns Minecraft: Java Edition.",
+                        "Guest mode plays local Minecraft installations and servers that allow \
+                         offline players. Microsoft authentication is required on online-mode servers.",
                     ))
                     .into_any_element(),
             ),
