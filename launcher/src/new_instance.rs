@@ -244,7 +244,8 @@ impl Launcher {
         .detach();
     }
 
-    /// The tabs over a new instance's dialog: NIROVA, Vanilla, Modded.
+    /// New instances offer NIROVA Rust and vanilla Java. Fabric/Quilt setup is retained
+    /// only to run existing legacy instances; new mod installs belong to NIROVA Rust.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
@@ -252,7 +253,6 @@ impl Launcher {
             [
                 (NewKind::Horizon, "NIROVA"),
                 (NewKind::Vanilla, "Vanilla"),
-                (NewKind::Modded, "Modded"),
             ]
             .map(|(kind, label)| {
                 shell::tab(
