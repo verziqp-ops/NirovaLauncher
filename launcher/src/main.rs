@@ -3,7 +3,6 @@
 
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-mod agents_page;
 mod art;
 mod blocks;
 mod cli;
@@ -304,8 +303,6 @@ struct Launcher {
     proxy_focus: FocusHandle,
     /// Opt-in data collection: the player's answer and Settings' section (`collection`).
     collection: collection::Collection,
-    /// Settings' "Connect an AI agent" (`agents_page`).
-    agents: agents_page::AgentsUi,
     /// How many play NIROVA now, while the server answers ("N playing now" on the Play page).
     playing: Option<u64>,
     /// How many play on the official server now, while it answers ("M on the official SMP").
@@ -536,7 +533,6 @@ impl Launcher {
             client_run: None,
             client_vars: Vec::new(),
             collection: collection::Collection::load(),
-            agents: agents_page::AgentsUi::default(),
             playing: None,
             official_players: None,
             tx,
@@ -3196,6 +3192,12 @@ impl Launcher {
         };
         let mono = |s: String| div().font_family(theme::MONO).child(s).into_any_element();
         let plain = |s: &str| div().child(tr(s).to_string()).into_any_element();
+        let minecraft_folder = self.settings.minecraft_dir.as_deref().map_or_else(
+            || div().child(tr("Not selected: choose your existing Minecraft folder.")).into_any_element(),
+            |path| div().font_family(theme::MONO).child(short(path)).into_any_element(),
+        );
+        let choose_minecraft_folder = button("settings-choose-minecraft-folder", "Choose…", Kind::Secondary, &t)
+            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_folder(cx)));
         let (accounts, n) = self.account_rows(cx);
         let (offline, n) = self.offline_rows(n, cx);
         let appearance = segments(
@@ -3285,9 +3287,14 @@ impl Launcher {
                     .child(group("Network", "globe"))
                     .child(self.proxy_row(n + 4, cx))
                     .child(group("Game", "gamepad"))
-                    .child(self.game_args_row(n + 5, cx))
-                    .child(group("AI", "terminal"))
-                    .child(self.no_ai_row(n + 6, cx))
+                    .child(index_row(
+                        n + 5,
+                        tr("Minecraft folder"),
+                        Some(minecraft_folder),
+                        Some(choose_minecraft_folder.into_any_element()),
+                        &t,
+                    ))
+                    .child(self.game_args_row(n + 6, cx))
                     .child(group("About", "info-box"))
                     .child(index_row(n + 7, "NIROVA", Some(plain(&horizon)), horizon_action, &t))
                     .child(index_row(
@@ -3338,7 +3345,6 @@ impl Launcher {
                     }),
             )
             .child(self.collection_section(cx))
-            .children(self.agents_section(cx))
             .children(self.dev_options_section(cx))
     }
 
