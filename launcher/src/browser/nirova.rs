@@ -148,7 +148,7 @@ fn kind_of(kind: &index::Kind) -> Option<Kind> {
 pub const POLICY: &str = "https://github.com/verziqp-ops/NirovaLauncher/blob/nivrora/full-rebrand-russian-home/docs/catalog-policy.md";
 
 /// Whether the NIROVA project made `p` (the mod policy's "Official": author NIROVA, source in
-/// the horizon-rust organisation).
+/// the NIROVA project repository).
 pub fn official(p: &index::Project) -> bool {
     p.authors == ["NIROVA"] && p.source.starts_with("https://github.com/verziqp-ops/")
 }
