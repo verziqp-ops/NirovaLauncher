@@ -343,10 +343,9 @@ pub(crate) fn parse_releases(
         if r["draft"].as_bool().unwrap_or(false) || !keep(tag) {
             continue;
         }
-        let legacy_asset = asset.and_then(legacy_game_asset);
         let found = r["assets"].as_array().into_iter().flatten().find_map(|a| {
             let name = a["name"].as_str()?;
-            (Some(name) == asset || Some(name) == legacy_asset).then(|| {
+            (Some(name) == asset).then(|| {
                 Some((
                     a["browser_download_url"].as_str()?.to_string(),
                     a["size"].as_u64()?,
