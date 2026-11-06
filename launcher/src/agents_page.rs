@@ -33,9 +33,9 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(if on {
-                        "On: every AI feature is hidden and off. The game opens no control socket, and horizon-ctl and the MCP servers refuse."
+                        "On: every AI feature is hidden and off. The game opens no control socket, and command-line control tool and the MCP servers refuse."
                     } else {
-                        "Hides and turns off every AI feature: agent control of the launcher and the game, horizon-ctl and the MCP servers."
+                        "Hides and turns off every AI feature: agent control of the launcher and the game, command-line control tool and the MCP servers."
                     }))
                     .into_any_element(),
             ),
