@@ -1477,7 +1477,13 @@ pub fn download_version_for_owner(
     manifest_sha1: &str,
     log: &dyn Fn(String),
 ) -> Result<PathBuf, String> {
-    download_version_for_owner_in(id, manifest_sha1, &data_dir().join("minecraft"), log)
+    // Use the same folder Java instances use when launched. In particular, a Prism
+    // 'instances' folder is NOT a vanilla .minecraft root, so use NIROVA's store there.
+    let selected = Settings::load().minecraft_dir;
+    let dir = selected
+        .filter(|path| path.join("versions").is_dir())
+        .unwrap_or_else(|| data_dir().join("minecraft"));
+    download_version_for_owner_in(id, manifest_sha1, &dir, log)
 }
 
 /// The same verified Mojang download, into the player's selected Minecraft folder.
