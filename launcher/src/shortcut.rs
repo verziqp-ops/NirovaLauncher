@@ -133,7 +133,7 @@ pub fn mac_app(exe: &Path, id: &str, name: &str) -> Vec<(&'static str, Vec<u8>, 
 	<key>CFBundleName</key>
 	<string>{}</string>
 	<key>CFBundleIconFile</key>
-	<string>horizon</string>
+	<string>nirova</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>LSUIElement</key>
