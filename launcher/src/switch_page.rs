@@ -27,11 +27,16 @@ impl Launcher {
         let done = accounts
             .play_as_with(account::store(), who, false)
             .and_then(|()| accounts.save());
+        let succeeded = done.is_ok();
         match done {
-            Ok(()) => self.accounts = accounts,
+            Ok(()) => {
+                self.accounts = accounts;
+                self.sign_in_state = None;
+            }
             Err(e) => self.sign_in_state = Some(SignInState::Done(Err(e))),
         }
-        self.account_menu = false;
+        // Keep the picker open on refusal so the player can read why this identity cannot play.
+        self.account_menu = !succeeded;
     }
 
     /// Everyone the player can play as, with how each signs in.
@@ -128,6 +133,16 @@ impl Launcher {
                     })),
             );
         }
+        if let Some(SignInState::Done(Err(error))) = &self.sign_in_state {
+            menu = menu.child(
+                div()
+                    .px(px(10.))
+                    .py(px(8.))
+                    .text_size(px(theme::CAPTION.px))
+                    .text_color(t.danger)
+                    .child(error.clone()),
+            );
+        }
         menu = menu.child(div().my(px(6.)).h(px(1.)).bg(t.rule)).child(
             div()
                 .id("account-manage")
@@ -155,9 +170,16 @@ impl Launcher {
         if name.is_empty() {
             return;
         }
-        self.play_as(Player::Offline(name));
-        if !matches!(self.sign_in_state, Some(SignInState::Done(Err(_)))) {
-            self.servers.text(Field::OfflineName).set(String::new());
+        let mut accounts = Accounts::load();
+        match accounts.add_offline(&name).and_then(|_| accounts.save()) {
+            Ok(()) => {
+                // Adding a nickname only stores a local profile. It does not authenticate the
+                // player or make an unlicensed Java Edition launch possible.
+                self.accounts = accounts;
+                self.servers.text(Field::OfflineName).set(String::new());
+                self.sign_in_state = None;
+            }
+            Err(e) => self.sign_in_state = Some(SignInState::Done(Err(e))),
         }
     }
 
@@ -267,7 +289,7 @@ impl Launcher {
             .gap(px(8.))
             .child(self.field(Field::OfflineName, tr("A name, 3 to 16 letters"), 220., cx))
             .child(
-                button("offline-add", "Add", Kind::Secondary, &t).on_click(cx.listener(
+                button("offline-add", "Add guest", Kind::Secondary, &t).on_click(cx.listener(
                     |this, _: &ClickEvent, _, cx| {
                         this.add_offline_name();
                         cx.notify();
@@ -280,8 +302,8 @@ impl Launcher {
             Some(
                 div()
                     .child(tr(
-                        "Play offline under another name, and switch from the top bar. Online \
-                         servers don't take offline names.",
+                        "Save a local guest nickname and switch between saved profiles. A local \
+                         nickname does not replace a Microsoft account that owns Minecraft: Java Edition.",
                     ))
                     .into_any_element(),
             ),
