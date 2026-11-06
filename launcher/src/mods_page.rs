@@ -876,6 +876,29 @@ impl Launcher {
 
     pub(super) fn mods_page(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
+        // NIROVA's Mods catalogue targets its Rust-native client. Java Edition
+        // versions downloaded from Mojang are separate JVM runtimes, not Rust ports.
+        // Preserve existing Fabric/Quilt folders, but never install Rust mods into a
+        // selected Java instance or offer new Java mods as if Rust could load them.
+        if self.selected_instance().is_some_and(|instance| instance.java.is_some()) {
+            return div()
+                .flex()
+                .flex_col()
+                .gap(px(20.))
+                .child(page_header("Mods NIROVA", "Моды только для Rust-клиента NIROVA.", &t))
+                .child(
+                    text(theme::UI)
+                        .text_color(t.muted)
+                        .child("Выбрана Minecraft Java Edition. Для модов NIROVA выберите экземпляр Rust-клиента. Существующие Java-моды и миры останутся на диске."),
+                )
+                .child(
+                    button("rust-mods-select-instance", "Выбрать экземпляр NIROVA", Kind::Secondary, &t)
+                        .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                            this.go(Page::Instances);
+                            cx.notify();
+                        })),
+                );
+        }
         self.mods_load();
         if !self.mods.asked {
             self.mods.asked = true;
