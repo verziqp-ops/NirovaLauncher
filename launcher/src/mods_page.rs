@@ -1295,6 +1295,18 @@ impl Launcher {
                         })),
                 );
             }
+            if !e.page.is_empty() {
+                let page = e.page.clone();
+                right = right.child(
+                    button(
+                        SharedString::from(format!("mods-installed-page-{}", e.project)),
+                        "Page",
+                        Kind::Ghost,
+                        &t,
+                    )
+                    .on_click(move |_, _, cx| cx.open_url(&page)),
+                );
+            }
             if is_native {
                 let folder = self.mods.home().join(native_mods::INSTALLED);
                 right = right.child(
