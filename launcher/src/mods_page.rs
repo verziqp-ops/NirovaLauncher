@@ -491,8 +491,6 @@ impl Launcher {
         });
     }
 
-    /// Turns a Horizon mod the browser installed on or off, as the game's Options > Mods does;
-    /// in a Java instance, renames its file.
     /// Resolves an installed entry through its original source, then opens the same details page
     /// used by online search results (description, gallery, versions and compatibility).
     pub(super) fn mods_open_installed(&mut self, source: SourceId, id: String) {
@@ -507,6 +505,7 @@ impl Launcher {
         });
     }
 
+    /// Turns a managed mod on or off; in a Java instance, renames its file.
     pub(super) fn mods_switch(&mut self, e: &installed::Entry) {
         let home = self.mods.home();
         if self.mods.java.is_some() {
