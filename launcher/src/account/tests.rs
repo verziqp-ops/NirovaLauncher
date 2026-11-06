@@ -535,18 +535,19 @@ fn a_guest_nickname_can_be_saved_without_claiming_game_ownership() {
     assert_eq!(accounts.add_offline("Builder_1").unwrap(), "Builder_1");
     assert_eq!(accounts.offline, ["Builder_1"]);
     assert!(!accounts.has_owner(&store));
-    assert!(accounts
+    accounts
         .play_as(&store, Player::Offline("Builder_1".into()))
-        .is_err());
+        .unwrap();
+    assert_eq!(accounts.player(), Player::Offline("Builder_1".into()));
 }
 
 #[test]
-fn offline_names_cannot_bypass_the_minecraft_ownership_gate() {
+fn offline_names_can_be_selected_without_game_ownership() {
     let store = MemoryStore::default();
     let mut accounts = Accounts::default();
-    assert!(accounts
+    accounts
         .play_as(&store, Player::Offline("Builder_1".into()))
-        .is_err());
+        .unwrap();
     assert!(!accounts.has_owner(&store));
 
     let mut accounts = signed_in(&store, &secrets("mc-token", true));
@@ -558,15 +559,17 @@ fn offline_names_cannot_bypass_the_minecraft_ownership_gate() {
 }
 
 #[test]
-fn the_developer_option_does_not_bypass_minecraft_ownership() {
+fn offline_player_never_grants_minecraft_download_ownership() {
     let store = MemoryStore::default();
     let mut accounts = Accounts::default();
-    assert!(accounts
+    accounts
         .play_as_with(&store, Player::Offline("Builder_1".into()), true)
-        .is_err());
-    assert_eq!(accounts.player(), Player::GameName);
+        .unwrap();
+    assert_eq!(accounts.player(), Player::Offline("Builder_1".into()));
     let (_, ep) = mock(|_| {});
-    assert!(launch_for_game(&ep, Some("test-client"), &store, &mut accounts, true).is_err());
+    let pass = launch_for_game(&ep, Some("test-client"), &store, &mut accounts, true).unwrap();
+    assert!(pass.session.is_none() && pass.owner.is_none());
+    assert!(launch(&ep, Some("test-client"), &store, &mut accounts).is_err());
 }
 #[test]
 fn refusals_have_messages() {
@@ -1047,12 +1050,26 @@ fn the_java_edition_plays_as_an_owner_even_offline() {
     // No network: the last token of an account that owned the game.
     let player = java_player_with(&offline(), Some("test-client"), &store, &mut accounts).unwrap();
     assert_eq!(player.token, "mc-token");
-    // Never for an account that doesn't own it.
+    // Never for a Microsoft account that doesn't own it.
     let mut accounts = signed_in(&store, &secrets("mc-token", false));
     assert_eq!(
         java_player_with(&offline(), Some("test-client"), &store, &mut accounts).unwrap_err(),
         NoOwner.to_string()
     );
+}
+
+#[test]
+fn java_guest_has_stable_offline_identity_without_tokens() {
+    let store = MemoryStore::default();
+    let mut accounts = Accounts::default();
+    accounts.play_as(&store, Player::Offline("Builder_1".into())).unwrap();
+    let one = java_player_with(&offline(), None, &store, &mut accounts).unwrap();
+    let two = java_player_with(&offline(), None, &store, &mut accounts).unwrap();
+    assert_eq!(one.name, "Builder_1");
+    assert_eq!(one.uuid, two.uuid);
+    assert_eq!(one.uuid.len(), 32);
+    assert!(one.token.is_empty() && one.xuid.is_empty());
+    assert!(!accounts.has_owner(&store));
 }
 
 #[test]
@@ -1482,7 +1499,7 @@ fn a_launch_as_another_account_leaves_the_selected_one() {
 }
 
 #[test]
-fn fresh_install_has_a_guest_profile_but_guest_never_skips_ownership() {
+fn fresh_install_has_a_guest_profile_without_download_ownership() {
     let path = std::env::temp_dir().join(format!(
         "nivrora-guest-profile-{}.json",
         std::process::id()
@@ -1492,10 +1509,10 @@ fn fresh_install_has_a_guest_profile_but_guest_never_skips_ownership() {
     assert_eq!(accounts.offline_selected.as_deref(), Some("Player"));
     assert!(accounts.offline.iter().any(|name| name == "Player"));
 
-    // Even the old hidden developer flag cannot turn a local name into game ownership.
+    // Selecting a local profile is allowed; it still grants no download entitlement.
     let store = MemoryStore::default();
-    let result = accounts.play_as_with(&store, Player::Offline("Player".into()), true);
-    assert_eq!(result, Err(OFFLINE_NEEDS_OWNER.into()));
+    accounts.play_as_with(&store, Player::Offline("Player".into()), true).unwrap();
+    assert!(!accounts.has_owner(&store));
     let _ = std::fs::remove_file(path);
 }
 
