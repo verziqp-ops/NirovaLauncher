@@ -1,4 +1,4 @@
-//! The Mods page: search NIROVA's own registry for mods and shader packs supported by NIROVA, or
+//! The Mods page: search the external community catalog for native mods and shader packs, or
 //! Modrinth for resource packs (a Java instance's mods too), see where each comes
 //! from and how well it runs (a Java mod's jar is checked first; a NIROVA mod says whether it is
 //! signed and what it may do), install it with its checksum checked, turn NIROVA mods on and
@@ -25,7 +25,7 @@ const KINDS: [(PackKind, &str, &str); 5] = [
     (PackKind::Shader, "Shader packs", "zap"),
     (PackKind::DataPack, "Data packs", "notes"),
 ];
-/// The kinds with a tab: external community registry's, and Modrinth's resource packs. Modrinth's mods and
+/// The kinds with a tab: the external community catalog and Modrinth's resource packs. Modrinth's mods and
 /// data packs aren't usable yet; the Modpacks tab shows while the sidebar has it open.
 const SHOWN: [PackKind; 3] = [PackKind::Mod, PackKind::ResourcePack, PackKind::Shader];
 /// Java mods checked at once.
@@ -934,7 +934,7 @@ impl Launcher {
         let java = self.mods.java_for(self.mods.kind).is_some();
         let source_note = (source_for(self.mods.kind) == SourceId::Modrinth && !java)
             .then(|| div().flex().child(self.mods_source_switch(cx)));
-        // The registry lists only what was supported by NIROVA: no "everything", no Modrinth filters.
+        // The external catalog lists its own supported projects: no "everything" or Modrinth filters.
         let registry = self.mods.source == SourceId::Horizon && !java;
         let filters = (!registry).then(|| self.mods_filters(cx));
         let controls = div()
@@ -1559,7 +1559,7 @@ impl Launcher {
                     &t,
                 );
             } else if m.source == SourceId::Horizon {
-                tr("Nothing in NIROVA's registry matches yet.")
+                tr("Nothing in the external catalog matches yet.")
             } else if m.everything {
                 tr("Nothing found.")
             } else {
@@ -1700,7 +1700,7 @@ impl Launcher {
     }
 }
 
-/// Where a kind's tab searches first: NIROVA's registry, but Modrinth for resource packs and
+/// Where a kind's tab searches first: the external catalog, but Modrinth for resource packs and
 /// modpacks.
 fn source_for(kind: PackKind) -> SourceId {
     match kind {
@@ -1710,7 +1710,7 @@ fn source_for(kind: PackKind) -> SourceId {
 }
 
 impl Launcher {
-    /// The source switch: Modrinth or NIROVA's registry, CurseForge shown as coming soon and not
+    /// The source switch: Modrinth or the external catalog, CurseForge shown as coming soon and not
     /// clickable, like the Microsoft account's "Coming soon".
     fn mods_source_switch(&self, cx: &mut Context<Self>) -> Stateful<Div> {
         let this = cx.entity().downgrade();
