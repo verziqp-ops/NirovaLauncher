@@ -58,7 +58,7 @@ fn ping_row(t: &Theme) -> Div {
         .gap(px(16.))
         .py(px(10.))
         .border_b_1()
-        .border_color(t.rule)
+        .pixel_border(t.rule)
         .child(
             div()
                 .flex()
@@ -98,8 +98,8 @@ fn json_view(view: &(String, String), t: &Theme, scroll: &Scrollbar) -> Div {
                     .max_h(px(260.))
                     .overflow_y_scroll()
                     .p(px(16.))
-                    .rounded(px(theme::RADIUS_PLATE))
-                    .bg(t.plate)
+                    .rounded(px(0.))
+                    .pixel_bg(t.plate)
                     .font_family(theme::MONO)
                     .text_size(px(theme::CAPTION.px))
                     .line_height(px(18.))
@@ -153,7 +153,7 @@ impl Launcher {
                 .gap(px(16.))
                 .py(px(10.))
                 .border_b_1()
-                .border_color(t.rule)
+                .pixel_border(t.rule)
                 .child(
                     div()
                         .flex()
@@ -198,7 +198,7 @@ impl Launcher {
                     .flex()
                     .flex_col()
                     .border_t_1()
-                    .border_color(t.rule)
+                    .pixel_border(t.rule)
                     .children(rows)
                     .child(ping_row(&t)),
             )
@@ -248,7 +248,7 @@ impl Launcher {
             .max_h_full()
             .bg(t.page)
             .border_1()
-            .border_color(t.rule)
+            .pixel_border(t.rule)
             .child(self.collection.body_scroll.wrap(body, &t))
             .child(answers);
         div()

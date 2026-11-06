@@ -287,8 +287,8 @@ impl Launcher {
             .overflow_y_scroll()
             .p(px(10.))
             .border_2()
-            .border_color(t.outline)
-            .bg(t.well)
+            .pixel_bg(t.well)
+            .pixel_border(t.outline)
             .font_family(theme::MONO)
             .text_size(px(12.))
             .children(lines.into_iter().skip(shown).map(|line| {

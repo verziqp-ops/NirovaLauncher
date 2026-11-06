@@ -278,13 +278,13 @@ impl Launcher {
             .items_center()
             .justify_center()
             .size(px(side))
-            .rounded(px(night::RADIUS_CONTROL))
+            .rounded(px(0.))
             .overflow_hidden();
         match (remote, jar) {
             (Some(path), _) => tile.child(gpui::img(path).size(px(side))),
             (None, Some(image)) => tile.child(gpui::img(image).size(px(side))),
             (None, None) => tile
-                .bg(alpha(n.card_hi, n.card_hi_alpha))
+                .pixel_bg(alpha(n.card_hi, n.card_hi_alpha))
                 .child(blocks::icon("box", side * 0.5, c(n.muted))),
         }
     }
@@ -381,7 +381,7 @@ impl Launcher {
         let rule = |row: AnyElement| {
             div()
                 .border_t_1()
-                .border_color(alpha(n.stroke, n.rule_alpha))
+                .pixel_border(alpha(n.stroke, n.rule_alpha))
                 .child(row)
         };
         let body = if !m.fresh {
@@ -482,10 +482,10 @@ impl Launcher {
                 .items_center()
                 .h(px(24.))
                 .px(px(10.))
-                .rounded(px(night::RADIUS_CONTROL))
-                .bg(alpha(n.warn, 0.16))
+                .rounded(px(0.))
+                .pixel_bg(alpha(n.warn, 0.16))
                 .cursor_pointer()
-                .hover(move |s| s.bg(alpha(n.warn, 0.26)))
+                .hover(move |s| s.opacity(0.9))
                 .child(
                     shell::text(night::CAPTION, c(n.warn))
                         .font_weight(FontWeight::SEMIBOLD)

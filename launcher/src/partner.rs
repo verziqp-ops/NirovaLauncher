@@ -3,6 +3,7 @@
 //! small to read. The pictures are in the binary, never fetched; a click opens Sculk's page in the
 //! browser. A "Partner" label above each says it is an ad. After `SEEN_BEFORE_HIDE` seconds on screen
 //! a "Hide" appears on either, and hiding one hides both for good.
+use crate::plate::PixelSurface;
 use crate::theme::Theme;
 use gpui::{
     div, img, prelude::*, px, rgb, ClickEvent, Div, FontWeight, HighlightStyle, Image, ImageFormat,
@@ -142,8 +143,8 @@ fn code_chip(size: f32, height: f32) -> Div {
         .px(px(10.))
         .border_1()
         .border_dashed()
-        .border_color(rgba(CYAN, 0.7))
-        .rounded(px(6.))
+        .pixel_border(rgba(CYAN, 0.7))
+        .rounded(px(0.))
         .font_family(crate::theme::MONO)
         .text_size(px(size))
         .whitespace_nowrap()
@@ -183,11 +184,11 @@ pub fn card(id: &'static str, width: f32, compact: bool, t: &Theme) -> Stateful<
         .flex()
         .flex_none()
         .w(px(width))
-        .bg(rgb(CARD))
+        .pixel_bg(rgb(CARD))
         .border_1()
-        .border_color(rgba(CYAN, 0.22))
-        .rounded(px(10.))
-        .group_hover(id, |s| s.top(px(-2.)).border_color(rgba(CYAN, 0.5)));
+        .pixel_border(rgba(CYAN, 0.22))
+        .rounded(px(0.))
+        .group_hover(id, |s| s.top(px(-2.)));
     let logo = |height: f32| {
         img(LOGO.clone())
             .flex_none()
@@ -243,9 +244,9 @@ pub fn card(id: &'static str, width: f32, compact: bool, t: &Theme) -> Stateful<
             .items_center()
             .justify_center()
             .h(px(36.))
-            .rounded(px(8.))
-            .bg(rgb(CYAN))
-            .group_hover(id, |s| s.bg(rgb(CYAN_HOVER)))
+            .rounded(px(0.))
+            .pixel_bg(rgb(CYAN))
+            .group_hover(id, |s| s.opacity(0.9))
             .text_color(rgb(ON_CYAN))
             .text_size(px(14.))
             .font_weight(FontWeight::SEMIBOLD)

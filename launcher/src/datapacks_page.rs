@@ -95,7 +95,7 @@ impl Launcher {
             .border_2()
             .mx(px(-4.))
             .p(px(2.))
-            .border_color(gpui::transparent_black())
+            .pixel_border(gpui::transparent_black())
             .drag_over::<ExternalPaths>(move |s, _, _, _| s.border_color(t.accent))
             .on_drop(cx.listener(move |this, paths: &ExternalPaths, _, cx| {
                 this.add_world_packs(path.clone(), paths.paths().to_vec());

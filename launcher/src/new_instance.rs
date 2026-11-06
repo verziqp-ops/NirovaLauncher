@@ -98,8 +98,7 @@ fn imported_versions() -> Vec<String> {
             let launchable = json["mainClass"].as_str().is_some()
                 || json["minecraftArguments"].as_str().is_some()
                 || json["inheritsFrom"].as_str().is_some();
-            (launchable && backend::local_java_version_ready(&root, &id))
-                .then_some(id)
+            (launchable && backend::local_java_version_ready(&root, &id)).then_some(id)
         })
         .collect::<Vec<_>>();
     found.sort_by(|a, b| b.cmp(a));
@@ -185,8 +184,7 @@ impl Launcher {
         if let Some(id) = selected {
             self.install_java_version_id(id, cx);
         } else {
-            self.instances.java_install_error =
-                Some("Выберите версию Minecraft из списка.".into());
+            self.instances.java_install_error = Some("Выберите версию Minecraft из списка.".into());
         }
     }
 
@@ -250,11 +248,7 @@ impl Launcher {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
         div().flex().gap(px(4.)).children(
-            [
-                (NewKind::Horizon, "NIROVA"),
-                (NewKind::Vanilla, "Vanilla"),
-            ]
-            .map(|(kind, label)| {
+            [(NewKind::Horizon, "NIROVA"), (NewKind::Vanilla, "Vanilla")].map(|(kind, label)| {
                 shell::tab(
                     format!("new-kind-{label}"),
                     tr(label),
@@ -350,9 +344,9 @@ impl Launcher {
                         .h(px(6. * 32. + 8.))
                         .p(px(4.))
                         .overflow_y_scroll()
-                        .rounded(px(night::RADIUS_CONTROL))
+                        .rounded(px(0.))
                         .border_1()
-                        .border_color(alpha(n.stroke, n.stroke_alpha))
+                        .pixel_border(alpha(n.stroke, n.stroke_alpha))
                         .children(rows)
                         .into_any_element()
                 }
@@ -396,7 +390,9 @@ impl Launcher {
                     .h(px(32.))
                     .px(px(12.))
                     .child(shell::text(night::UI, c(n.ink)).child(id))
-                    .child(shell::text(night::CAPTION, c(n.muted)).child(tr("Installed").to_string()))
+                    .child(
+                        shell::text(night::CAPTION, c(n.muted)).child(tr("Installed").to_string()),
+                    )
                     .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                         this.change(|j| j.version = Some(picked.clone()));
                         cx.notify();
@@ -404,21 +400,19 @@ impl Launcher {
             })
             .collect();
         if !imported_rows.is_empty() {
-            rows = rows
-                .child(heading("Installed in .minecraft"))
-                .child(
-                    div()
-                        .id("imported-mc-versions")
-                        .flex()
-                        .flex_col()
-                        .h(px(6. * 32. + 8.))
-                        .p(px(4.))
-                        .overflow_y_scroll()
-                        .rounded(px(night::RADIUS_CONTROL))
-                        .border_1()
-                        .border_color(alpha(n.stroke, n.stroke_alpha))
-                        .children(imported_rows),
-                );
+            rows = rows.child(heading("Installed in .minecraft")).child(
+                div()
+                    .id("imported-mc-versions")
+                    .flex()
+                    .flex_col()
+                    .h(px(6. * 32. + 8.))
+                    .p(px(4.))
+                    .overflow_y_scroll()
+                    .rounded(px(0.))
+                    .border_1()
+                    .pixel_border(alpha(n.stroke, n.stroke_alpha))
+                    .children(imported_rows),
+            );
         }
         if choice.kind == NewKind::Modded {
             let scale = self.scale;
@@ -486,15 +480,12 @@ impl Launcher {
         };
         rows = rows.child(div().flex().flex_col().gap(px(8.)).child(install_button));
         if let Some(version) = &self.instances.java_installed {
-            rows = rows.child(
-                shell::text(night::CAPTION, c(n.muted))
-                    .child(format!("Minecraft {version} скачан. Можно создать инстанс.")),
-            );
+            rows = rows.child(shell::text(night::CAPTION, c(n.muted)).child(format!(
+                "Minecraft {version} скачан. Можно создать инстанс."
+            )));
         }
         if let Some(error) = &self.instances.java_install_error {
-            rows = rows.child(
-                shell::text(night::UI, c(n.danger)).child(error.clone()),
-            );
+            rows = rows.child(shell::text(night::UI, c(n.danger)).child(error.clone()));
         }
         rows.child(shell::text(night::CAPTION, c(n.muted)).child(
             "Скачать версию можно прямо здесь. Гостевой профиль запускает одиночную игру и только серверы с поддержкой offline-mode; серверы с проверкой Microsoft требуют лицензию."

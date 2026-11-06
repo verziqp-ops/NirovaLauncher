@@ -26,11 +26,10 @@ impl Launcher {
                 .h(px(theme::CONTROL))
                 .px(px(14.))
                 .border_2()
-                .border_color(t.outline)
-                .bg(t.button)
-                .children(blocks::edges(t.button_bevel, t.lip, theme::LIP))
+                .pixel_bg(t.button)
+                .pixel_border(t.outline)
                 .cursor_pointer()
-                .hover(move |s| s.bg(t.raised))
+                .hover(move |s| s.opacity(0.9))
                 .child(
                     div()
                         .flex_1()
@@ -55,8 +54,8 @@ impl Launcher {
                 .w(px(220.))
                 .p(px(6.))
                 .border_2()
-                .border_color(t.outline)
-                .bg(t.surface)
+                .pixel_bg(t.surface)
+                .pixel_border(t.outline)
                 .flex()
                 .flex_col()
                 .occlude();
@@ -72,16 +71,16 @@ impl Launcher {
                         .gap(px(8.))
                         .h(px(30.))
                         .px(px(10.))
-                        .rounded(px(theme::RADIUS))
+                        .rounded(px(0.))
                         .cursor_pointer()
-                        .hover(move |s| s.bg(t.plate_soft))
+                        .hover(move |s| s.opacity(0.9))
                         .child(
                             text(theme::LABEL)
                                 .text_color(t.ink)
                                 .child(choice_name(choice)),
                         )
                         .when(chosen, |d| {
-                            d.child(div().size(px(6.)).rounded_full().bg(t.accent))
+                            d.child(div().size(px(6.)).rounded(px(0.)).bg(t.accent))
                         })
                         .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                             this.settings.language = choice;

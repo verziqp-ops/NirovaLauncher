@@ -1,6 +1,7 @@
 //! The launcher's frame in the night look (docs/design-system.md, "Night"): the sidebar's plate
 //! and rows, and the top bar's tabs, icon buttons and account chip. The sky shows between them;
 //! only the sidebar and the selected or hovered parts are plates.
+use crate::plate::PixelSurface;
 use crate::plate::{alpha, cut};
 use crate::theme::{self, night, Step, Theme};
 use crate::{hover_fade, keyboard, track_hover};
@@ -30,9 +31,9 @@ pub fn text(step: Step, color: Hsla) -> Div {
 pub fn sidebar_plate(t: &Theme) -> Div {
     let n = t.night;
     div()
-        .bg(alpha(n.card, n.card_alpha))
+        .pixel_bg(alpha(n.card, n.card_alpha))
         .border_r_1()
-        .border_color(alpha(n.stroke, n.stroke_alpha))
+        .pixel_border(alpha(n.stroke, n.stroke_alpha))
 }
 
 /// A plate behind a selected row or tab: `card_hi`, its corners cut in `steps` pixel steps.
@@ -269,7 +270,7 @@ pub fn action(id: impl Into<SharedString>, kind: Action, t: &Theme) -> Stateful<
         .text_size(px(night::UI.px))
         .cursor_pointer();
     let fill = |d: Div| d.absolute().top_0().left_0().size_full();
-    let round = move || fill(div()).rounded(px(theme::RADIUS));
+    let stepped = move || fill(cut(night::PIXEL_CORNER, 1, Some(alpha(n.ink, 1.)), None));
     let d = match kind {
         Action::Main => d
             .h(px(night::PLAY))
@@ -297,20 +298,18 @@ pub fn action(id: impl Into<SharedString>, kind: Action, t: &Theme) -> Stateful<
             )),
         Action::Raised => d
             .h(px(theme::CONTROL))
-            .rounded(px(theme::RADIUS))
-            .bg(alpha(n.card_hi, n.card_hi_alpha))
+            .rounded(px(0.))
+            .pixel_bg(alpha(n.card_hi, n.card_hi_alpha))
             .border_1()
-            .border_color(alpha(n.stroke, n.stroke_alpha))
+            .pixel_border(alpha(n.stroke, n.stroke_alpha))
             .text_color(c(n.ink))
-            .child(hover_fade(&id, round, move |d, a| {
-                d.bg(alpha(n.ink, 0.06 * a))
-            })),
+            .child(hover_fade(&id, stepped, |d, a| d.opacity(0.06 * a))),
         Action::Quiet => d
             .h(px(theme::CONTROL))
-            .rounded(px(theme::RADIUS))
+            .rounded(px(0.))
             .text_color(c(n.ink_soft))
-            .child(hover_fade(&id, round, move |d, a| {
-                d.bg(alpha(n.card_hi, n.card_hi_alpha * 0.5 * a))
+            .child(hover_fade(&id, stepped, move |d, a| {
+                d.opacity(n.card_hi_alpha * 0.5 * a)
             })),
     };
     keyboard(track_hover(d, id), t).active(|s| s.opacity(theme::PRESSED))

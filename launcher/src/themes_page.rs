@@ -88,7 +88,7 @@ impl Launcher {
                         div()
                             .p(px(4.))
                             .border_2()
-                            .border_color(if selected { t.accent } else { t.outline })
+                            .pixel_border(if selected { t.accent } else { t.outline })
                             .child(art),
                     )
                     .child(text(theme::UI).child(tr(label)))
@@ -186,9 +186,9 @@ impl Launcher {
                     &t,
                 )
                 .size(px(SWATCH))
-                .bg(face)
+                .pixel_bg(face)
                 .border_2()
-                .border_color(if chosen { t.ink } else { t.outline })
+                .pixel_border(if chosen { t.ink } else { t.outline })
                 .cursor_pointer()
                 .when(chosen, |d| {
                     d.flex()
@@ -241,7 +241,7 @@ impl Launcher {
             .w(px(STRIP))
             .h(px(SWATCH))
             .border_2()
-            .border_color(outline)
+            .pixel_border(outline)
             .cursor_pointer()
             .child(
                 canvas(

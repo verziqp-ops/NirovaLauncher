@@ -899,16 +899,16 @@ impl Launcher {
             .h(px(theme::FIELD))
             .px(px(12.))
             .overflow_hidden()
-            .rounded(px(theme::RADIUS))
+            .rounded(px(0.))
             .border_1()
-            .border_color(if invalid {
+            .pixel_bg(t.surface)
+            .pixel_border(if invalid {
                 t.danger
             } else if focused {
                 t.accent
             } else {
                 t.rule
             })
-            .bg(t.surface)
             .text_size(px(theme::UI.px))
             .cursor_text()
             .child(line_edit::content(
@@ -1058,7 +1058,7 @@ impl Launcher {
             .flex()
             .flex_col()
             .size(px(size))
-            .rounded(px(3.))
+            .rounded(px(0.))
             .overflow_hidden()
             .bg(self.theme.plate);
         if let Some(pixels) = face {
@@ -1296,12 +1296,12 @@ impl Launcher {
                 Fix::ShowLog => "Open the logs".into(),
             };
             n = n.child(
-                button("problem-fix", label, Kind::Secondary, &t)
-                    .bg(t.plate)
-                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                button("problem-fix", label, Kind::Secondary, &t).on_click(cx.listener(
+                    move |this, _: &ClickEvent, _, cx| {
                         this.fix(fix.clone(), cx);
                         cx.notify();
-                    })),
+                    },
+                )),
             );
         }
         n.child(
@@ -1357,7 +1357,7 @@ impl Launcher {
                     .flex()
                     .items_center()
                     .gap(px(10.))
-                    .child(div().size(px(8.)).rounded_full().bg(dot))
+                    .child(div().size(px(8.)).rounded(px(0.)).bg(dot))
                     .child(caps(phase_label(&status)).text_color(t.muted))
                     .when_some(status.uptime.filter(|_| running), |d, up| {
                         d.child(caps(format!("· up {}", uptime(up))).text_color(t.muted))
@@ -1478,7 +1478,7 @@ impl Launcher {
                     .items_center()
                     .gap(px(12.))
                     .p(px(16.))
-                    .child(div().flex_none().size(px(6.)).rounded_full().bg(t.success))
+                    .child(div().flex_none().size(px(6.)).rounded(px(0.)).bg(t.success))
                     .child(
                         div()
                             .flex_1()
@@ -1501,7 +1501,7 @@ impl Launcher {
                     .items_center()
                     .gap(px(12.))
                     .p(px(16.))
-                    .child(div().flex_none().size(px(6.)).rounded_full().bg(t.accent))
+                    .child(div().flex_none().size(px(6.)).rounded(px(0.)).bg(t.accent))
                     .child(
                         div()
                             .flex_1()
@@ -1513,8 +1513,7 @@ impl Launcher {
                             )),
                     )
                     .child({
-                        let b =
-                            button("restart-apply", "Restart now", Kind::Secondary, &t).bg(t.plate);
+                        let b = button("restart-apply", "Restart now", Kind::Secondary, &t);
                         if idle {
                             b.on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                                 this.servers.restart_needed.clear();
@@ -1645,7 +1644,6 @@ impl Launcher {
                             Kind::Secondary,
                             &t,
                         )
-                        .bg(t.plate)
                         .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                             copy_to_clipboard(cx, gpui::ClipboardItem::new_string(
                                 copy_text.clone(),
@@ -1729,7 +1727,7 @@ impl Launcher {
             )
             .flex_1()
             .border_0()
-            .bg(t.plate_soft)
+            .pixel_bg(t.plate_soft)
             .font_family(theme::MONO)
             .text_size(px(theme::CAPTION.px))
             .into_any_element()
@@ -1755,7 +1753,7 @@ impl Launcher {
                     .h(px(40.))
                     .px(px(20.))
                     .border_b_1()
-                    .border_color(t.rule)
+                    .pixel_border(t.rule)
                     .child(caps(tr("Console")).text_color(t.muted)),
             )
             .child(log)
@@ -1766,7 +1764,7 @@ impl Launcher {
                     .px(px(8.))
                     .py(px(4.))
                     .border_t_1()
-                    .border_color(t.rule)
+                    .pixel_border(t.rule)
                     .child(div().text_color(t.accent).ml(px(12.)).child("›"))
                     .child(input),
             )
@@ -1832,7 +1830,7 @@ impl Launcher {
                     .min_h(px(theme::ROW))
                     .py(px(8.))
                     .border_b_1()
-                    .border_color(t.rule)
+                    .pixel_border(t.rule)
                     .child(self.head(&p.uuid, 24.))
                     .child(
                         div()
@@ -1956,7 +1954,7 @@ impl Launcher {
                     .min_h(px(theme::ROW))
                     .py(px(8.))
                     .border_b_1()
-                    .border_color(t.rule)
+                    .pixel_border(t.rule)
                     .child(head)
                     .child(
                         div()
@@ -2067,7 +2065,7 @@ impl Launcher {
             .min_h(px(theme::ROW))
             .py(px(12.))
             .border_b_1()
-            .border_color(t.rule)
+            .pixel_border(t.rule)
             .child(
                 div()
                     .flex()
@@ -2233,7 +2231,7 @@ impl Launcher {
             .flex()
             .flex_col()
             .border_t_1()
-            .border_color(t.rule)
+            .pixel_border(t.rule)
             .child(self.setting_row(
                 "Message in the server list",
                 format!("What players see under the server's name (the MOTD). {later}"),
@@ -2536,7 +2534,7 @@ impl Launcher {
             .flex()
             .flex_col()
             .border_t_1()
-            .border_color(t.rule)
+            .pixel_border(t.rule)
             .child(self.setting_row("This server's NIROVA", about, control.into_any_element()));
         if self.servers.setting("updates", "keep").is_some() {
             rows = rows.child(self.setting_row(
@@ -2773,17 +2771,17 @@ impl Launcher {
                         .gap(px(10.))
                         .h(px(32.))
                         .px(px(10.))
-                        .rounded(px(theme::RADIUS))
+                        .rounded(px(0.))
                         .cursor_pointer()
-                        .when(chosen, |d| d.bg(t.plate_soft))
-                        .hover(move |s| s.bg(t.plate_soft))
+                        .when(chosen, |d| d.pixel_bg(t.plate_soft))
+                        .hover(move |s| s.opacity(0.9))
                         .child(
                             div()
                                 .size(px(12.))
-                                .rounded_full()
+                                .rounded(px(0.))
                                 .border_1()
-                                .border_color(if chosen { t.accent } else { t.muted })
-                                .when(chosen, |d| d.bg(t.accent)),
+                                .pixel_border(if chosen { t.accent } else { t.muted })
+                                .when(chosen, |d| d.pixel_bg(t.accent)),
                         )
                         .child(text(theme::UI).text_color(t.ink).child(name))
                         .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
@@ -2854,10 +2852,10 @@ impl Launcher {
                 .id(id)
                 .flex_none()
                 .size(px(18.))
-                .rounded(px(4.))
+                .rounded(px(0.))
                 .border_1()
-                .border_color(if on { t.accent } else { t.muted })
-                .bg(if on { t.accent } else { t.surface })
+                .pixel_bg(if on { t.accent } else { t.surface })
+                .pixel_border(if on { t.accent } else { t.muted })
                 .flex()
                 .items_center()
                 .justify_center()
@@ -3027,7 +3025,7 @@ impl Launcher {
             .max_h_full()
             .bg(t.page)
             .border_1()
-            .border_color(t.rule)
+            .pixel_border(t.rule)
             .child(self.servers.create_scroll.wrap(body, &t))
             .child(foot);
         Some(

@@ -156,7 +156,7 @@ impl Launcher {
                 .justify_center()
                 .size(px(size))
                 .border_2()
-                .border_color(t.outline)
+                .pixel_border(t.outline)
         };
         match &instance.icon {
             Some(Icon::Colour(hex)) => {
@@ -394,7 +394,11 @@ impl Launcher {
     pub(super) fn instance_dialog(&mut self, cx: &mut Context<Self>) -> Option<Stateful<Div>> {
         // A new Java instance opens with Vanilla selected, so fetch Mojang's version manifest
         // immediately instead of hiding the version selector behind a second tab click.
-        if self.instances.dialog.as_ref().is_some_and(|d| d.editing.is_none() && d.java.kind != new_instance::NewKind::Horizon)
+        if self
+            .instances
+            .dialog
+            .as_ref()
+            .is_some_and(|d| d.editing.is_none() && d.java.kind != new_instance::NewKind::Horizon)
             && matches!(self.instances.versions, new_instance::VersionList::NotAsked)
         {
             self.pick_kind(new_instance::NewKind::Vanilla, cx);
@@ -501,7 +505,7 @@ impl Launcher {
                 .justify_center()
                 .size(px(40.))
                 .border_2()
-                .border_color(if chosen { t.accent } else { t.rule })
+                .pixel_border(if chosen { t.accent } else { t.rule })
                 .cursor_pointer()
                 .hover(move |s| s.border_color(t.outline))
         };
@@ -549,7 +553,7 @@ impl Launcher {
             let chosen = !pictured && icon == Some(Icon::Texture(name.into()));
             tiles.push(
                 tile(format!("instance-icon-{name}"), chosen)
-                    .bg(t.well)
+                    .pixel_bg(t.well)
                     .child(gpui::img(image).size(px(28.)))
                     .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                         if let Some(d) = &mut this.instances.dialog {
@@ -638,7 +642,7 @@ impl Launcher {
             .px(px(28.))
             .py(px(16.))
             .border_t_1()
-            .border_color(plate::alpha(n.stroke, n.rule_alpha))
+            .pixel_border(plate::alpha(n.stroke, n.rule_alpha))
             .items_center()
             .children(import);
         let foot = if busy {
@@ -681,7 +685,7 @@ impl Launcher {
                 .py(px(24.))
                 // A Java kind's list can make it taller than the window.
                 .overflow_y_scroll()
-                .bg(plate::alpha(n.page, 0.8))
+                .pixel_bg(plate::alpha(n.page, 0.8))
                 .on_scroll(|_, _, cx| cx.stop_propagation())
                 .occlude()
                 .child(card),

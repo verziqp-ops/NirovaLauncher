@@ -1,4 +1,5 @@
 //! Release notes: pulldown-cmark events into gpui elements.
+use crate::plate::PixelSurface;
 use crate::theme::Theme;
 use gpui::{
     div, prelude::*, px, AnyElement, FontStyle, FontWeight, HighlightStyle, SharedString,
@@ -197,8 +198,8 @@ pub fn render(source: &str, t: &Theme) -> AnyElement {
                 .into_any_element(),
             Block::Code(code) => div()
                 .p(px(16.))
-                .rounded(px(crate::theme::RADIUS_PLATE))
-                .bg(t.plate_soft)
+                .rounded(px(0.))
+                .pixel_bg(t.plate_soft)
                 .font_family(crate::theme::MONO)
                 .text_size(px(12.))
                 .line_height(px(18.))
@@ -212,14 +213,14 @@ pub fn render(source: &str, t: &Theme) -> AnyElement {
                     .flex_col()
                     .my(px(4.))
                     .border_t_1()
-                    .border_color(t.rule);
+                    .pixel_border(t.rule);
                 for (i, row) in rows.into_iter().enumerate() {
                     let mut line = div()
                         .flex()
                         .gap(px(16.))
                         .py(px(8.))
                         .border_b_1()
-                        .border_color(t.rule);
+                        .pixel_border(t.rule);
                     let columns = row.len();
                     for (j, (text, spans)) in row.into_iter().enumerate() {
                         // Two-column tables keep a narrow first column; wider ones share the width.

@@ -817,8 +817,8 @@ impl Launcher {
             .px(px(12.))
             .overflow_hidden()
             .border_2()
-            .border_color(if focused { t.accent } else { t.outline })
-            .bg(t.well)
+            .pixel_bg(t.well)
+            .pixel_border(if focused { t.accent } else { t.outline })
             .text_size(px(theme::UI.px))
             .cursor_text()
             .child(blocks::icon("search", 18., t.muted))
@@ -880,7 +880,10 @@ impl Launcher {
         // versions downloaded from Mojang are separate JVM runtimes, not Rust ports.
         // Preserve existing Fabric/Quilt folders, but never install Rust mods into a
         // selected Java instance or offer new Java mods as if Rust could load them.
-        if self.selected_instance().is_some_and(|instance| instance.java.is_some()) {
+        if self
+            .selected_instance()
+            .is_some_and(|instance| instance.java.is_some())
+        {
             return div()
                 .flex()
                 .flex_col()

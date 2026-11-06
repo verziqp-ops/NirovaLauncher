@@ -265,7 +265,6 @@ impl Launcher {
             kind,
             &self.theme,
         )
-        .bg(self.theme.plate)
         .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
             copy_to_clipboard(cx, gpui::ClipboardItem::new_string(text.clone()));
             this.internet.copied = Some((text.clone(), Instant::now()));
@@ -301,22 +300,21 @@ impl Launcher {
                             .gap(px(8.))
                             .child(
                                 button("ts-install", "Install Tailscale", Kind::Secondary, &t)
-                                    .bg(t.plate)
                                     .on_click(|_, _, cx| cx.open_url(tailscale::install_url())),
                             )
                             .child(check),
                     );
             }
             Some(State::Off(why)) => {
-                let open = button("ts-open", "Open Tailscale", Kind::Secondary, &t)
-                    .bg(t.plate)
-                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                let open = button("ts-open", "Open Tailscale", Kind::Secondary, &t).on_click(
+                    cx.listener(|this, _: &ClickEvent, _, cx| {
                         if let Err(e) = tailscale::open_app() {
                             this.internet.message = Some(Err(e));
                         }
                         this.internet.read = None;
                         cx.notify();
-                    }));
+                    }),
+                );
                 panel = panel
                     .child(text(theme::UI).text_color(t.ink).child(tr(
                         "Tailscale is installed but not running. Open it and switch it on.",
@@ -327,7 +325,6 @@ impl Launcher {
             }
             Some(State::SignedOut { auth_url }) => {
                 let sign_in = button("ts-login", "Sign in to Tailscale", Kind::Secondary, &t)
-                    .bg(t.plate)
                     .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                         match &auth_url {
                             Some(url) => cx.open_url(url),
@@ -391,7 +388,7 @@ impl Launcher {
         panel = panel.child(
             div()
                 .border_t_1()
-                .border_color(t.rule)
+                .pixel_border(t.rule)
                 .pt(px(12.))
                 .flex()
                 .flex_col()
@@ -439,12 +436,12 @@ impl Launcher {
                 "https://login.tailscale.com/admin/machines",
             );
             if self.internet.asking_token {
-                let save = button("ts-token-save", "Save", Kind::Secondary, &t)
-                    .bg(t.plate)
-                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                let save = button("ts-token-save", "Save", Kind::Secondary, &t).on_click(
+                    cx.listener(|this, _: &ClickEvent, _, cx| {
                         this.save_token();
                         cx.notify();
-                    }));
+                    }),
+                );
                 d = d
                     .child(
                         div()
@@ -475,7 +472,7 @@ impl Launcher {
 
         // Invite.
         let busy = self.internet.busy;
-        let invite = button("ts-invite", "Make an invitation", Kind::Secondary, &t).bg(t.plate);
+        let invite = button("ts-invite", "Make an invitation", Kind::Secondary, &t);
         let invite = if busy {
             disabled(invite)
         } else {
@@ -619,8 +616,7 @@ impl Launcher {
                                     )),
                             );
                     } else {
-                        let b = button("ts-limit", "Limit them to Minecraft", Kind::Secondary, &t)
-                            .bg(t.plate);
+                        let b = button("ts-limit", "Limit them to Minecraft", Kind::Secondary, &t);
                         safety = safety.child(div().flex().child(if busy {
                             disabled(b)
                         } else {
@@ -639,7 +635,7 @@ impl Launcher {
                             .flex()
                             .items_center()
                             .gap(px(12.))
-                            .child(div().flex_none().size(px(6.)).rounded_full().bg(t.success))
+                            .child(div().flex_none().size(px(6.)).rounded(px(0.)).bg(t.success))
                             .child(
                                 text(theme::UI)
                                     .flex_1()
@@ -674,8 +670,8 @@ impl Launcher {
                         .child(
                             div()
                                 .p(px(12.))
-                                .rounded(px(theme::RADIUS))
-                                .bg(t.plate)
+                                .rounded(px(0.))
+                                .pixel_bg(t.plate)
                                 .font_family(theme::MONO)
                                 .text_size(px(theme::CAPTION.px))
                                 .text_color(t.ink_soft)

@@ -157,8 +157,8 @@ impl Launcher {
             .justify_center()
             .size(px(48.))
             .border_2()
-            .border_color(t.outline)
-            .bg(t.well);
+            .pixel_bg(t.well)
+            .pixel_border(t.outline);
         let picture = match icon {
             Some(image) => picture.child(gpui::img(image).size(px(44.))),
             None => picture.child(blocks::icon("server", 22., t.muted)),

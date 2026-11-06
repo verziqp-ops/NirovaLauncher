@@ -6,6 +6,7 @@
 //! (its squares, places and colours as they are there), never recoloured or reshaped; see
 //! THIRD_PARTY_NOTICES.md. Square corners, as Microsoft's own: not the launcher's cut plates.
 use super::*;
+use crate::plate::PixelSurface;
 
 /// The symbol's squares in its 21-pixel box: left, top, colour.
 const SQUARES: [(f32, f32, u32); 4] = [
@@ -46,8 +47,8 @@ pub(super) fn sign_in_button(id: &'static str, t: &Theme) -> Stateful<Div> {
         .gap(px(12.))
         .h(px(41.))
         .px(px(12.))
-        .bg(gpui::rgb(fill))
-        .when_some(border, |d, b| d.border_1().border_color(gpui::rgb(b)))
+        .pixel_bg(gpui::rgb(fill))
+        .when_some(border, |d, b| d.border_1().pixel_border(gpui::rgb(b)))
         .cursor_pointer()
         .hover(|s| s.opacity(0.9))
         .child(symbol())

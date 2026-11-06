@@ -154,8 +154,8 @@ impl Launcher {
                     .w(px(THUMB_W))
                     .h(px(THUMB_H))
                     .border_2()
-                    .border_color(t.outline)
-                    .bg(t.well)
+                    .pixel_bg(t.well)
+                    .pixel_border(t.outline)
                     .cursor_pointer()
                     .hover(|s| s.border_color(t.accent))
                     .child(
@@ -323,8 +323,8 @@ impl Launcher {
                         .flex_1()
                         .min_h_0()
                         .border_2()
-                        .border_color(t.outline)
-                        .bg(t.well)
+                        .pixel_bg(t.well)
+                        .pixel_border(t.outline)
                         .child(
                             gpui::img(shot.path.clone())
                                 .absolute()

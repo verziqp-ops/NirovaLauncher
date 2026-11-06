@@ -121,7 +121,7 @@ impl Launcher {
                         .px(px(16.))
                         .py(px(12.))
                         .border_1()
-                        .border_color(t.rule)
+                        .pixel_border(t.rule)
                         .bg(t.page)
                         .child(blocks::icon("download", 18., t.accent))
                         .child(div().flex_1().min_w_0().child(line))

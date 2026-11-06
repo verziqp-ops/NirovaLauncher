@@ -134,7 +134,7 @@ impl Launcher {
             .p(px(2.))
             .mx(px(-4.))
             .border_2()
-            .border_color(gpui::transparent_black())
+            .pixel_border(gpui::transparent_black())
             .drag_over::<ExternalPaths>(move |s, _, _, _| s.border_color(t.accent).bg(t.well))
             .on_drop(cx.listener(|this, paths: &ExternalPaths, _, cx| {
                 this.add_packs(paths.paths().to_vec());
@@ -197,8 +197,8 @@ impl Launcher {
             .justify_center()
             .size(px(40.))
             .border_2()
-            .border_color(t.outline)
-            .bg(t.well);
+            .pixel_bg(t.well)
+            .pixel_border(t.outline);
         let picture = match icon {
             Some(image) => picture.child(gpui::img(image).size(px(36.))),
             None => picture.child(blocks::icon(

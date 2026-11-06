@@ -331,7 +331,7 @@ impl Launcher {
                         .relative()
                         .my(px(8.))
                         .h(px(1.))
-                        .bg(alpha(n.stroke, n.rule_alpha)),
+                        .pixel_bg(alpha(n.stroke, n.rule_alpha)),
                 );
         }
         card.child(heading("Join a friend"))
@@ -353,14 +353,14 @@ impl Launcher {
             .h(px(theme::CONTROL))
             .px(px(12.))
             .overflow_hidden()
-            .rounded(px(night::RADIUS_CONTROL))
+            .rounded(px(0.))
             .border_1()
-            .border_color(if focused {
+            .pixel_bg(alpha(n.page, 0.6))
+            .pixel_border(if focused {
                 c(n.accent_hi)
             } else {
                 alpha(n.stroke, 2. * n.stroke_alpha).into()
             })
-            .bg(alpha(n.page, 0.6))
             .font_family(theme::MONO)
             .text_size(px(12.))
             .cursor_text()
@@ -537,8 +537,7 @@ impl Launcher {
 /// downloads from Mojang, a third of the way through: for screenshots, nothing runs.
 pub(super) fn getting_ready_preview() -> bool {
     static PREVIEW: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *PREVIEW
-        .get_or_init(|| std::env::var("NIROVA_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
+    *PREVIEW.get_or_init(|| std::env::var("NIROVA_LAUNCHER_PAGE").as_deref() == Ok("getting-ready"))
 }
 
 /// The download under way, files done of how many.

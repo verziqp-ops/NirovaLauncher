@@ -82,8 +82,8 @@ impl Launcher {
             .w(px(280.))
             .p(px(6.))
             .border_2()
-            .border_color(t.outline)
-            .bg(t.surface)
+            .pixel_bg(t.surface)
+            .pixel_border(t.outline)
             .flex()
             .flex_col()
             .occlude()
@@ -103,9 +103,9 @@ impl Launcher {
                     .gap(px(8.))
                     .h(px(46.))
                     .px(px(10.))
-                    .rounded(px(theme::RADIUS))
+                    .rounded(px(0.))
                     .cursor_pointer()
-                    .hover(move |s| s.bg(t.plate_soft))
+                    .hover(move |s| s.opacity(0.9))
                     .child(self.profile_heads.draw(
                         match &who {
                             Player::Microsoft(uuid) => Some(uuid),
@@ -125,7 +125,7 @@ impl Launcher {
                             .child(text(theme::CAPTION).text_color(t.muted).child(how)),
                     )
                     .when(chosen, |d| {
-                        d.child(div().size(px(6.)).rounded_full().bg(t.accent))
+                        d.child(div().size(px(6.)).rounded(px(0.)).bg(t.accent))
                     })
                     .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
                         this.play_as(who.clone());
@@ -150,11 +150,11 @@ impl Launcher {
                 .items_center()
                 .h(px(32.))
                 .px(px(10.))
-                .rounded(px(theme::RADIUS))
+                .rounded(px(0.))
                 .text_size(px(theme::LABEL.px))
                 .text_color(t.muted)
                 .cursor_pointer()
-                .hover(move |s| s.bg(t.plate_soft).text_color(t.ink))
+                .hover(move |s| s.opacity(0.9).text_color(t.ink))
                 .child(tr("Manage accounts"))
                 .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                     this.account_menu = false;

@@ -89,10 +89,10 @@ impl Launcher {
                 .relative()
                 .mt(px(10.))
                 .p(px(18.))
-                .rounded(px(theme::night::RADIUS_CONTROL))
-                .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
+                .rounded(px(0.))
+                .pixel_bg(plate::alpha(n.card_hi, n.card_hi_alpha))
                 .border_1()
-                .border_color(plate::alpha(n.stroke, n.stroke_alpha))
+                .pixel_border(plate::alpha(n.stroke, n.stroke_alpha))
         };
         body = match state {
             Shown::Code(uri, user_code) => {
@@ -220,7 +220,7 @@ impl Launcher {
             .justify_center()
             .px(px(32.))
             .py(px(24.))
-            .bg(plate::alpha(n.page, 0.8))
+            .pixel_bg(plate::alpha(n.page, 0.8))
             .on_scroll(|_, _, cx| cx.stop_propagation())
             .occlude()
             .child(card)

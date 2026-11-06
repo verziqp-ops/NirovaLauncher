@@ -205,8 +205,8 @@ impl Launcher {
             .px(px(12.))
             .overflow_hidden()
             .border_2()
-            .border_color(if focused { t.accent } else { t.outline })
-            .bg(t.well)
+            .pixel_bg(t.well)
+            .pixel_border(if focused { t.accent } else { t.outline })
             .text_size(px(theme::UI.px))
             .cursor_text()
             .child(line_edit::content(

@@ -10,20 +10,45 @@ pub fn alpha(c: u32, a: f32) -> Rgba {
     rgba(c << 8 | (a * 255.).round() as u32)
 }
 
-/// A softly rounded card at the chosen panel opacity, with a thin border.
-/// Pixel-stepped controls use `cut` separately.
+/// Shared stepped surfaces for every launcher button and card.
+pub trait PixelSurface: gpui::Styled + gpui::ParentElement + Sized {
+    fn pixel_bg(self, color: impl Into<gpui::Hsla>) -> Self {
+        self.child(surface_layer(Some(color.into()), None, 1))
+    }
+    fn pixel_border(self, color: impl Into<gpui::Hsla>) -> Self {
+        self.border_color(gpui::rgba(0))
+            .child(surface_layer(None, Some(color.into()), 1))
+    }
+}
+impl<T: gpui::Styled + gpui::ParentElement> PixelSurface for T {}
+
+pub fn surface_layer(fill: Option<gpui::Hsla>, stroke: Option<gpui::Hsla>, steps: usize) -> Div {
+    cut(
+        crate::theme::night::PIXEL_CORNER,
+        steps,
+        fill.map(Into::into),
+        stroke.map(|c| (c.into(), 1.)),
+    )
+    .absolute()
+    .top_0()
+    .left_0()
+    .size_full()
+}
+
+/// A card with the same stepped corners as the launcher controls.
 pub fn plate(n: &Night) -> Div {
-    div()
-        .relative()
-        .rounded(px(crate::theme::RADIUS_PLATE))
-        .bg(alpha(n.card, n.card_alpha))
-        .border_1()
-        .border_color(alpha(n.stroke, n.stroke_alpha))
+    cut(
+        crate::theme::night::PIXEL_CORNER,
+        1,
+        Some(alpha(n.card, n.card_alpha)),
+        Some((alpha(n.stroke, n.stroke_alpha), 1.)),
+    )
 }
 
 /// A box of any size whose corners are cut in `steps` steps of `step` px: `fill` inside, and a
 /// `stroke` of the given colour and width along the edge.
 pub fn cut(step: f32, steps: usize, fill: Option<Rgba>, stroke: Option<(Rgba, f32)>) -> Div {
+    let original_fill = fill;
     let fill = fill
         .into_iter()
         .flat_map(|c| fill_rects(step, steps).into_iter().map(move |r| (r, c)));
@@ -37,6 +62,13 @@ pub fn cut(step: f32, steps: usize, fill: Option<Rgba>, stroke: Option<(Rgba, f3
         canvas(
             |_, _, _| {},
             move |bounds, (), window, _| {
+                let minimum: f32 = bounds.size.width.min(bounds.size.height).into();
+                if minimum < step * steps as f32 * 2. + 1. {
+                    if let Some(color) = original_fill {
+                        window.paint_quad(gpui::fill(bounds, color));
+                    }
+                    return;
+                }
                 for (r, c) in quads {
                     window.paint_quad(gpui::fill(r.within(bounds), c));
                 }
@@ -153,6 +185,15 @@ fn stroke_rects(step: f32, steps: usize, w: f32) -> Vec<Rect> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stepped_surfaces_preserve_absolute_popup_position() {
+        let mut popup = div()
+            .absolute()
+            .pixel_bg(gpui::rgb(0x182432))
+            .pixel_border(gpui::rgb(0x7892a7));
+        assert_eq!(popup.style().position, Some(gpui::Position::Absolute));
+    }
 
     /// The pixels `rects` cover in a `w` × `h` box, counting overlaps.
     fn raster(rects: &[Rect], w: usize, h: usize) -> Vec<Vec<u8>> {

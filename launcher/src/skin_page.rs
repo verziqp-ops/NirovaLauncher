@@ -40,7 +40,10 @@ impl Launcher {
         let mut accounts = Accounts::load();
         // The name may have been forgotten while a file dialog was open: keep nothing for it.
         if accounts.find(&name).is_none()
-            && !accounts.offline.iter().any(|n| n.eq_ignore_ascii_case(&name))
+            && !accounts
+                .offline
+                .iter()
+                .any(|n| n.eq_ignore_ascii_case(&name))
         {
             return Ok(());
         }
@@ -84,7 +87,10 @@ impl Launcher {
         // The name may have been forgotten while the file dialog was open.
         let accounts = Accounts::load();
         if accounts.find(&name).is_none()
-            && !accounts.offline.iter().any(|n| n.eq_ignore_ascii_case(&name))
+            && !accounts
+                .offline
+                .iter()
+                .any(|n| n.eq_ignore_ascii_case(&name))
         {
             return;
         }
@@ -133,7 +139,11 @@ impl Launcher {
         let t = self.theme;
         let name = self.skin.as_ref()?.name.clone();
         if self.accounts.find(&name).is_none()
-            && !self.accounts.offline.iter().any(|n| n.eq_ignore_ascii_case(&name))
+            && !self
+                .accounts
+                .offline
+                .iter()
+                .any(|n| n.eq_ignore_ascii_case(&name))
         {
             self.skin = None;
             return None;
@@ -147,9 +157,9 @@ impl Launcher {
                 .justify_center()
                 .w(px(w + 24.))
                 .h(px(h + 24.))
-                .bg(t.well)
+                .pixel_bg(t.well)
                 .border_2()
-                .border_color(t.outline)
+                .pixel_border(t.outline)
                 .child(match image {
                     Some(i) => gpui::img(i).w(px(w)).h(px(h)).into_any_element(),
                     None => text(theme::CAPTION)

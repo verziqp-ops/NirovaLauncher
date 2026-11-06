@@ -85,9 +85,9 @@ impl Launcher {
         let code = |s: &str| {
             div()
                 .p(px(10.))
-                .bg(t.well)
+                .pixel_bg(t.well)
                 .border_2()
-                .border_color(t.outline)
+                .pixel_border(t.outline)
                 .font_family(theme::MONO)
                 .text_size(px(12.))
                 .line_height(px(18.))

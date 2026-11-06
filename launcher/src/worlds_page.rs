@@ -194,7 +194,7 @@ impl Launcher {
                 .flex_none()
                 .size(px(48.))
                 .border_2()
-                .border_color(t.outline)
+                .pixel_border(t.outline)
                 .child(gpui::img(icon.clone()).size(px(44.)))
                 .into_any_element(),
             None => div()
@@ -204,8 +204,8 @@ impl Launcher {
                 .justify_center()
                 .size(px(48.))
                 .border_2()
-                .border_color(t.outline)
-                .bg(t.well)
+                .pixel_bg(t.well)
+                .pixel_border(t.outline)
                 .child(blocks::icon("image", 22., t.muted))
                 .into_any_element(),
         };

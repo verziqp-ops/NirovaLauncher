@@ -56,6 +56,7 @@ mod titlebar;
 mod while_playing;
 mod worlds_page;
 
+use crate::plate::PixelSurface;
 use gpui::{
     actions, div, ease_out_quint, prelude::*, px, size, Animation, AnimationExt, AnyElement, App,
     Bounds, ClickEvent, Context, Div, ElementId, FocusHandle, FontWeight, Hsla, KeyBinding,
@@ -1660,17 +1661,13 @@ fn track_hover(el: Stateful<Div>, id: SharedString) -> Stateful<Div> {
 
 /// A layer under an element's content that fades `color` in while it is hovered. `bleed` lets
 /// it reach past the element on the left and right, as the hover plate of a list row does.
-fn hover_layer(id: &SharedString, color: Hsla, radius: f32, bleed: f32) -> AnyElement {
+fn hover_layer(id: &SharedString, color: Hsla, _radius: f32, bleed: f32) -> AnyElement {
     let layer = || {
-        div()
-            .absolute()
-            .top_0()
-            .bottom_0()
+        plate::surface_layer(Some(color), None, 1)
             .left(px(-bleed))
             .right(px(-bleed))
-            .rounded(px(radius))
     };
-    hover_fade(id, layer, move |d, a| d.bg(color.opacity(color.a * a)))
+    hover_fade(id, layer, |d, a| d.opacity(a))
 }
 
 /// The `layer` made while the element `id` (see [`track_hover`]) is hovered, eased in and out:
@@ -1743,10 +1740,10 @@ fn mark(size: f32, t: &Theme) -> Div {
         .relative()
         .flex_none()
         .size(px(size))
-        .rounded(px(7.))
-        .bg(t.plate)
+        .rounded(px(0.))
+        .pixel_bg(t.plate)
         .border_1()
-        .border_color(t.outline)
+        .pixel_border(t.outline)
         .flex()
         .items_center()
         .justify_center()
@@ -1820,26 +1817,19 @@ fn button(
         .text_size(px(15.))
         .font_weight(FontWeight::MEDIUM)
         .cursor_pointer()
-        .rounded(px(theme::RADIUS))
-        .overflow_hidden()
-        .child(hover_layer(&id, hover, 0., theme::RADIUS));
+        .rounded(px(0.))
+        .overflow_hidden();
     let base = match kind {
         Kind::Primary => base
-            .border_2()
-            .border_color(t.outline)
-            .children(blocks::edges(t.face_bevel, t.face_lip, theme::LIP))
-            .bg(t.face)
+            .child(plate::surface_layer(Some(t.face), Some(t.outline), 1))
             .text_color(t.on_face),
         Kind::Secondary => base
-            .border_2()
-            .border_color(t.outline)
-            .children(blocks::edges(t.button_bevel, t.lip, theme::LIP))
-            .bg(t.button)
+            .child(plate::surface_layer(Some(t.button), Some(t.outline), 1))
             .text_color(t.ink),
         Kind::Ghost => base.text_color(t.muted).hover(move |s| s.text_color(t.ink)),
     };
-    // The label sits on the block's face, above its lip; pressing pushes it down.
-    let base = base.child(
+    // Hover and content paint above the shared stepped background.
+    let base = base.child(hover_layer(&id, hover, 0., 0.)).child(
         div()
             .relative()
             .flex()
@@ -1922,24 +1912,15 @@ fn switch(id: impl Into<SharedString>, on: bool, t: &Theme) -> Stateful<Div> {
         .w(px(44.))
         .h(px(24.))
         .border_2()
-        .border_color(t.outline)
+        .pixel_bg(if on { t.face } else { t.well })
         .cursor_pointer()
-        .bg(if on { t.face } else { t.well })
+        .pixel_border(t.outline)
         .child(
             div()
                 .absolute()
                 .top(px(2.))
                 .size(px(16.))
-                .bg(knob)
-                .child(
-                    div()
-                        .absolute()
-                        .bottom_0()
-                        .left_0()
-                        .right_0()
-                        .h(px(2.))
-                        .bg(if on { t.face_lip } else { t.lip }),
-                )
+                .pixel_bg(knob)
                 .with_animation(
                     ElementId::named_usize(id, on as usize),
                     Animation::new(theme::MOVE).with_easing(ease_out_quint()),
@@ -1978,8 +1959,8 @@ fn segments<T: Copy + PartialEq + 'static>(
         .p(px(2.))
         .gap(px(2.))
         .border_2()
-        .border_color(t.outline)
-        .bg(t.well)
+        .pixel_bg(t.well)
+        .pixel_border(t.outline)
         .children(options.iter().map(|&(value, label)| {
             let active = current == value;
             let pick = on_pick.clone();
@@ -1994,13 +1975,7 @@ fn segments<T: Copy + PartialEq + 'static>(
                 .text_size(px(14.))
                 .font_weight(FontWeight::MEDIUM)
                 .cursor_pointer()
-                .when(active, |d| {
-                    d.bg(t.button).text_color(t.ink).children(blocks::edges(
-                        t.button_bevel,
-                        t.lip,
-                        3.,
-                    ))
-                })
+                .when(active, |d| d.pixel_bg(t.button).text_color(t.ink))
                 .when(!active, |d| {
                     d.text_color(t.muted).hover(move |s| s.text_color(t.ink))
                 })
@@ -2297,7 +2272,7 @@ impl Launcher {
                 .items_center()
                 .justify_center()
                 .size(px(28.))
-                .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
+                .pixel_bg(plate::alpha(n.card_hi, n.card_hi_alpha))
                 .child(blocks::icon("user", 16., shell::c(n.muted)))
                 .into_any_element(),
         };
@@ -2349,7 +2324,7 @@ impl Launcher {
             .pl(px(theme::PAGE_GUTTER - 14.))
             .pr(px(12.))
             .border_b_1()
-            .border_color(plate::alpha(n.stroke, n.rule_alpha))
+            .pixel_border(plate::alpha(n.stroke, n.rule_alpha))
             .child(
                 div()
                     .ml_auto()
@@ -2517,12 +2492,12 @@ impl Launcher {
                 .h(px(theme::night::PLAY))
                 .pl(px(14.))
                 .pr(px(12.))
-                .rounded(px(theme::RADIUS))
-                .bg(plate::alpha(n.card_hi, n.card_hi_alpha))
+                .rounded(px(0.))
+                .pixel_bg(plate::alpha(n.card_hi, n.card_hi_alpha))
                 .border_1()
-                .border_color(plate::alpha(n.stroke, n.stroke_alpha))
+                .pixel_border(plate::alpha(n.stroke, n.stroke_alpha))
                 .cursor_pointer()
-                .hover(move |s| s.border_color(plate::alpha(n.stroke, 3. * n.stroke_alpha)))
+                .hover(|s| s.opacity(0.9))
                 .child(
                     div()
                         .flex()
@@ -2550,10 +2525,10 @@ impl Launcher {
                 .left_0()
                 .w(px(300.))
                 .p(px(6.))
-                .rounded(px(theme::RADIUS))
+                .rounded(px(0.))
                 .border_1()
-                .border_color(plate::alpha(n.stroke, 2. * n.stroke_alpha))
-                .bg(t.surface)
+                .pixel_bg(t.surface)
+                .pixel_border(plate::alpha(n.stroke, 2. * n.stroke_alpha))
                 .flex()
                 .flex_col()
                 .on_mouse_down_out(cx.listener(|this, event: &MouseDownEvent, _, cx| {
@@ -2576,12 +2551,12 @@ impl Launcher {
                         .justify_between()
                         .h(px(32.))
                         .px(px(10.))
-                        .rounded(px(theme::RADIUS))
+                        .rounded(px(0.))
                         .font_family(theme::MONO)
                         .text_size(px(theme::CAPTION.px))
                         .text_color(t.ink)
                         .cursor_pointer()
-                        .hover(move |s| s.bg(t.plate_soft))
+                        .hover(move |s| s.opacity(0.9))
                         .child(tag.clone())
                         .child(
                             div()
@@ -2607,11 +2582,11 @@ impl Launcher {
                     .items_center()
                     .h(px(32.))
                     .px(px(10.))
-                    .rounded(px(theme::RADIUS))
+                    .rounded(px(0.))
                     .text_size(px(theme::LABEL.px))
                     .text_color(t.muted)
                     .cursor_pointer()
-                    .hover(move |s| s.bg(t.plate_soft).text_color(t.ink))
+                    .hover(move |s| s.opacity(0.9).text_color(t.ink))
                     .child(tr("Manage versions"))
                     .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
                         this.go(Page::Versions);
@@ -3002,7 +2977,6 @@ impl Launcher {
             actions = actions
                 .child(
                     button("crash-open", "Open report", Kind::Secondary, &t)
-                        .bg(t.plate)
                         .on_click(move |_, _, cx| cx.open_with_system(&open)),
                 )
                 .child(
@@ -3016,7 +2990,6 @@ impl Launcher {
                         Kind::Secondary,
                         &t,
                     )
-                    .bg(t.plate)
                     .on_click(cx.listener(
                         move |this, _: &ClickEvent, _, cx| {
                             if let Ok(text) = std::fs::read_to_string(&report) {
@@ -3031,13 +3004,11 @@ impl Launcher {
                 );
         }
         actions = actions.child(
-            button("crash-logs", "Open logs folder", Kind::Secondary, &t)
-                .bg(t.plate)
-                .on_click(|_, _, cx| {
-                    let dir = backend::logs_dir();
-                    let _ = std::fs::create_dir_all(&dir);
-                    cx.open_with_system(&dir);
-                }),
+            button("crash-logs", "Open logs folder", Kind::Secondary, &t).on_click(|_, _, cx| {
+                let dir = backend::logs_dir();
+                let _ = std::fs::create_dir_all(&dir);
+                cx.open_with_system(&dir);
+            }),
         );
         actions = actions.child(
             button("crash-dismiss", "Dismiss", Kind::Ghost, &t).on_click(cx.listener(
@@ -3092,7 +3063,7 @@ impl Launcher {
                     .flex_none()
                     .mt(px(11.))
                     .size(px(6.))
-                    .rounded(px(theme::RADIUS))
+                    .rounded(px(0.))
                     .bg(t.danger),
             )
             .child(body)
@@ -3414,7 +3385,7 @@ impl Launcher {
             .gap(px(6.))
             .mt(px(8.))
             .p(px(12.))
-            .bg(t.well)
+            .pixel_bg(t.well)
             .child(div().text_color(t.danger).child(tr("These mods will run with full access to your computer").to_string()))
             .child(tr("They can read, change or delete your files, and use your accounts and network, like any program you run. Build them only if you trust their authors: the Mods page names them.").to_string())
             .child(trf("Mods: {mods}", &[("mods", &list)]))
@@ -3461,7 +3432,7 @@ impl Launcher {
             .gap(px(6.))
             .mt(px(8.))
             .p(px(12.))
-            .bg(t.well)
+            .pixel_bg(t.well)
             .child(div().text_color(t.danger).child(tr("These mods were made for different NIROVA versions").to_string()))
             .child(list.to_owned())
             .child(tr("They often still work together. If the build fails, install versions made for the same Nightly.").to_string())
@@ -3504,8 +3475,8 @@ impl Launcher {
             .px(px(12.))
             .overflow_hidden()
             .border_2()
-            .border_color(if focused { t.accent } else { t.outline })
-            .bg(t.well)
+            .pixel_bg(t.well)
+            .pixel_border(if focused { t.accent } else { t.outline })
             .font_family(theme::MONO)
             .text_size(px(12.))
             .cursor_text()
@@ -3563,8 +3534,8 @@ impl Launcher {
             .px(px(12.))
             .overflow_hidden()
             .border_2()
-            .border_color(if focused { t.accent } else { t.outline })
-            .bg(t.well)
+            .pixel_bg(t.well)
+            .pixel_border(if focused { t.accent } else { t.outline })
             .font_family(theme::MONO)
             .text_size(px(12.))
             .cursor_text()
@@ -4006,10 +3977,9 @@ impl Launcher {
             .gap(px(10.))
             .py(px(14.))
             .px(px(16.))
-            .bg(t.panel)
+            .pixel_bg(t.panel)
             .border_2()
-            .border_color(t.outline)
-            .children(blocks::edges(t.bevel, t.lip, theme::BEVEL))
+            .pixel_border(t.outline)
             .child(
                 div()
                     .relative()
@@ -4094,9 +4064,9 @@ impl Launcher {
                     .gap(px(12.))
                     .px(px(12.))
                     .py(px(10.))
-                    .bg(t.panel)
+                    .pixel_bg(t.panel)
                     .border_1()
-                    .border_color(t.outline)
+                    .pixel_border(t.outline)
                     .child(
                         div()
                             .flex()
@@ -4214,9 +4184,9 @@ impl Launcher {
                     .gap(px(12.))
                     .px(px(12.))
                     .py(px(10.))
-                    .bg(t.panel)
+                    .pixel_bg(t.panel)
                     .border_1()
-                    .border_color(t.outline)
+                    .pixel_border(t.outline)
                     .child(
                         div()
                             .flex()
@@ -4428,10 +4398,9 @@ impl Launcher {
                     .py(px(14.))
                     .px(px(16.))
                     .mb(px(8.))
-                    .bg(t.panel)
+                    .pixel_bg(t.panel)
                     .border_2()
-                    .border_color(t.outline)
-                    .children(blocks::edges(t.bevel, t.lip, theme::BEVEL))
+                    .pixel_border(t.outline)
                     .child(hover_layer(&id, t.raised, 0., 0.))
                     .child(
                         div()
@@ -4504,12 +4473,10 @@ impl Launcher {
                         ))),
                 )
                 .child(
-                    button("sponsor", "Sponsor on GitHub", Kind::Secondary, &t)
-                        .bg(t.plate)
-                        .on_click({
-                            let url = self.links.sponsor.clone();
-                            move |_: &ClickEvent, _, cx| cx.open_url(&url)
-                        }),
+                    button("sponsor", "Sponsor on GitHub", Kind::Secondary, &t).on_click({
+                        let url = self.links.sponsor.clone();
+                        move |_: &ClickEvent, _, cx| cx.open_url(&url)
+                    }),
                 )
         });
         let page = div()
@@ -4561,10 +4528,9 @@ impl Launcher {
                     .gap(px(16.))
                     .p(px(20.))
                     .mb(px(10.))
-                    .bg(t.panel)
+                    .pixel_bg(t.panel)
                     .border_2()
-                    .border_color(t.outline)
-                    .children(blocks::edges(t.bevel, t.lip, theme::BEVEL))
+                    .pixel_border(t.outline)
                     .child(
                         div()
                             .flex()

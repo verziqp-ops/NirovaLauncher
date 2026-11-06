@@ -91,7 +91,7 @@ impl Heads {
             .flex_none()
             .size(px(size))
             .overflow_hidden()
-            .bg(t.well)
+            .pixel_bg(t.well)
             .flex()
             .items_center()
             .justify_center();

@@ -1,6 +1,7 @@
 //! The blocky look's parts (`docs/design-system.md`, "Blocks"): pixel type, pixel icons, panels
 //! with a dark outline, a light bevel on top and a darker lip below, sunk wells, badges, the
 //! inventory tabs, and the slots that hold icons downloaded at run time.
+use crate::plate::PixelSurface;
 use crate::theme::{self, Theme};
 use gpui::{
     div, img, prelude::*, px, svg, AnyElement, App, ClickEvent, Div, FontWeight, Hsla, ImageSource,
@@ -72,10 +73,10 @@ pub fn edges(top: Hsla, bottom: Hsla, lip: f32) -> [AnyElement; 2] {
 pub fn panel(t: &Theme) -> Div {
     div()
         .relative()
-        .bg(t.surface)
+        .pixel_bg(t.surface)
         .border_1()
-        .border_color(t.rule)
-        .rounded(px(theme::RADIUS_PLATE))
+        .pixel_border(t.rule)
+        .rounded(px(0.))
 }
 
 /// A small label in a block of its colour: "Runs", "Partly", a version.
@@ -90,8 +91,8 @@ pub fn badge(label: impl Into<SharedString>, color: Hsla, t: &Theme) -> Div {
         .gap(px(6.))
         .h(px(22.))
         .px(px(10.))
-        .bg(color.opacity(tint))
-        .rounded(px(theme::RADIUS))
+        .pixel_bg(color.opacity(tint))
+        .rounded(px(0.))
         .child(
             pixel(12., FontWeight::MEDIUM)
                 .text_color(color)
@@ -113,8 +114,8 @@ pub fn tabs<T: Copy + PartialEq + 'static>(
         .items_center()
         .gap(px(4.))
         .p(px(4.))
-        .bg(t.plate_soft)
-        .rounded(px(theme::RADIUS))
+        .pixel_bg(t.plate_soft)
+        .rounded(px(0.))
         .children(options.iter().map(|&(value, label, icon_name)| {
             let open = current == value;
             let pick = on_pick.clone();
@@ -126,16 +127,16 @@ pub fn tabs<T: Copy + PartialEq + 'static>(
                 .gap(px(8.))
                 .h(px(32.))
                 .px(px(12.))
-                .rounded(px(theme::RADIUS))
+                .rounded(px(0.))
                 .cursor_pointer()
-                .when(open, |d| d.bg(t.ink))
+                .when(open, |d| d.pixel_bg(t.ink))
                 .child(icon(icon_name, 16., if open { t.page } else { t.muted }))
                 .child(
                     pixel(14., FontWeight::MEDIUM)
                         .text_color(if open { t.page } else { t.ink_soft })
                         .child(crate::i18n::tr(label)),
                 )
-                .when(!open, |d| d.hover(move |s| s.bg(t.plate)))
+                .when(!open, |d| d.hover(move |s| s.opacity(0.9)))
                 .on_click(move |_: &ClickEvent, window, cx| pick(value, window, cx));
             crate::keyboard(tab, &t)
         }))
@@ -151,11 +152,11 @@ pub fn slot(source: Option<ImageSource>, name: &str, size: f32, t: &Theme) -> Di
         .justify_center()
         .size(px(size))
         .overflow_hidden()
-        .rounded(px(theme::RADIUS))
-        .bg(t.plate_soft);
+        .rounded(px(0.))
+        .pixel_bg(t.plate_soft);
     match source {
         Some(source) => frame.child(img(source).size(px(size - 4.)).object_fit(ObjectFit::Cover)),
-        None => frame.bg(t.plate).child(
+        None => frame.pixel_bg(t.plate).child(
             pixel((size * 0.42).round(), FontWeight::BOLD)
                 .text_color(t.muted)
                 .child(
