@@ -1,4 +1,4 @@
-//! The Mods page: search the external community catalog for native mods and shader packs, or
+//! The Mods page: search NIROVA's own catalog for native mods and shader packs, or
 //! Modrinth for resource packs (a Java instance's mods too), see where each comes
 //! from and how well it runs (a Java mod's jar is checked first; a NIROVA mod says whether it is
 //! signed and what it may do), install it with its checksum checked, turn NIROVA mods on and
@@ -7,7 +7,7 @@
 use super::line_edit::{self, Key, LineEdit};
 use super::*;
 use horizon_launcher::browser::{
-    self, horizon, installed, java, java_instance, Kind as PackKind, Project, Query, SourceId,
+    self, nirova, installed, java, java_instance, Kind as PackKind, Project, Query, SourceId,
     Support,
 };
 use horizon_launcher::modpacks;
@@ -25,7 +25,7 @@ const KINDS: [(PackKind, &str, &str); 5] = [
     (PackKind::Shader, "Shader packs", "zap"),
     (PackKind::DataPack, "Data packs", "notes"),
 ];
-/// The kinds with a tab: the external community catalog and Modrinth's resource packs. Modrinth's mods and
+/// The kinds with a tab: the NIROVA catalog and Modrinth's resource packs. Modrinth's mods and
 /// data packs aren't usable yet; the Modpacks tab shows while the sidebar has it open.
 const SHOWN: [PackKind; 3] = [PackKind::Mod, PackKind::ResourcePack, PackKind::Shader];
 /// Java mods checked at once.
@@ -33,7 +33,7 @@ const CHECKING: usize = 2;
 /// The sources to pick from on the Resource packs and Modpacks tabs; CurseForge is shown beside them as coming soon.
 const SOURCES: [(SourceId, &str); 2] = [
     (SourceId::Modrinth, "Modrinth"),
-    (SourceId::Horizon, "External Catalog"),
+    (SourceId::Nirova, "NIROVA Catalog"),
 ];
 const PAGE: usize = 20;
 
@@ -45,9 +45,9 @@ pub(super) enum Event {
     Updates(HashMap<(SourceId, String), String>),
     /// A Java mod's check: its jar read, or why it couldn't be.
     Checked((SourceId, String), Result<Box<Check>, String>),
-    /// What an external catalog project says before install: signed or not, what it may do.
+    /// What an NIROVA catalog project says before install: signed or not, what it may do.
     About(HashMap<String, Vec<String>>),
-    /// Registry files taken down that the launcher turned off.
+    /// Catalog files taken down that the launcher turned off.
     TakenDown(Vec<String>),
     /// A project page's part, an image or a filter's values (`mods_project`).
     Loaded(super::mods_project::Loaded),
@@ -102,7 +102,7 @@ pub(super) struct Mods {
     native_files: std::cell::RefCell<Option<(String, Vec<native_status::Installed>)>>,
     /// Java mods' checks, by source and project.
     pub(super) checks: HashMap<(SourceId, String), Checking>,
-    /// NIROVA catalog projects' trust and capabilities, by id ([`horizon::trust_and_capabilities`]).
+    /// NIROVA catalog projects' trust and capabilities, by id ([`nirova::trust_and_capabilities`]).
     pub(super) about: HashMap<String, Vec<String>>,
     /// The project page, filters and images.
     pub(super) browse: super::mods_project::Browse,
@@ -246,7 +246,7 @@ fn count(n: u64) -> String {
     }
 }
 
-/// A registry project's rating: five pixel stars, the mean's nearest whole number of them lit, the
+/// A catalog project's rating: five pixel stars, the mean's nearest whole number of them lit, the
 /// mean and how many; None while the ratings aren't known.
 pub(super) fn stars(id: &str, t: &theme::Theme) -> Option<Div> {
     let row = div().flex().items_center().gap(px(2.));
@@ -441,7 +441,7 @@ impl Launcher {
         });
     }
 
-    /// Reads the registry's index again when something installed came from it, and turns off
+    /// Reads the NIROVA catalog index again when something installed came from it, and turns off
     /// what it took down since (`horizon::turn_off_revoked`).
     fn mods_taken_down(&mut self) {
         if !self
