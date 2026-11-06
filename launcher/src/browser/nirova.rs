@@ -8,15 +8,13 @@ use super::{
     download, installed, java, FileRef, Kind, Project, Query, Source, SourceId, Version, GAME,
 };
 use horizon_mods::index::{self, Index, Trust};
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-/// Where the registry publishes its index (GitHub Pages of verziqp-ops/NirovaLauncher).
+/// Where the NIROVA repository publishes its signed catalog index.
 pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/catalog/index.json";
-/// The registry's pages on the website, `<SITE>/<id>`.
+/// Project pages in the NIROVA repository, `<SITE>/<id>`.
 const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/catalog/projects";
 /// The report form of a project.
 const REPORT: &str = "https://github.com/verziqp-ops/NirovaLauncher/issues/new?title=Catalog%20report";
@@ -28,11 +26,6 @@ const FRESH: Duration = Duration::from_secs(600);
 const MAX_INDEX: u64 = 16 << 20;
 /// The last index fetched, kept in the game folder for when the registry can't be reached.
 const CACHE: &str = "mod-browser/nirova-index.json";
-/// Players' ratings of every project (the registry service, crates/horizon-mod-registry).
-
-/// Where a player rates a project: the site's GitHub sign-in, which comes back to its page.
-/// The launcher has no GitHub account of its own.
-
 
 /// Where the index comes from: `NIROVA_MOD_INDEX` (a file or an `https://` address, for a
 /// test registry), else [`INDEX_URL`].
@@ -151,8 +144,8 @@ fn kind_of(kind: &index::Kind) -> Option<Kind> {
     }
 }
 
-/// Where the registry's mod policy is: who owns and answers for a project, takedowns.
-pub const POLICY: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/catalog/projects/policy";
+/// Catalog policy: project ownership, review and takedowns.
+pub const POLICY: &str = "https://github.com/verziqp-ops/NirovaLauncher/blob/main/docs/catalog-policy.md";
 
 /// Whether the NIROVA project made `p` (the mod policy's "Official": author NIROVA, source in
 /// the horizon-rust organisation).
@@ -298,7 +291,7 @@ fn search(index: &Index, query: &Query) -> Vec<Project> {
         .collect()
 }
 
-/// The registry as a browser source.
+/// The NIROVA catalog as a browser source.
 pub struct Registry;
 
 impl Source for Registry {
@@ -676,7 +669,7 @@ pub fn turn_off_revoked(index: &Index, home: &Path) -> Vec<String> {
     out
 }
 
-/// Before the game starts: registry files taken down are turned off, by the index kept last
+/// Before the game starts: catalog files taken down are turned off, by the index kept last
 /// time (no waiting on the network), and the index is fetched again in the background for the
 /// next start. Nothing happens when nothing came from the registry.
 pub fn before_play(home: &Path) {
@@ -705,7 +698,6 @@ pub fn before_play(home: &Path) {
     });
 }
 
-#[path = "horizon/pack.rs"]
 #[path = "horizon/pack.rs"]
 pub mod pack;
 #[cfg(test)]
