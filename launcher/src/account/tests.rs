@@ -538,10 +538,11 @@ fn offline_names_cannot_bypass_the_minecraft_ownership_gate() {
     assert!(!accounts.has_owner(&store));
 
     let mut accounts = signed_in(&store, &secrets("mc-token", true));
-    assert!(accounts
+    accounts
         .play_as_with(&store, Player::Offline("Builder_2".into()), true)
-        .is_err());
+        .unwrap();
     assert!(accounts.has_owner(&store));
+    assert_eq!(accounts.player(), Player::Offline("Builder_2".into()));
 }
 
 #[test]
@@ -551,7 +552,7 @@ fn the_developer_option_does_not_bypass_minecraft_ownership() {
     assert!(accounts
         .play_as_with(&store, Player::Offline("Builder_1".into()), true)
         .is_err());
-    assert!(accounts.player().is_none());
+    assert_eq!(accounts.player(), Player::GameName);
     let (_, ep) = mock(|_| {});
     assert!(launch_for_game(&ep, Some("test-client"), &store, &mut accounts, true).is_err());
 }
