@@ -161,3 +161,20 @@ fn java_version_download_folder_can_be_empty_and_is_persisted() {
 
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn guest_version_download_rejects_unsafe_version_names_without_touching_disk() {
+    let root = std::env::temp_dir().join(format!(
+        "nirova-guest-version-safety-{}",
+        std::process::id()
+    ));
+    let checksum = "0123456789abcdef0123456789abcdef01234567";
+    let _ = fs::remove_dir_all(&root);
+    for unsafe_id in ["", "../escape", "1.21/../other", "1.21\\escape"] {
+        let err = download_version_for_guest_in(unsafe_id, checksum, &root, &|_| {}).unwrap_err();
+        assert!(err.contains("Invalid Minecraft version ID"), "{err}");
+    }
+    let err = download_version_for_guest_in("1.21.4", "bad", &root, &|_| {}).unwrap_err();
+    assert!(err.contains("invalid checksum"), "{err}");
+    assert!(!root.exists());
+}
