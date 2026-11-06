@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-/// Where the registry publishes its index (GitHub Pages of horizon-rust/horizon-mods).
+/// Where the registry publishes its index (GitHub Pages of verziqp-ops/NirovaLauncher).
 pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/catalog/index.json";
 /// The registry's pages on the website, `<SITE>/<id>`.
 const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/catalog/projects";
@@ -34,7 +34,7 @@ const CACHE: &str = "mod-browser/nirova-index.json";
 /// The launcher has no GitHub account of its own.
 
 
-/// Where the index comes from: `HORIZON_MOD_INDEX` (a file or an `https://` address, for a
+/// Where the index comes from: `NIROVA_MOD_INDEX` (a file or an `https://` address, for a
 /// test registry), else [`INDEX_URL`].
 fn location() -> String {
     std::env::var("NIROVA_MOD_INDEX")
@@ -131,84 +131,13 @@ pub struct Rating {
     pub count: u64,
 }
 
-/// When the ratings were fetched last, and every rated project's [`Rating`] (None: that failed).
-type Ratings = Option<Arc<HashMap<String, Rating>>>;
-static RATINGS: Mutex<Option<(Instant, Ratings)>> = Mutex::new(None);
+/// Ratings are intentionally disabled until NIROVA operates its own service.
+pub fn rating(_id: &str) -> Option<Option<Rating>> { None }
 
-/// A project's rating as fetched last, without asking the network: None when the ratings
-/// aren't known (not fetched, or the service didn't answer), `Some(None)` when it has none.
-pub fn rating(_id: &str) -> Option<Option<Rating>> {
-    None
-}
+/// The catalog report page.
+pub fn rate_url(id: &str) -> String { format!(\"{REPORT}&title={id}\") }
 
-/// The page that signs the player in with GitHub on the site and lets them rate `id`.
-pub fn rate_url(id: &str) -> String {
-    format!("{REPORT}&title={id}")
-}
-
-/// Fetches the ratings again when the last try is ten minutes old: from `HORIZON_MOD_RATINGS`
-/// (a file or an `https://` address, for a test registry), else [`RATINGS_URL`]; a local test
-/// registry has none unless given. After a failure the browser shows downloads only.
-fn refresh_ratings() {
-    if RATINGS
-        .lock()
-        .unwrap()
-        .as_ref()
-        .is_some_and(|(at, _)| at.elapsed() < FRESH)
-    {
-        return;
-    }
-    let given = std::env::var("NIROVA_MOD_RATINGS")
-        .ok()
-        .filter(|v| !v.is_empty());
-    if given.is_none() && local() {
-        return;
-    }
-    let at = given.unwrap_or_else(|| RATINGS_URL.to_owned());
-    let text = if at.starts_with("https://") {
-        download::agent(&at).get(&at).call().ok().and_then(|r| {
-            use std::io::Read;
-            let mut text = String::new();
-            r.into_reader()
-                .take(MAX_INDEX)
-                .read_to_string(&mut text)
-                .ok()
-                .map(|_| text)
-        })
-    } else {
-        fs::read_to_string(&at).ok()
-    };
-    let fetched = text.map(|t| Arc::new(parse_ratings(&t)));
-    *RATINGS.lock().unwrap() = Some((Instant::now(), fetched));
-}
-
-/// `{"projects": {"<id>": {"average", "count"}}}`, keeping only well-formed entries.
-fn parse_ratings(text: &str) -> HashMap<String, Rating> {
-    let Ok(json) = serde_json::from_str::<serde_json::Value>(text) else {
-        return HashMap::new();
-    };
-    let Some(projects) = json["projects"].as_object() else {
-        return HashMap::new();
-    };
-    projects
-        .iter()
-        .filter_map(|(id, r)| {
-            let average = r["average"].as_f64().filter(|a| (1.0..=5.0).contains(a))?;
-            let count = r["count"].as_u64().filter(|&c| c > 0)?;
-            index::valid_id(id).then(|| {
-                (
-                    id.clone(),
-                    Rating {
-                        average: average as f32,
-                        count,
-                    },
-                )
-            })
-        })
-        .collect()
-}
-
-/// The browser's kind for a registry kind; None for one the launcher doesn't install yet
+/// The browser's kind for a catalog kind; None for one the launcher doesn't install yet
 /// (kinds newer than this launcher).
 fn kind_of(kind: &index::Kind) -> Option<Kind> {
     match kind {
@@ -223,9 +152,9 @@ fn kind_of(kind: &index::Kind) -> Option<Kind> {
 }
 
 /// Where the registry's mod policy is: who owns and answers for a project, takedowns.
-pub const POLICY: &str = "https://playhorizon.dev/mods/policy";
+pub const POLICY: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/catalog/projects/policy";
 
-/// Whether the Horizon project made `p` (the mod policy's "Official": author Horizon, source in
+/// Whether the NIROVA project made `p` (the mod policy's "Official": author NIROVA, source in
 /// the horizon-rust organisation).
 pub fn official(p: &index::Project) -> bool {
     p.authors == ["NIROVA"] && p.source.starts_with("https://github.com/verziqp-ops/")
@@ -242,10 +171,10 @@ pub fn trust_and_capabilities(id: &str) -> Vec<String> {
         return Vec::new();
     };
     let mut lines = vec![if official(p) {
-        "Officially listed by the external catalog".to_owned()
+        "Officially listed by the NIROVA catalog".to_owned()
     } else {
         format!(
-            "Made by {}. Not endorsed by the external catalog operator ({POLICY})",
+            "Made by {}. Not endorsed by the NIROVA catalog operator ({POLICY})",
             p.authors.join(", ")
         )
     }];
@@ -374,12 +303,11 @@ pub struct Registry;
 
 impl Source for Registry {
     fn id(&self) -> SourceId {
-        SourceId::Horizon
+        SourceId::Nirova
     }
 
     fn search(&self, query: &Query) -> Result<Vec<Project>, String> {
         let found = search(&*index()?, query);
-        refresh_ratings();
         Ok(found)
     }
 
@@ -387,10 +315,10 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(id)
-            .ok_or_else(|| format!("{id} isn't in the external catalog."))?;
+            .ok_or_else(|| format!("{id} isn't in the NIROVA catalog."))?;
         project_of(p).ok_or_else(|| {
             format!(
-                "{} is a {} in the external catalog: this launcher can't install those yet.",
+                "{} is a {} in the NIROVA catalog: this launcher can't install those yet.",
                 p.name,
                 p.kind.name()
             )
@@ -401,7 +329,7 @@ impl Source for Registry {
         let index = index()?;
         let p = index
             .project(&project.id)
-            .ok_or_else(|| format!("{} isn't in the external catalog.", project.title))?;
+            .ok_or_else(|| format!("{} isn't in the NIROVA catalog.", project.title))?;
         let level = crate::backend::game_mod_api_level();
         Ok(p.versions
             .iter()
@@ -410,11 +338,10 @@ impl Source for Registry {
     }
 
     fn details(&self, project: &Project) -> Result<Details, String> {
-        refresh_ratings();
         let index = index()?;
         let p = index
             .project(&project.id)
-            .ok_or_else(|| format!("{} isn't in the external catalog.", project.title))?;
+            .ok_or_else(|| format!("{} isn't in the NIROVA catalog.", project.title))?;
         let newest = p.versions.first();
         let mut body = p.description.clone();
         if let Some(v) = newest.filter(|v| !v.capabilities.is_empty()) {
@@ -525,7 +452,7 @@ fn relative(kind: Kind, id: &str, file_name: &str) -> Result<String, String> {
         Kind::ResourcePack => Ok(format!("resourcepacks/{file_name}")),
         Kind::Shader => Ok(format!("shaderpacks/{file_name}")),
         Kind::Modpack => Err("A modpack installs as its own profile (pack::install).".into()),
-        Kind::DataPack => Err("The external catalog has no data packs.".into()),
+        Kind::DataPack => Err("The NIROVA catalog has no data packs.".into()),
     }
 }
 
@@ -553,7 +480,7 @@ fn install_from(
 ) -> Result<Vec<installed::Entry>, String> {
     let p = index
         .project(&project.id)
-        .ok_or_else(|| format!("{} isn't in the external catalog.", project.title))?;
+        .ok_or_else(|| format!("{} isn't in the NIROVA catalog.", project.title))?;
     let v = newest(index, p, level)?;
     if needs_port(v) {
         return Err(format!("{} {NEEDS_PORT}.", p.name));
@@ -623,7 +550,7 @@ fn install_version(
         false => relative(project.kind, &p.id, &v.file.name)?,
     };
     let mut list = installed::Installed::load(home);
-    let ours = |e: &installed::Entry| e.source == SourceId::Horizon && e.project == p.id;
+    let ours = |e: &installed::Entry| e.source == SourceId::Nirova && e.project == p.id;
     let old = list.entries.iter().find(|e| ours(e)).cloned();
     if old.as_ref().is_some_and(|o| o.version == v.version) {
         return Ok(old.expect("checked"));
@@ -679,7 +606,7 @@ fn install_version(
         java::set_enabled(home, &p.id, true)?;
     }
     let entry = installed::Entry {
-        source: SourceId::Horizon,
+        source: SourceId::Nirova,
         project: p.id.clone(),
         slug: p.id.clone(),
         title: p.name.clone(),
@@ -710,7 +637,7 @@ fn stays(native: bool, old: &str) -> bool {
     native && old.ends_with(".hmod")
 }
 
-/// The mod id of an installed mod (`horizon-mods/<id>`, `horizon-mods/<id>.hmod` or
+/// The mod id of an installed mod (`nirova-mods/<id>`, `nirova-mods/<id>.hmod` or
 /// `nirova-native-mods/<id>.hnmod`).
 pub fn mod_id(entry: &installed::Entry) -> Option<&str> {
     if let Some(rest) = entry.file.strip_prefix(crate::native_mods::INSTALLED) {
@@ -726,7 +653,7 @@ pub fn turn_off_revoked(index: &Index, home: &Path) -> Vec<String> {
     let mut out = Vec::new();
     for e in installed::Installed::load(home).entries {
         let hash = e.checksum.strip_prefix("SHA-256:").unwrap_or_default();
-        let Some(r) = (e.source == SourceId::Horizon)
+        let Some(r) = (e.source == SourceId::Nirova)
             .then(|| index.revoked(&e.project, hash))
             .flatten()
         else {
@@ -756,7 +683,7 @@ pub fn before_play(home: &Path) {
     let from_registry = installed::Installed::load(home)
         .entries
         .iter()
-        .any(|e| e.source == SourceId::Horizon);
+        .any(|e| e.source == SourceId::Nirova);
     if !from_registry {
         return;
     }
@@ -778,6 +705,7 @@ pub fn before_play(home: &Path) {
     });
 }
 
+#[path = "horizon/pack.rs"]
 #[path = "horizon/pack.rs"]
 pub mod pack;
 #[cfg(test)]
