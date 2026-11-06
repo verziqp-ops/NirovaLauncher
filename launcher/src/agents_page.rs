@@ -178,7 +178,7 @@ impl Launcher {
                         let exe = backend::update_target();
                         let task = cx.background_executor().spawn(async move {
                             match agents::self_test(&exe) {
-                                Ok(n) => (true, trf("The MCP server answered with {count} tools. Now ask your agent: \"Say hello from Horizon\".", &[("count", &n.to_string())])),
+                                Ok(n) => (true, trf("The MCP server answered with {count} tools. Now ask your agent: \"Say hello from NIROVA\".", &[("count", &n.to_string())])),
                                 Err(e) => (false, trf("The MCP server did not answer: {error}", &[("error", &e)])),
                             }
                         });
@@ -225,7 +225,7 @@ fn run_add(program: &str, args: &[String]) -> (bool, String) {
         Ok(out) if out.status.success() => (
             true,
             trf(
-                "Added. Restart {program} if it is open, then ask it: \"Say hello from Horizon\".",
+                "Added. Restart {program} if it is open, then ask it: \"Say hello from NIROVA\".",
                 &[("program", program)],
             ),
         ),
