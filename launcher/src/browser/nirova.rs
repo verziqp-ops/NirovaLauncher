@@ -13,9 +13,9 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// Where the NIROVA repository publishes its signed catalog index.
-pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/nivrora/full-rebrand-russian-home/catalog/index.json";
+pub const INDEX_URL: &str = "https://raw.githubusercontent.com/verziqp-ops/NirovaLauncher/main/catalog/index.json";
 /// Project pages in the NIROVA repository, `<SITE>/<id>`.
-const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/nivrora/full-rebrand-russian-home/catalog";
+const SITE: &str = "https://github.com/verziqp-ops/NirovaLauncher/tree/main/catalog";
 /// The report form of a project.
 const REPORT: &str = "https://github.com/verziqp-ops/NirovaLauncher/issues/new?template=nirova-catalog-project.yml";
 /// The loader name the browser gives registry versions, so `support` and `pick` know them.
@@ -145,7 +145,7 @@ fn kind_of(kind: &index::Kind) -> Option<Kind> {
 }
 
 /// Catalog policy: project ownership, review and takedowns.
-pub const POLICY: &str = "https://github.com/verziqp-ops/NirovaLauncher/blob/nivrora/full-rebrand-russian-home/docs/catalog-policy.md";
+pub const POLICY: &str = "https://github.com/verziqp-ops/NirovaLauncher/blob/main/docs/catalog-policy.md";
 
 /// Whether the NIROVA project made `p` (the mod policy's "Official": author NIROVA, source in
 /// the NIROVA project repository).
