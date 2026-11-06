@@ -69,6 +69,12 @@ pub(super) struct Instances {
     pub(super) icons: HashMap<(String, u32), Option<Arc<RenderImage>>>,
     /// Mojang's versions, for a new Java instance.
     pub(super) versions: new_instance::VersionList,
+    /// The Java Edition version currently downloading; separate from NIROVA game releases.
+    pub(super) java_installing: Option<String>,
+    /// Last direct Java Edition download error, displayed in the instance dialog.
+    pub(super) java_install_error: Option<String>,
+    /// Last Java Edition version downloaded successfully in this session.
+    pub(super) java_installed: Option<String>,
 }
 
 impl Launcher {
