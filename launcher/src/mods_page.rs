@@ -283,6 +283,13 @@ fn short_sum(checksum: &str) -> String {
     format!("{algo} {}…{}", &hex[..12], &hex[hex.len() - 8..])
 }
 
+/// Whether an installed entry matches the Mods page's search field. The same query can
+/// immediately narrow the local library while Enter refreshes the online results.
+fn installed_matches(query: &str, fields: &[&str]) -> bool {
+    let query = query.trim().to_lowercase();
+    query.is_empty() || fields.iter().any(|field| field.to_lowercase().contains(&query))
+}
+
 impl Launcher {
     /// Opens the Mods page on its Modpacks tab, with the pack `slug` open when given (the
     /// sidebar's packs and its + button).
@@ -484,10 +491,14 @@ impl Launcher {
             return;
         };
         let on = !java::is_enabled(&home, id);
-        let revoked = horizon::known_index().and_then(|index| {
-            let hash = e.checksum.trim_start_matches("SHA-256:");
-            index.revoked(&e.project, hash).map(|r| r.reason.clone())
-        });
+        let revoked = if e.source == SourceId::Horizon {
+            horizon::known_index().and_then(|index| {
+                let hash = e.checksum.trim_start_matches("SHA-256:");
+                index.revoked(&e.project, hash).map(|r| r.reason.clone())
+            })
+        } else {
+            None
+        };
         self.mods.message = Some(match revoked.filter(|_| on) {
             Some(reason) => Err(format!("{} was taken down: {reason}", e.title)),
             None => java::set_enabled(&home, id, on).map(|()| {
@@ -1147,42 +1158,53 @@ impl Launcher {
         let t = self.theme;
         let kind = self.mods.kind;
         // Each project's own icon (Modrinth's, asked for once), at the row's size.
-        let ids = self
-            .mods
-            .installed
-            .iter()
-            .filter(|e| e.kind == kind && e.source == SourceId::Modrinth)
-            .map(|e| e.project.clone())
-            .collect();
-        self.ask_project_icons(ids, cx);
-        let icons: Vec<Option<PathBuf>> = self
-            .mods
-            .installed
-            .clone()
-            .iter()
-            .filter(|e| e.kind == kind)
-            .map(|e| self.project_icon(e))
-            .collect();
-        let entries: Vec<&installed::Entry> = self
+        let all_entries: Vec<&installed::Entry> = self
             .mods
             .installed
             .iter()
             .filter(|e| e.kind == kind)
             .collect();
-        let native_entries = if kind == PackKind::Mod && self.mods.java.is_none() {
+        let all_native_entries = if kind == PackKind::Mod && self.mods.java.is_none() {
             self.native_files()
         } else {
             Vec::new()
         };
-        if entries.is_empty() && native_entries.is_empty() {
+        if all_entries.is_empty() && all_native_entries.is_empty() {
             return None;
         }
-        let busy = self.mods.busy.is_some();
-        let native = !native_entries.is_empty()
-            || self.mods.java.is_none()
-                && entries
+
+        let total_installed = all_entries.len() + all_native_entries.len();
+        let has_native = self.mods.java.is_none()
+            && (!all_native_entries.is_empty()
+                || all_entries
                     .iter()
-                    .any(|e| native_status::is_native_file(&e.file));
+                    .any(|e| native_status::is_native_file(&e.file)));
+        let query = self.mods.text.text().trim().to_owned();
+        let entries: Vec<&installed::Entry> = all_entries
+            .into_iter()
+            .filter(|e| {
+                installed_matches(
+                    &query,
+                    &[&e.title, &e.project, &e.number, &e.file, e.source.label()],
+                )
+            })
+            .collect();
+        let native_entries: Vec<native_status::Installed> = all_native_entries
+            .into_iter()
+            .filter(|e| installed_matches(&query, &[&e.id, &e.version, &e.file]))
+            .collect();
+
+        let ids = entries
+            .iter()
+            .filter(|e| e.source == SourceId::Modrinth)
+            .map(|e| e.project.clone())
+            .collect();
+        self.ask_project_icons(ids, cx);
+        let icons: Vec<Option<PathBuf>> =
+            entries.iter().map(|e| self.project_icon(e)).collect();
+
+        let busy = self.mods.busy.is_some();
+        let native = has_native;
         let instance = self.selected_instance().map(|i| i.name.clone());
         let row = |i: usize| {
             if i >= entries.len() {
@@ -1247,10 +1269,8 @@ impl Launcher {
             let on = match &self.mods.java {
                 _ if e.kind != PackKind::Mod => None,
                 Some(_) => Some(java_instance::is_on(&self.mods.home(), e)),
-                None if e.source == SourceId::Horizon => Some(
-                    horizon::mod_id(e).is_some_and(|id| java::is_enabled(&self.mods.home(), id)),
-                ),
-                None => None,
+                None => horizon::mod_id(e)
+                    .map(|id| java::is_enabled(&self.mods.home(), id)),
             };
             if let Some(on) = on {
                 let entry = e.clone();
@@ -1355,17 +1375,27 @@ impl Launcher {
                 }))
             }
         });
-        let list = self.mods.installed_list.column(
-            &self.content_scroll.handle,
-            entries.len() + native_entries.len(),
-            8.,
-            |index| {
-                entries
-                    .get(index)
-                    .is_some_and(|e| self.mods.confirm_remove.as_ref() == Some(&e.project))
-            },
-            row,
-        );
+        let visible_installed = entries.len() + native_entries.len();
+        let installed_label = if query.trim().is_empty() {
+            format!("{} ({total_installed})", tr("Installed"))
+        } else {
+            format!("{} ({visible_installed}/{total_installed})", tr("Installed"))
+        };
+        let list = if visible_installed == 0 {
+            centered(tr("Nothing found."), &t)
+        } else {
+            self.mods.installed_list.column(
+                &self.content_scroll.handle,
+                visible_installed,
+                8.,
+                |index| {
+                    entries
+                        .get(index)
+                        .is_some_and(|e| self.mods.confirm_remove.as_ref() == Some(&e.project))
+                },
+                row,
+            )
+        };
         Some(
             div()
                 .flex()
@@ -1376,7 +1406,7 @@ impl Launcher {
                         .flex()
                         .items_center()
                         .justify_between()
-                        .child(caps(tr("Installed")).text_color(t.muted))
+                        .child(caps(installed_label).text_color(t.muted))
                         .children(update_all),
                 )
                 .children(native.then(|| self.native_build(cx)).flatten())
@@ -1760,5 +1790,15 @@ mod tests {
         let sum = format!("SHA-512:{}", "ab".repeat(64));
         assert_eq!(short_sum(&sum), "SHA-512 abababababab…abababab");
         assert_eq!(short_sum("SHA-1:abcd"), "SHA-1:abcd");
+    }
+
+    #[test]
+    fn installed_search_matches_name_version_and_path_case_insensitively() {
+        let fields = ["Sodium", "maven.sodium", "0.5.3", "horizon-mods/sodium", "Modrinth"];
+        assert!(installed_matches("sod", &fields));
+        assert!(installed_matches("0.5.3", &fields));
+        assert!(installed_matches("HORIZON-MODS", &fields));
+        assert!(installed_matches("  ", &fields));
+        assert!(!installed_matches("iris", &fields));
     }
 }
