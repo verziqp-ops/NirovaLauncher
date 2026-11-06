@@ -446,12 +446,12 @@ fn live_modrinth_search_pick_and_download() {
 #[test]
 fn curseforge_is_coming_soon_and_never_searched() {
     let ids: Vec<SourceId> = sources().iter().map(|s| s.id()).collect();
-    assert_eq!(ids, [SourceId::Modrinth, SourceId::Nirova]);
+    assert_eq!(ids, [SourceId::Modrinth, SourceId::Horizon]);
     assert!(source(SourceId::CurseForge).is_none());
 }
 
 #[test]
 fn old_catalog_source_ids_remain_readable() {
     let old: SourceId = serde_json::from_str("\"horizon\"").unwrap();
-    assert_eq!(old, SourceId::Nirova);
+    assert_eq!(old, SourceId::Horizon);
 }
