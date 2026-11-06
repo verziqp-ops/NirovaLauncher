@@ -2487,6 +2487,10 @@ struct Game<'a> {
     end: end::EndState,
     block_ticks: Ticks,
     tick_chunks: horizon_client::tick_chunk_membership::TickChunkMembership,
+    /// Reuse the chunk-order buffer every world tick instead of allocating a fresh
+    /// Vec when random ticking runs. Never reorder entries: redstone and random
+    /// tick RNG depend on the same canonical chunk iteration order.
+    ticking_chunk_scratch: Vec<(i32, i32)>,
     tickets: horizon_client::ticket_levels::ChunkTickets,
     random_tick_sections: horizon_client::random_tick_sections::RandomTickSections,
     level_events: Vec<LevelEvent>,
@@ -4184,7 +4188,9 @@ impl Game<'_> {
         let bounds = levels.random_tick_bounds();
         // Keep the world map's chunk order, including empty chunks
         // (tick_chunk_random still draws for precipitation in those).
-        let ticking: Vec<_> = self
+        let mut ticking = std::mem::take(&mut self.ticking_chunk_scratch);
+        ticking.clear();
+        ticking.extend(self
             .world
             .chunks
             .keys()
@@ -4196,8 +4202,7 @@ impl Game<'_> {
                     return false;
                 }
                 levels.random_ticking(x, z) && ticking_chunk(&self.world, x, z)
-            })
-            .collect();
+            }));
         // Entity.checkInsideBlocks for the plates, tripwires, detector rails and
         // buttons under the players (the host and the LAN guests), the minecarts
         // and the arrows (the mobs and other entities are added in `with_level`
@@ -4328,7 +4333,7 @@ impl Game<'_> {
             // after a block changed.
             let mut sections = Vec::new();
             horizon_client::spans::time("random_ticks", || {
-                for (x, z) in ticking.into_iter().filter(|_| !debug) {
+                for &(x, z) in ticking.iter().filter(|_| !debug) {
                     let mut read = None;
                     let pos = horizon_core::position::ChunkPos::new(x, z);
                     b.tick_chunk_random_masked(level, ticks, pos, |level, from| {
@@ -4355,6 +4360,9 @@ impl Game<'_> {
             b.run_block_events(level, ticks);
             b.tick_block_entities(level, ticks);
         });
+        // Return the allocation after the canonical tick traversal finishes.
+        // Keep this until the next tick to avoid repeated heap growth.
+        self.ticking_chunk_scratch = ticking;
         // `PistonMovingBlockEntity.tick` pushes what its block just ran into,
         // with the progress it is about to take.
         let pushes = std::mem::take(&mut self.block_ticks.piston_pushes);
@@ -17477,6 +17485,7 @@ impl<'a> Game<'a> {
             end: Default::default(),
             block_ticks: Ticks::new(0),
             tick_chunks: Default::default(),
+            ticking_chunk_scratch: Vec::new(),
             tickets: Default::default(),
             random_tick_sections: Default::default(),
             level_events: Vec::new(),
