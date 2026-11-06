@@ -1,7 +1,7 @@
 //! Tick scheduler membership, invalidated by resident key changes or resets.
 use crate::{
     chunk_map::{ChunkMap, ChunkMembershipDelta},
-    fast_hash::FxHashSet,
+    fast_hash::{FxHashMap, FxHashSet},
 };
 
 type Key = (i32, i32);
@@ -12,6 +12,13 @@ pub struct TickChunkMembership {
     revision: Option<u64>,
     added: Vec<Key>,
     removed: Vec<Key>,
+    /// Scratch indices avoid quadratic scans when many chunks stream in and out
+    /// between consecutive ticks. The vectors still determine the event order.
+    added_positions: FxHashMap<Key, usize>,
+    removed_positions: FxHashMap<Key, usize>,
+    /// Temporarily remembers saved ticks while an unload may be cancelled by
+    /// another load in the same batch; reused to avoid per-tick allocations.
+    removed_waiting: FxHashSet<Key>,
     /// Loaded chunks with saved ticks that have not started ticking yet
     /// (`LevelChunkTicks.pendingTicks`, unpacked by `startTickingChunk`).
     waiting: FxHashSet<Key>,
@@ -25,6 +32,9 @@ impl TickChunkMembership {
         self.revision = None;
         self.added.clear();
         self.removed.clear();
+        self.added_positions.clear();
+        self.removed_positions.clear();
+        self.removed_waiting.clear();
         self.waiting.clear();
     }
 
@@ -37,33 +47,43 @@ impl TickChunkMembership {
         }
         self.added.clear();
         self.removed.clear();
+        self.added_positions.clear();
+        self.removed_positions.clear();
+        self.removed_waiting.clear();
 
         if let Some(deltas) = self.revision.and_then(|rev| chunks.deltas_since(rev)) {
-            let mut removed_waiting = FxHashSet::default();
             for (_, delta) in deltas {
                 match delta {
                     ChunkMembershipDelta::Added(key) => {
-                        if let Some(pos) = self.removed.iter().position(|&k| k == key) {
+                        if let Some(pos) = self.removed_positions.remove(&key) {
                             // The chunk is back where it was: the removal it
                             // cancels is no news, and it keeps its saved ticks.
                             self.removed.swap_remove(pos);
+                            if let Some(&moved) = self.removed.get(pos) {
+                                self.removed_positions.insert(moved, pos);
+                            }
                             self.keys.insert(key);
-                            if removed_waiting.remove(&key) {
+                            if self.removed_waiting.remove(&key) {
                                 self.waiting.insert(key);
                             }
                         } else if self.keys.insert(key) {
+                            self.added_positions.insert(key, self.added.len());
                             self.added.push(key);
                         }
                     }
                     ChunkMembershipDelta::Removed(key) => {
-                        if let Some(pos) = self.added.iter().position(|&k| k == key) {
+                        if let Some(pos) = self.added_positions.remove(&key) {
                             self.added.swap_remove(pos);
+                            if let Some(&moved) = self.added.get(pos) {
+                                self.added_positions.insert(moved, pos);
+                            }
                             self.keys.remove(&key);
                             self.waiting.remove(&key);
                         } else if self.keys.remove(&key) {
+                            self.removed_positions.insert(key, self.removed.len());
                             self.removed.push(key);
                             if self.waiting.remove(&key) {
-                                removed_waiting.insert(key);
+                                self.removed_waiting.insert(key);
                             }
                         }
                     }
@@ -306,6 +326,41 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn many_chunk_reloads_cancel_without_losing_saved_ticks() {
+        let mut map = ChunkMap::default();
+        let chunk = Arc::new(Chunk::empty(0, 0));
+        let mut cache = TickChunkMembership::default();
+        for x in 0..64 {
+            map.insert((x, 0), chunk.clone());
+        }
+        cache.synchronize(&map);
+        cache.take_added();
+        for x in 0..64 {
+            cache.wait((x, 0));
+        }
+        // Batch 96 changes without crossing the delta ring's 256 limit.
+        // The later additions cancel some removals in reverse order.
+        for x in 0..64 {
+            map.remove(&(x, 0));
+        }
+        for x in (0..64).step_by(2).rev() {
+            map.insert((x, 0), chunk.clone());
+        }
+        assert!(cache.synchronize(&map));
+        assert!(cache.take_added().is_empty());
+        let removed: HashSet<Key> = cache.removed().iter().copied().collect();
+        let expected: HashSet<Key> = (0..64).filter(|x| x % 2 == 1).map(|x| (x, 0)).collect();
+        assert_eq!(removed, expected);
+        let waiting: HashSet<Key> = cache.waiting.iter().copied().collect();
+        let kept: HashSet<Key> = (0..64).filter(|x| x % 2 == 0).map(|x| (x, 0)).collect();
+        assert_eq!(waiting, kept);
+        // No stale scratch indices can leak into a later synchronization.
+        map.insert((1, 0), chunk);
+        assert!(cache.synchronize(&map));
+        assert_eq!(cache.take_added(), vec![(1, 0)]);
     }
 
     /// A removal the next addition cancels puts the chunk back where it was,
