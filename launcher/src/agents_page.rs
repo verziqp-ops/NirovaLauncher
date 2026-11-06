@@ -107,7 +107,7 @@ impl Launcher {
                     .child(tr("Connect an AI agent")),
             )
             .child(div().max_w(px(640.)).text_color(t.muted).child(tr(
-                "Your own agent (Claude Code, Codex, Cursor or any MCP client) can drive the launcher and the game it starts, with the same commands as the terminal. It runs on your computer and talks to Horizon there; it asks before deleting anything.",
+                "Your own agent (Claude Code, Codex, Cursor or any MCP client) can drive NIROVA Launcher and the game it starts, with the same commands as the terminal. It runs on your computer and talks to NIROVA; it asks before deleting anything.",
             )))
             .child(picker);
         if let Some((program, args)) = client.add.clone() {
