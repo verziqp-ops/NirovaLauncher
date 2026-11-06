@@ -38,7 +38,6 @@ WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
 CloseApplications=force
-DefaultLanguage=russian
 ShowLanguageDialog=no
 
 [Languages]
