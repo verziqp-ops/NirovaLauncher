@@ -312,4 +312,12 @@ fn community_ratings_are_not_requested_until_nirova_operates_a_service() {
         rate_url("zoom"),
         "https://github.com/verziqp-ops/NirovaLauncher/issues/new?template=nirova-catalog-project.yml&title=zoom"
     );
+#[test]
+fn repository_catalog_index_is_valid_and_empty_until_reviewed() {
+    let text = include_str!("../../../../catalog/index.json");
+    let index = Index::parse(text).unwrap();
+    assert!(index.projects.is_empty());
+    assert!(index.revoked.is_empty());
+}
+
 }
