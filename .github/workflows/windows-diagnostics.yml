@@ -1,0 +1,102 @@
+# Diagnose exact, already-built NIROVA files without running them or weakening Windows protections.
+name: windows diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      launcher_run_id:
+        description: Successful launcher workflow run containing the Windows artifacts
+        required: true
+        type: string
+      game_run_id:
+        description: Successful game workflow run containing game-windows
+        required: true
+        type: string
+  push:
+    branches: ['nivrora/security-scan-*']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  scan:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test signature diagnostics
+        shell: pwsh
+        run: ./tools/windows/test-authenticode.ps1
+      - name: Validate the source workflows
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          LAUNCHER_RUN: ${{ inputs.launcher_run_id }}
+          GAME_RUN: ${{ inputs.game_run_id }}
+        run: |
+          if (-not $env:LAUNCHER_RUN -and $env:BRANCH -match '^nivrora/security-scan-(\d+)-(\d+)$') {
+            $env:LAUNCHER_RUN = $Matches[1]
+            $env:GAME_RUN = $Matches[2]
+          }
+          foreach ($entry in @(@{id=$env:LAUNCHER_RUN; path='.github/workflows/launcher.yml'; job='windows'}, @{id=$env:GAME_RUN; path='.github/workflows/game.yml'; job='build windows'})) {
+            if ($entry.id -notmatch '^\d+$') { throw 'Workflow run IDs must be numeric.' }
+            $run = gh api "repos/$env:REPOSITORY/actions/runs/$($entry.id)" | ConvertFrom-Json
+            if ($LASTEXITCODE) { throw 'Cannot inspect the requested workflow.' }
+            if ($run.head_repository.full_name -ne $env:REPOSITORY -or $run.path -ne $entry.path) {
+              throw 'Only NIROVA artifacts from the expected workflow can be diagnosed.'
+            }
+            $jobs = gh api "repos/$env:REPOSITORY/actions/runs/$($entry.id)/jobs?filter=latest" | ConvertFrom-Json
+            if ($LASTEXITCODE -or @($jobs.jobs | Where-Object { $_.name -eq $entry.job -and $_.status -eq 'completed' -and $_.conclusion -eq 'success' }).Count -ne 1) {
+              throw 'The Windows artifact-producing job must have succeeded.'
+            }
+          }
+          "launcher=$env:LAUNCHER_RUN" >> $env:GITHUB_OUTPUT
+          "game=$env:GAME_RUN" >> $env:GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: nirova-launcher-windows-x64.zip
+          run-id: ${{ steps.source.outputs.launcher }}
+          github-token: ${{ github.token }}
+          path: inputs/launcher
+      - uses: actions/download-artifact@v4
+        with:
+          name: NIROVA-Setup.exe
+          run-id: ${{ steps.source.outputs.launcher }}
+          github-token: ${{ github.token }}
+          path: inputs/setup
+      - uses: actions/download-artifact@v4
+        with:
+          name: game-windows
+          run-id: ${{ steps.source.outputs.game }}
+          github-token: ${{ github.token }}
+          path: inputs/game
+      - name: Extract the exact native files and record their hashes
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force scan, reports | Out-Null
+          Expand-Archive inputs/launcher/nirova-launcher-windows-x64.zip unpacked-launcher
+          Expand-Archive inputs/game/nirova-game-windows-x64.zip unpacked-game
+          foreach ($entry in @(@{folder='unpacked-launcher'; name='nirova-launcher.exe'}, @{folder='unpacked-game'; name='horizon-client.exe'}, @{folder='unpacked-game'; name='horizon-prepare.exe'})) {
+            $found = @(Get-ChildItem $entry.folder -Recurse -File -Filter $entry.name)
+            if ($found.Count -ne 1) { throw "The artifact must contain exactly one $($entry.name)." }
+            Copy-Item -LiteralPath $found[0].FullName -Destination scan
+          }
+          Copy-Item inputs/setup/NIROVA-Setup.exe scan
+          Get-ChildItem inputs -Recurse -File | ForEach-Object {
+            @{ name=$_.Name; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
+          } | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 reports/input-hashes.json
+      - name: Record actual Authenticode status
+        shell: pwsh
+        run: |
+          & ./tools/windows/authenticode-report.ps1 -Files @((Get-ChildItem scan -File).FullName) -Report reports/authenticode.json
+      - name: Scan launcher, setup, Rust game and resource preparer
+        shell: pwsh
+        run: ./tools/windows/scan-defender.ps1 -Folder scan -Report reports/defender-scan.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nirova-exact-windows-diagnostics
+          path: reports/
+          if-no-files-found: warn

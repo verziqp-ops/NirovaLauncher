@@ -43,3 +43,7 @@ NIROVA — независимый неофициальный проект, не 
 ## Internal naming
 
 The public product and launcher binary are NIROVA. A number of engine crate IDs and legacy technical identifiers still use the historical `horizon-*` spelling. They are being migrated separately; do not rename them with a global search-and-replace because they are referenced by Cargo dependencies, runtime paths, compatibility code and release verification.
+
+## Code signing policy
+
+[Статус подписи Windows, проверка издателя и политика подписывания](docs/code-signing-policy.md). Наличие CI-интеграции не означает, что текущие preview-файлы уже подписаны.

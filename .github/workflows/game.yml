@@ -6,7 +6,7 @@ on:
   push:
     # Build our own Rust game from working-branch source so previews can be tested
     # before a stable v* release exists. These branch builds are artifacts only.
-    branches: ['nivrora/**']
+    branches: ['nivrora/**', '!nivrora/security-scan-*']
     tags: ['v*']
   pull_request:
     paths:
@@ -20,12 +20,21 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: nirova-game-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  windows-signing-checks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test signature verification and unsigned-release rejection
+        shell: pwsh
+        run: ./tools/windows/test-authenticode.ps1
+
   brand-assets:
     name: Render NIROVA game icons
     runs-on: ubuntu-22.04
@@ -142,6 +151,18 @@ jobs:
       - name: ALSA and udev headers
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libudev-dev
+      - name: Check Windows code-signing configuration
+        if: runner.os == 'Windows' && github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          SIGNPATH_ENABLED: ${{ vars.SIGNPATH_ENABLED }}
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY: ${{ vars.SIGNPATH_SIGNING_POLICY }}
+          SIGNPATH_EXPECTED_PUBLISHER: ${{ vars.SIGNPATH_EXPECTED_PUBLISHER }}
+          REQUIRE_SIGNING: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
+        run: '& tools/windows/check-signing-config.ps1 -RequireSigning:($env:REQUIRE_SIGNING -eq ''true'')'
       - name: Build Nirova game and resource preparer from this checkout
         run: |
           set -euo pipefail
@@ -152,6 +173,37 @@ jobs:
           out=target/release
           [[ -z "${{ matrix.target }}" ]] || out="target/${{ matrix.target }}/release"
           echo "BUILD_OUT=$out" >> "$GITHUB_ENV"
+      - name: Upload unsigned game signing input
+        if: runner.os == 'Windows' && github.event_name != 'pull_request' && vars.SIGNPATH_ENABLED == 'true'
+        id: signing-input-game
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-signing-input-game
+          path: |
+            target/release/horizon-client.exe
+            target/release/horizon-prepare.exe
+          if-no-files-found: error
+      - name: Authenticode sign game with the verified publisher
+        if: runner.os == 'Windows' && github.event_name != 'pull_request' && vars.SIGNPATH_ENABLED == 'true'
+        uses: SignPath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY }}
+          artifact-configuration-slug: game-windows
+          github-artifact-id: ${{ steps.signing-input-game.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-game
+      - name: Verify and use signed game files
+        if: runner.os == 'Windows' && github.event_name != 'pull_request' && vars.SIGNPATH_ENABLED == 'true'
+        shell: pwsh
+        env:
+          EXPECTED_PUBLISHER: ${{ vars.SIGNPATH_EXPECTED_PUBLISHER }}
+        run: |
+          & ./tools/windows/authenticode-report.ps1 -Files @('signed-game/horizon-client.exe', 'signed-game/horizon-prepare.exe') -Report signed-game/verification.json -ExpectedPublisher $env:EXPECTED_PUBLISHER -RequireTrusted
+          Copy-Item signed-game/horizon-client.exe target/release/horizon-client.exe -Force
+          Copy-Item signed-game/horizon-prepare.exe target/release/horizon-prepare.exe -Force
       - name: Package the Nirova game and its own resource-preparation sources
         run: |
           set -euo pipefail
@@ -184,6 +236,34 @@ jobs:
           esac
           tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" >/dev/null 2>&1 || [[ "${{ matrix.name }}" != linux ]]
           ls -lh "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}"
+      - name: Report Windows Authenticode status
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          EXPECTED_PUBLISHER: ${{ vars.SIGNPATH_EXPECTED_PUBLISHER }}
+          REQUIRE_SIGNING: ${{ github.event_name != 'pull_request' && vars.SIGNPATH_ENABLED == 'true' }}
+        run: |
+          & tools/windows/authenticode-report.ps1 -Files @('target/release/horizon-client.exe', 'target/release/horizon-prepare.exe') -Report "$env:GITHUB_WORKSPACE/dist/game-authenticode.json" -ExpectedPublisher $env:EXPECTED_PUBLISHER -RequireTrusted:($env:REQUIRE_SIGNING -eq 'true')
+      - name: Upload Windows signature diagnostics
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nirova-game-authenticode-report
+          path: dist/game-authenticode.json
+      - name: Scan native Windows game outputs with Defender
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $scan = Join-Path $env:RUNNER_TEMP 'nirova-native-game-scan'
+          New-Item -ItemType Directory -Force $scan | Out-Null
+          Copy-Item target/release/horizon-client.exe, target/release/horizon-prepare.exe $scan
+          & ./tools/windows/scan-defender.ps1 -Folder $scan -Report dist/game-defender-scan.json
+      - name: Upload native game antivirus diagnostics
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nirova-game-defender-report
+          path: dist/game-defender-scan.json
       - uses: actions/upload-artifact@v4
         with:
           name: game-${{ matrix.name }}
@@ -272,7 +352,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [pick, build, server]
+    needs: [pick, build, server, windows-signing-checks]
     # Only explicit manual runs or version tags may publish a release.
     # Ordinary branch pushes create downloadable Action artifacts, never releases.
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
@@ -286,7 +366,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
-          pattern: '*'
+          pattern: 'game-*'
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: 'server-*'
           merge-multiple: true
       - name: Sign checksums for Nirova's own release channel
         env:
