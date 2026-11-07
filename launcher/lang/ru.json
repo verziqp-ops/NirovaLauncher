@@ -630,5 +630,8 @@
   "The game runs natively in Rust. A guest nickname works for single player and offline-mode servers. Game resources are prepared separately from your Minecraft files.": "Игра работает на Rust. Гостевой ник подходит для одиночной игры и серверов в offline-mode. Ресурсы подготавливаются отдельно из ваших файлов Minecraft.",
   "Rust game installation folder": "Папка установки Rust-игры",
   "Install and play": "Установить и играть",
-  "No native game package found. Install the complete NIROVA launcher.": "Пакет Rust-игры не найден. Установите полную версию лаунчера NIROVA."
+  "No native game package found. Install the complete NIROVA launcher.": "Пакет Rust-игры не найден. Установите полную версию лаунчера NIROVA.",
+  "Rust mods from Horizon Mods, with resource packs from Modrinth. Choose a mod to install it into your NIROVA instance.": "Rust-моды из Horizon Mods и ресурспаки из Modrinth. Выберите мод для установки в свою сборку NIROVA.",
+  "Catalog: Horizon Mods": "Каталог: Horizon Mods",
+  "Horizon Mods": "Horizon Mods"
 }

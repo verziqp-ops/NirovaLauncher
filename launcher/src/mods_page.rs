@@ -33,7 +33,7 @@ const CHECKING: usize = 2;
 /// The sources to pick from on the Resource packs and Modpacks tabs; CurseForge is shown beside them as coming soon.
 const SOURCES: [(SourceId, &str); 2] = [
     (SourceId::Modrinth, "Modrinth"),
-    (SourceId::Horizon, "External Catalog"),
+    (SourceId::Horizon, "Horizon Mods"),
 ];
 const PAGE: usize = 20;
 
@@ -679,7 +679,7 @@ impl Launcher {
         let java = self.mods.java.clone();
         let instance = self
             .selected_instance()
-            .map_or_else(|| "External Catalog".to_string(), |i| i.name.clone());
+            .map_or_else(|| "Horizon Mods".to_string(), |i| i.name.clone());
         let world = self.mods.world.clone().and_then(|path| {
             let (_, name) = self.mods.worlds.iter().find(|(p, _)| *p == path)?;
             Some((path, name.clone()))
@@ -909,7 +909,7 @@ impl Launcher {
         }
         let header = page_header(
             "Mods",
-            "Native mods and shader packs from an external community catalog, and resource packs from Modrinth. Each file is checked against its source's checksum before it reaches your game folder.",
+            "Rust mods from Horizon Mods, with resource packs from Modrinth. Choose a mod to install it into your NIROVA instance.",
             &t,
         );
         let this = cx.entity().downgrade();
@@ -961,6 +961,11 @@ impl Launcher {
         // The external catalog lists its own supported projects: no "everything" or Modrinth filters.
         let registry = self.mods.source == SourceId::Horizon && !java;
         let filters = (!registry).then(|| self.mods_filters(cx));
+        let catalog = registry.then(|| {
+            text(theme::LABEL)
+                .text_color(t.ink_soft)
+                .child(tr("Catalog: Horizon Mods"))
+        });
         let controls = div()
             .flex()
             .flex_col()
@@ -974,6 +979,7 @@ impl Launcher {
                     .child(self.mods_field(cx))
                     .when(!registry && !java, |d| d.child(toggle)),
             )
+            .children(catalog)
             .children(source_note)
             .children(filters)
             .children(self.mods_target_line(cx));
