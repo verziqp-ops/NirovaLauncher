@@ -378,7 +378,7 @@ fn is_launcher_tag(tag: &str) -> bool {
 /// 2026-10-28, docs/release-flow.md), the last week's Nightlies, then the releases from before.
 /// Drafts never reach the anonymous API, and launcher releases are left out.
 pub fn releases() -> Result<Vec<Release>, String> {
-    Ok(game_releases(&release_list()?))
+    crate::bundled_runtime::merge(release_list().map(|list| game_releases(&list)))
 }
 
 /// The game's builds in `list`, newest first. A Nightly is listed under the version it installs as
@@ -620,8 +620,10 @@ fn short_path(path: &Path) -> Option<PathBuf> {
     (got != 0 && got < need).then(|| PathBuf::from(std::ffi::OsString::from_wide(&buf[..got])))
 }
 
-fn versions_dir() -> PathBuf {
-    data_dir().join("versions")
+pub fn versions_dir() -> PathBuf {
+    Settings::load()
+        .rust_versions_dir
+        .unwrap_or_else(|| data_dir().join("versions"))
 }
 
 pub fn version_dir(tag: &str) -> PathBuf {
@@ -759,6 +761,13 @@ fn unpack(archive: &Path, url: &str, to: &Path) -> Result<(), String> {
 /// Downloads one release, checks it against its signed checksums and unpacks it; `progress` gets
 /// the fraction done.
 pub fn install(release: &Release, progress: impl Fn(f32)) -> Result<(), String> {
+    if crate::bundled_runtime::is_bundled(&release.tag) {
+        return install_bundled_runtime(
+            &crate::bundled_runtime::path(),
+            &versions_dir(),
+            &progress,
+        );
+    }
     let tag = release.tag.as_str();
     let asset = release
         .asset
@@ -827,6 +836,105 @@ pub(crate) fn install_as(
     complete_assets(tag);
     progress(1.0);
     Ok(())
+}
+
+/// Install the bootstrap packaged with this launcher. Its digest is compiled into the
+/// launcher, so altering an archive on disk cannot substitute another executable.
+fn install_bundled_runtime(
+    path: &Path,
+    root: &Path,
+    progress: &impl Fn(f32),
+) -> Result<(), String> {
+    let info = crate::bundled_runtime::info().ok_or("No native build for this platform.")?;
+    install_pinned_archive(path, root, &info.tag, &info.asset, &info.sha256, progress)?;
+    reuse_prepared(root, &info.tag);
+    complete_assets(&info.tag);
+    Ok(())
+}
+
+fn install_pinned_archive(
+    path: &Path,
+    root: &Path,
+    tag: &str,
+    asset: &str,
+    expected: &str,
+    progress: &impl Fn(f32),
+) -> Result<(), String> {
+    use sha2::{Digest, Sha256};
+    fs::create_dir_all(root).map_err(|e| format!("Cannot create the selected game folder: {e}"))?;
+    if root.join(tag).join(COMPLETE).is_file() {
+        return Ok(());
+    }
+    let partial = root.join(format!(".{tag}.partial"));
+    let _ = fs::remove_dir_all(&partial);
+    fs::create_dir_all(&partial).map_err(|e| e.to_string())?;
+    let result = (|| {
+        let snapshot = partial.join("runtime.pack");
+        let mut input = fs::File::open(path).map_err(|e| {
+            format!("The complete NIROVA installation is missing its native runtime: {e}")
+        })?;
+        let mut output = fs::File::create(&snapshot).map_err(|e| e.to_string())?;
+        let total = input.metadata().map_err(|e| e.to_string())?.len().max(1);
+        let (mut done, mut hash) = (0u64, Sha256::new());
+        let mut block = [0u8; 65536];
+        loop {
+            let n = input.read(&mut block).map_err(|e| e.to_string())?;
+            if n == 0 {
+                break;
+            }
+            output.write_all(&block[..n]).map_err(|e| e.to_string())?;
+            hash.update(&block[..n]);
+            done += n as u64;
+            progress(0.8 * done as f32 / total as f32);
+        }
+        drop(output);
+        horizon_release_sign::check(asset, expected, &format!("{:x}", hash.finalize()))?;
+        validate_native_archive(&snapshot, asset)?;
+        let unpacked = partial.join("unpacked");
+        unpack(&snapshot, asset, &unpacked)?;
+        let entries = fs::read_dir(&unpacked)
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
+        let top = match entries.as_slice() {
+            [only] if only.file_type().is_ok_and(|t| t.is_dir()) => only.path(),
+            _ => return Err("Invalid native runtime package.".into()),
+        };
+        let prepare = if cfg!(windows) {
+            "horizon-prepare.exe"
+        } else {
+            "horizon-prepare"
+        };
+        for name in [CLIENT, prepare, "research-lock.json"] {
+            if !top.join(name).is_file() {
+                return Err(format!("The native runtime is missing {name}."));
+            }
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            for name in [CLIENT, prepare] {
+                fs::set_permissions(top.join(name), fs::Permissions::from_mode(0o755))
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        fs::write(top.join("LICENSE"), include_str!("../../LICENSE")).map_err(|e| e.to_string())?;
+        fs::write(
+            top.join("THIRD_PARTY_NOTICES.md"),
+            include_str!("../../THIRD_PARTY_NOTICES.md"),
+        )
+        .map_err(|e| e.to_string())?;
+        let target = root.join(tag);
+        if target.exists() {
+            return Err("The version folder already exists but is incomplete. Select a different installation folder.".into());
+        }
+        fs::write(top.join(COMPLETE), "").map_err(|e| e.to_string())?;
+        fs::rename(top, target).map_err(|e| e.to_string())?;
+        progress(1.);
+        Ok(())
+    })();
+    let _ = fs::remove_dir_all(partial);
+    result
 }
 
 /// Import an explicitly selected local CI archive. Automatic downloads still require
@@ -2807,7 +2915,9 @@ fn launcher_update_from(releases: &[Release], own: &str) -> Option<Release> {
 pub fn releases_and_updates(
     on_releases: impl FnOnce(Result<Vec<Release>, String>),
 ) -> Result<Updates, String> {
-    releases_and_updates_with(release_list, installed, launcher_releases_in, on_releases)
+    releases_and_updates_with(release_list, installed, launcher_releases_in, |r| {
+        on_releases(crate::bundled_runtime::merge(r))
+    })
 }
 
 fn releases_and_updates_with(
@@ -2855,7 +2965,11 @@ pub fn select_after_update(selected: Option<&str>, installed_before: &[String]) 
 /// Installs `tag` (or with "latest" the newest release, pre-releases left out), then updates the selection as
 /// `select_after_update` says when `as_update`, or always selects it otherwise.
 pub fn install_tag(tag: &str, as_update: bool, progress: impl Fn(f32)) -> Result<String, String> {
-    let releases = releases()?;
+    let releases = if crate::bundled_runtime::is_bundled(tag) {
+        vec![crate::bundled_runtime::release().ok_or("The native runtime package is missing.")?]
+    } else {
+        releases()?
+    };
     let release = if tag == "latest" {
         releases
             .iter()
@@ -3169,6 +3283,26 @@ pub fn self_update(release: &Release, progress: impl Fn(f32)) -> Result<(), Stri
     }
     let binary =
         find_file(&unpacked, LAUNCHER_BINARY).ok_or("The download has no launcher binary.")?;
+    if let Some(pack) = find_file(&unpacked, crate::bundled_runtime::PACK) {
+        use sha2::{Digest, Sha256};
+        let mut input = fs::File::open(&pack).map_err(|e| e.to_string())?;
+        let mut hash = Sha256::new();
+        let mut block = [0u8; 65536];
+        loop {
+            let n = input.read(&mut block).map_err(|e| e.to_string())?;
+            if n == 0 {
+                break;
+            }
+            hash.update(&block[..n]);
+        }
+        let digest = format!("{:x}", hash.finalize());
+        if let Some(parent) = exe_path().parent() {
+            let target = parent.join(format!("nirova-runtime-{digest}.pack"));
+            let temporary = target.with_extension("partial");
+            fs::copy(&pack, &temporary).map_err(|e| e.to_string())?;
+            fs::rename(temporary, target).map_err(|e| e.to_string())?;
+        }
+    }
     replace_binary(&binary, exe_path()).map_err(|e| {
         format!(
             "Could not replace the launcher at {}: {e}",
@@ -3475,6 +3609,9 @@ pub struct Settings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
     pub minecraft_dir: Option<PathBuf>,
+    /// Native Rust builds and their prepared resources. Existing saves stay in game_home.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rust_versions_dir: Option<PathBuf>,
     /// Directory for Java Edition version downloads. May be an empty folder chosen on
     /// Versions; unlike minecraft_dir, it does not need an existing versions/ layout.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5415,5 +5552,87 @@ mod local_rust_build_tests {
         assert!(restored.pixel_text);
         assert_eq!(restored.panel_opacity, Some(50));
         assert_eq!(restored.language(), crate::i18n::Language::Ukrainian);
+    }
+}
+
+#[cfg(test)]
+mod bundled_install_tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+
+    #[test]
+    fn pinned_native_install_uses_the_selected_folder_and_rejects_corruption_without_deleting_files(
+    ) {
+        let root =
+            std::env::temp_dir().join(format!("nirova-bundled-install-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let archive = root.join("runtime.zip");
+        let mut z = zip::ZipWriter::new(fs::File::create(&archive).unwrap());
+        let prepare = if cfg!(windows) {
+            "horizon-prepare.exe"
+        } else {
+            "horizon-prepare"
+        };
+        for name in [CLIENT, prepare, "research-lock.json"] {
+            z.start_file(
+                format!("game/{name}"),
+                zip::write::SimpleFileOptions::default(),
+            )
+            .unwrap();
+            z.write_all(b"native fixture").unwrap();
+        }
+        z.finish().unwrap();
+        let expected = format!("{:x}", Sha256::digest(fs::read(&archive).unwrap()));
+        let chosen = root.join("chosen game folder");
+        let mut settings = Settings::default();
+        settings.rust_versions_dir = Some(chosen.clone());
+        let restored = Settings::parse(&serde_json::to_string(&settings).unwrap());
+        assert_eq!(restored.rust_versions_dir.as_ref(), Some(&chosen));
+        let root_target = restored.rust_versions_dir.unwrap();
+        install_pinned_archive(
+            &archive,
+            &root_target,
+            "rust-valid",
+            "runtime.zip",
+            &expected,
+            &|_| {},
+        )
+        .unwrap();
+        assert_eq!(installed_in(&root_target), vec!["rust-valid"]);
+        assert_eq!(
+            fs::read(root_target.join("rust-valid").join(CLIENT)).unwrap(),
+            b"native fixture"
+        );
+        let untouched = root_target.join("rust-existing");
+        fs::create_dir_all(&untouched).unwrap();
+        fs::write(untouched.join("keep.txt"), "keep my data").unwrap();
+        assert!(install_pinned_archive(
+            &archive,
+            &root_target,
+            "rust-existing",
+            "runtime.zip",
+            &expected,
+            &|_| {}
+        )
+        .is_err());
+        assert_eq!(
+            fs::read_to_string(untouched.join("keep.txt")).unwrap(),
+            "keep my data"
+        );
+        fs::write(&archive, "tampered package").unwrap();
+        assert!(install_pinned_archive(
+            &archive,
+            &root_target,
+            "rust-corrupt",
+            "runtime.zip",
+            &expected,
+            &|_| {}
+        )
+        .is_err());
+        assert!(!root_target.join("rust-corrupt").exists());
+        assert!(!root_target.join(".rust-corrupt.partial").exists());
+        assert_eq!(installed_in(&root_target), vec!["rust-valid"]);
+        fs::remove_dir_all(root).unwrap();
     }
 }

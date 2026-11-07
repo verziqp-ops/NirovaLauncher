@@ -628,5 +628,7 @@
   "Import NIROVA Rust archive": "Импортировать архив NIROVA Rust",
   "Installed NIROVA Rust build": "Установленная Rust-сборка NIROVA",
   "The game runs natively in Rust. A guest nickname works for single player and offline-mode servers. Game resources are prepared separately from your Minecraft files.": "Игра работает на Rust. Гостевой ник подходит для одиночной игры и серверов в offline-mode. Ресурсы подготавливаются отдельно из ваших файлов Minecraft.",
-  "NIROVA Rust 26.3: no downloadable build has been published yet. Import a local NIROVA game archive to install it.": "NIROVA Rust 26.3: сборка для скачивания ещё не опубликована. Для установки импортируйте локальный архив игры NIROVA."
+  "Rust game installation folder": "Папка установки Rust-игры",
+  "Install and play": "Установить и играть",
+  "No native game package found. Install the complete NIROVA launcher.": "Пакет Rust-игры не найден. Установите полную версию лаунчера NIROVA."
 }

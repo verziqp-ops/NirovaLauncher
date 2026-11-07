@@ -316,6 +316,7 @@ struct Launcher {
     /// The session's measurements (`perf.rs`), and when the steps they time began.
     perf: perf::Perf,
     install_started: Option<Instant>,
+    play_after_install: Option<String>,
     prepare_started: Option<Instant>,
     /// The download under way as first seen (when, files done), for the time left.
     download_seen: Option<(Instant, usize)>,
@@ -543,6 +544,7 @@ impl Launcher {
             _activation: cx.observe_window_activation(window, |_, _, cx| cx.notify()),
             perf: perf::Perf::new("session"),
             install_started: None,
+            play_after_install: None,
             prepare_started: None,
             download_seen: None,
             home_tab: home_tabs::HomeTab::from_env(),
@@ -1000,6 +1002,14 @@ impl Launcher {
                         };
                         self.perf.record_since(name, started);
                     }
+                    let requested_play = self
+                        .play_after_install
+                        .take()
+                        .filter(|t| t == &tag)
+                        .is_some()
+                        && self.client.is_none()
+                        && self.starting_client.is_none()
+                        && !self.preparing;
                     match result {
                         Ok(()) => {
                             if self.updates.horizon.as_ref().is_some_and(|r| r.tag == tag) {
@@ -1009,6 +1019,19 @@ impl Launcher {
                                 self.settings.selected = Some(tag);
                             }
                             self.settings.save();
+                            if requested_play {
+                                let selected = self.settings.selected.clone();
+                                self.pin_version(None);
+                                self.go(Page::Play);
+                                if let Some(tag) = selected {
+                                    if backend::is_prepared(&tag) {
+                                        self.play();
+                                    } else {
+                                        self.play_when_prepared = Some(tag);
+                                        self.prepare(backend::MinecraftFrom::Install);
+                                    }
+                                }
+                            }
                             // After the save: the selected version is never pruned.
                             let tx = self.tx.clone();
                             std::thread::spawn(move || {
@@ -1257,7 +1280,10 @@ impl Launcher {
     }
 
     fn install(&mut self, release: &Release) {
-        if release.asset.is_none() || self.removing.contains(&release.tag) {
+        if self.installing.is_some()
+            || release.asset.is_none()
+            || self.removing.contains(&release.tag)
+        {
             return;
         }
         let (release, tx) = (release.clone(), self.tx.clone());
@@ -2021,8 +2047,8 @@ fn play_press(prepared: bool, owner: Option<bool>, busy: bool) -> PlayPress {
         _ if busy => PlayPress::Nothing,
         (true, _) => PlayPress::Play,
         (false, Some(true)) => PlayPress::PrepareThenPlay,
-        // This fork: no owner prepares from the player's own Minecraft install, then plays.
-        (false, _) => PlayPress::Nothing,
+        // Local guests prepare their own resources; verified owners may download theirs.
+        (false, _) => PlayPress::PrepareThenPlay,
     }
 }
 
@@ -3266,6 +3292,7 @@ impl Launcher {
                     ))
                     .child(self.accent_row(cx))
                     .child(self.scenery_controls(cx))
+                    .child(index_row(0, tr("Import NIROVA Rust archive"), None, Some(button("import-rust-build", "Import NIROVA Rust archive", Kind::Secondary, &t).on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_rust_archive(cx))).into_any_element()), &t))
                     .child(self.pixel_text_row(cx))
                     .child(self.home_background_row(cx))
                     .child(self.language_row(cx))
@@ -3987,6 +4014,72 @@ impl Launcher {
             .children(error.map(|e| notice(e, &t)))
     }
 
+    fn choose_rust_folder(&mut self, cx: &mut Context<Self>) {
+        if self.installing.is_some()
+            || self.preparing
+            || self.client.is_some()
+            || self.starting_client.is_some()
+        {
+            return;
+        }
+        let paths = cx.prompt_for_paths(PathPromptOptions {
+            files: false,
+            directories: true,
+            multiple: false,
+            prompt: Some(tr("Rust game installation folder").to_string().into()),
+        });
+        cx.spawn(async move |this, cx| {
+            if let Ok(Ok(Some(mut paths))) = paths.await {
+                if let Some(path) = paths.pop() {
+                    let _ = this.update(cx, |this, cx| {
+                        if this.installing.is_some()
+                            || this.preparing
+                            || this.client.is_some()
+                            || this.starting_client.is_some()
+                        {
+                            return;
+                        }
+                        this.settings.rust_versions_dir = Some(path);
+                        this.settings.save();
+                        this.installed = backend::installed();
+                        this.settings.selected = this.installed.first().cloned();
+                        this.settings.save();
+                        this.disk_for.clear();
+                        this.install_error = None;
+                        cx.notify();
+                    });
+                }
+            }
+        })
+        .detach();
+    }
+
+    fn rust_folder_row(&self, cx: &mut Context<Self>) -> Div {
+        let t = self.theme;
+        let busy = self.installing.is_some()
+            || self.preparing
+            || self.client.is_some()
+            || self.starting_client.is_some();
+        let choose = button("choose-rust-folder", "Choose…", Kind::Secondary, &t);
+        let choose = if busy {
+            disabled(choose)
+        } else {
+            choose.on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_rust_folder(cx)))
+        };
+        plate(&t).p(px(16.)).child(index_row(
+            0,
+            tr("Rust game installation folder"),
+            Some(
+                text(theme::UI)
+                    .text_color(t.ink_soft)
+                    .child(short(&backend::versions_dir()))
+                    .into_any_element(),
+            ),
+            Some(choose.into_any_element()),
+            &t,
+        ))
+    }
+
     fn choose_rust_archive(&mut self, cx: &mut Context<Self>) {
         if self.installing.is_some() {
             return;
@@ -4058,8 +4151,7 @@ impl Launcher {
             .gap(px(32.))
             .child(header)
             .child(text(theme::UI).text_color(t.muted).child(tr("The game runs natively in Rust. A guest nickname works for single player and offline-mode servers. Game resources are prepared separately from your Minecraft files.")))
-            .child(button("import-rust-build", "Import NIROVA Rust archive", Kind::Secondary, &t)
-                .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_rust_archive(cx))))
+            .child(self.rust_folder_row(cx))
             .children(self.installing.as_ref().filter(|(tag,_)| tag == "local-import").map(|_| progress_bar(Some(self.bar), &t)))
             .children(self.install_error.as_ref().filter(|(tag,_)| tag == "local-import").map(|(_,e)| text(theme::UI).text_color(t.danger).child(e.clone())))
             .child(
@@ -4100,6 +4192,13 @@ impl Launcher {
             Load::Loading => Vec::new(),
             Load::Failed(_) => Vec::new(),
         };
+        let bundled = horizon_launcher::bundled_runtime::release();
+        let has_bundled = bundled.is_some();
+        if let Some(local) = bundled {
+            if !available.iter().any(|r| r.tag == local.tag) {
+                available.push(local);
+            }
+        }
         for tag in &self.installed {
             if !native_mods::is_native(tag) && !available.iter().any(|r| &r.tag == tag) {
                 available.push(Release {
@@ -4114,12 +4213,22 @@ impl Launcher {
             }
         }
         let page = match &self.releases {
+            Load::Loading | Load::Failed(_) if has_bundled => page,
             Load::Loading => page.child(centered(tr("Loading releases…"), &t)),
-            Load::Failed(e) => page.child(centered(&trf("Couldn't load releases. {error}", &[("error",e)]), &t)
-                .child(button("retry", "Try again", Kind::Secondary, &t).on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                    this.fetch_releases(); cx.notify();
-                })))),
-            Load::Ready(r) if r.is_empty() => page.child(centered(tr("NIROVA Rust 26.3: no downloadable build has been published yet. Import a local NIROVA game archive to install it."), &t)),
+            Load::Failed(e) => page.child(
+                centered(&trf("Couldn't load releases. {error}", &[("error", e)]), &t).child(
+                    button("retry", "Try again", Kind::Secondary, &t).on_click(cx.listener(
+                        |this, _: &ClickEvent, _, cx| {
+                            this.fetch_releases();
+                            cx.notify();
+                        },
+                    )),
+                ),
+            ),
+            Load::Ready(r) if r.is_empty() && !has_bundled => page.child(centered(
+                tr("No native game package found. Install the complete NIROVA launcher."),
+                &t,
+            )),
             _ => page,
         };
         if available.is_empty() {
@@ -4156,50 +4265,66 @@ impl Launcher {
                     .split_once(": ")
                     .map(|(_, rest)| rest.to_string())
                     .unwrap_or_else(|| release.name.clone());
-                let right: gpui::AnyElement = if let Some((_, p)) =
-                    self.installing.as_ref().filter(|(t, _)| *t == tag)
-                {
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap(px(10.))
-                        .w(px(180.))
-                        .child(progress_bar(Some(self.bar), &t))
-                        .child(
-                            text(theme::MICRO)
-                                .w(px(36.))
-                                .text_color(t.muted)
-                                .child(format!("{:.0}%", p * 100.)),
-                        )
-                        .into_any_element()
-                } else if self.removing.contains(&tag) {
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap(px(10.))
-                        .w(px(180.))
-                        .child(progress_bar(None, &t))
-                        .child(text(theme::MICRO).text_color(t.muted).child("Removing…"))
-                        .into_any_element()
-                } else if installed {
-                    self.version_actions(&tag, selected, cx).into_any_element()
-                } else if release.asset.is_none() {
-                    text(theme::CAPTION)
-                        .text_color(t.muted)
-                        .child(tr("No build for this platform"))
-                        .into_any_element()
-                } else {
-                    let mut b = button(format!("install-{tag}"), "Install", Kind::Secondary, &t);
-                    if self.installing.is_some() {
-                        b = disabled(b);
+                let right: gpui::AnyElement =
+                    if let Some((_, p)) = self.installing.as_ref().filter(|(t, _)| *t == tag) {
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(10.))
+                            .w(px(180.))
+                            .child(progress_bar(Some(self.bar), &t))
+                            .child(
+                                text(theme::MICRO)
+                                    .w(px(36.))
+                                    .text_color(t.muted)
+                                    .child(format!("{:.0}%", p * 100.)),
+                            )
+                            .into_any_element()
+                    } else if self.removing.contains(&tag) {
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(10.))
+                            .w(px(180.))
+                            .child(progress_bar(None, &t))
+                            .child(text(theme::MICRO).text_color(t.muted).child("Removing…"))
+                            .into_any_element()
+                    } else if installed {
+                        self.version_actions(&tag, selected, cx).into_any_element()
+                    } else if release.asset.is_none() {
+                        text(theme::CAPTION)
+                            .text_color(t.muted)
+                            .child(tr("No build for this platform"))
+                            .into_any_element()
                     } else {
-                        b = b.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                            this.install(&release);
-                            cx.notify();
-                        }));
-                    }
-                    b.into_any_element()
-                };
+                        let mut b = button(
+                            format!("install-{tag}"),
+                            "Install and play",
+                            Kind::Primary,
+                            &t,
+                        );
+                        if self.installing.is_some()
+                            || self.preparing
+                            || self.client.is_some()
+                            || self.starting_client.is_some()
+                        {
+                            b = disabled(b);
+                        } else {
+                            b = b.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                                if this.installing.is_some()
+                                    || this.preparing
+                                    || this.client.is_some()
+                                    || this.starting_client.is_some()
+                                {
+                                    return;
+                                }
+                                this.play_after_install = Some(release.tag.clone());
+                                this.install(&release);
+                                cx.notify();
+                            }));
+                        }
+                        b.into_any_element()
+                    };
                 let status = if selected {
                     Some(caps(tr("In use")).text_color(t.accent))
                 } else if installed {
@@ -4240,11 +4365,17 @@ impl Launcher {
                                     .min_w_0()
                                     .gap(px(4.))
                                     .child(
-                                        version_tag(if tag.starts_with("local-") {
-                                            "NIROVA Rust 26.3"
-                                        } else {
-                                            &tag
-                                        })
+                                        version_tag(
+                                            if tag.starts_with("local-")
+                                                || horizon_launcher::bundled_runtime::is_bundled(
+                                                    &tag,
+                                                )
+                                            {
+                                                "NIROVA Rust 26.3"
+                                            } else {
+                                                &tag
+                                            },
+                                        )
                                         .text_color(t.ink),
                                     )
                                     .child(
@@ -4925,9 +5056,8 @@ mod tests {
         );
     }
 
-    /// An owner's Play works on a version not prepared yet: it prepares it (downloading
-    /// Minecraft from Mojang when this computer has no install), then plays. Without an owner
-    /// it stays off: signing in comes first.
+    /// Play prepares missing resources for both local guests and owners. The backend
+    /// independently protects Mojang downloads; guest preparation uses existing files.
     #[test]
     fn play_prepares_first_for_an_owner() {
         use super::{play_press, PlayPress};
@@ -4937,8 +5067,11 @@ mod tests {
             play_press(false, Some(true), false),
             PlayPress::PrepareThenPlay
         );
-        assert_eq!(play_press(false, Some(false), false), PlayPress::Nothing);
-        assert_eq!(play_press(false, None, false), PlayPress::Nothing);
+        assert_eq!(
+            play_press(false, Some(false), false),
+            PlayPress::PrepareThenPlay
+        );
+        assert_eq!(play_press(false, None, false), PlayPress::PrepareThenPlay);
         assert!(!super::starts_now(false, false, false));
         assert_eq!(play_press(false, Some(true), true), PlayPress::Nothing);
         assert_eq!(play_press(true, Some(true), true), PlayPress::Nothing);

@@ -1,0 +1,37 @@
+{
+  "tag": "rust-26.3-35a70cf",
+  "name": "NIROVA Rust 26.3",
+  "source": "35a70cf29dafc29274909cc3fc382f8618c0e57b",
+  "run_id": 42359386249,
+  "minecraft": "26.3",
+  "platforms": {
+    "windows": {
+      "asset": "nirova-game-windows-x64.zip",
+      "os": "windows",
+      "arch": "x86_64",
+      "sha256": "ed831715aa4d30ecf791c5e352ead3e02a2f4e8c0535bc33367bcf2a2f865e71",
+      "size": 27524175
+    },
+    "linux": {
+      "asset": "nirova-game-linux-x86_64.tar.gz",
+      "os": "linux",
+      "arch": "x86_64",
+      "sha256": "897d0e7a1544f8d9c61a975b502709b83d5d8748ff35a06c80408d2821da6c4a",
+      "size": 29321542
+    },
+    "macos": {
+      "asset": "nirova-game-macos-arm64.zip",
+      "os": "macos",
+      "arch": "aarch64",
+      "sha256": "049e8a6ceb6d44d9be92114528f6edabfb280fbb6dd73272e9733da6d3417c6e",
+      "size": 25541522
+    },
+    "macos-x64": {
+      "asset": "nirova-game-macos-x64.zip",
+      "os": "macos",
+      "arch": "x86_64",
+      "sha256": "1bef9b2c17f6c3aad0ae3d34a3e578af771c13b0228679569217439a300a10cd",
+      "size": 27893611
+    }
+  }
+}

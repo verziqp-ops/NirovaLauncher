@@ -11,6 +11,9 @@
 #ifndef Source
   #define Source "..\..\launcher\target\release\nirova-launcher.exe"
 #endif
+#ifndef RuntimeSource
+  #define RuntimeSource "..\..\launcher\target\release\nirova-runtime.pack"
+#endif
 #define AppName "NIROVA Launcher"
 #define AppExe "nirova-launcher.exe"
 
@@ -50,6 +53,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
+Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#RuntimeSource}"; DestDir: "{app}"; DestName: "nirova-runtime.pack"; Flags: ignoreversion
 Source: "{#Source}"; DestDir: "{app}"; DestName: "{#AppExe}"; Flags: ignoreversion
 
 [Icons]
