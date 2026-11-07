@@ -37,46 +37,55 @@ impl Launcher {
             (backend::Appearance::System, "System"),
         ] {
             let selected = self.settings.appearance == choice;
-            let mut art = div().relative().size(px(100.)).overflow_hidden();
-            for y in 0..20 {
-                for x in 0..20 {
-                    let dark = choice == backend::Appearance::Dark
-                        || (choice == backend::Appearance::System && x + y < 20);
-                    let color = if y >= 16 {
-                        if (x + y) % 3 == 0 {
-                            0x705037
-                        } else {
-                            0x876044
+            // Paint the artwork on one canvas so pixel cells have no widget borders.
+            let art = canvas(
+                |_, _, _| {},
+                move |bounds, (), window, _| {
+                    for y in 0..20 {
+                        for x in 0..20 {
+                            let dark = choice == backend::Appearance::Dark
+                                || (choice == backend::Appearance::System && x + y < 20);
+                            let color = if y >= 16 {
+                                if (x + y) % 3 == 0 {
+                                    0x705037
+                                } else {
+                                    0x876044
+                                }
+                            } else if y >= 14 {
+                                if y == 14 {
+                                    0x68ac47
+                                } else {
+                                    0x4e8038
+                                }
+                            } else if dark
+                                && [(4, 3), (13, 4), (9, 8), (16, 10), (3, 11)].contains(&(x, y))
+                            {
+                                0xdce9ff
+                            } else if !dark
+                                && ((3..9).contains(&x) && (4..6).contains(&y)
+                                    || (11..17).contains(&x) && (9..11).contains(&y))
+                            {
+                                0xe4f4ff
+                            } else if dark {
+                                0x141d3a
+                            } else {
+                                0x64baf2
+                            };
+                            window.paint_quad(fill(
+                                Bounds::new(
+                                    point(
+                                        bounds.origin.x + px(x as f32 * 5.),
+                                        bounds.origin.y + px(y as f32 * 5.),
+                                    ),
+                                    size(px(5.), px(5.)),
+                                ),
+                                gpui::rgb(color),
+                            ));
                         }
-                    } else if y >= 14 {
-                        if y == 14 {
-                            0x68ac47
-                        } else {
-                            0x4e8038
-                        }
-                    } else if dark && [(4, 3), (13, 4), (9, 8), (16, 10), (3, 11)].contains(&(x, y))
-                    {
-                        0xdce9ff
-                    } else if !dark
-                        && ((3..9).contains(&x) && (4..6).contains(&y)
-                            || (11..17).contains(&x) && (9..11).contains(&y))
-                    {
-                        0xe4f4ff
-                    } else if dark {
-                        0x141d3a
-                    } else {
-                        0x64baf2
-                    };
-                    art = art.child(
-                        div()
-                            .absolute()
-                            .left(px(x as f32 * 5.))
-                            .top(px(y as f32 * 5.))
-                            .size(px(5.))
-                            .bg(gpui::rgb(color)),
-                    );
-                }
-            }
+                    }
+                },
+            )
+            .size(px(100.));
             tiles = tiles.child(
                 keyboard(div().id(SharedString::from(format!("theme-{label}"))), &t)
                     .flex()
@@ -102,6 +111,29 @@ impl Launcher {
             );
         }
         tiles
+    }
+
+    pub(super) fn pixel_text_row(&self, cx: &mut Context<Self>) -> Div {
+        let t = self.theme;
+        let enabled = self.settings.pixel_text;
+        index_row(
+            0,
+            tr("Pixel text"),
+            Some(text(theme::CAPTION).text_color(t.muted).child(tr(
+                "Use a pixel font throughout the launcher. Off uses the standard readable font."
+            )).into_any_element()),
+            Some(
+                switch("pixel-text", enabled, &t)
+                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        this.settings.pixel_text = !enabled;
+                        theme::set_pixel_text(!enabled);
+                        this.settings.save();
+                        cx.notify();
+                    }))
+                    .into_any_element(),
+            ),
+            &t,
+        )
     }
 
     pub(super) fn scenery_controls(&self, cx: &mut Context<Self>) -> Div {

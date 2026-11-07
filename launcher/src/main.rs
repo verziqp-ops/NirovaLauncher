@@ -413,6 +413,7 @@ impl Launcher {
         })
         .detach();
         let mut settings = Settings::load();
+        theme::set_pixel_text(settings.pixel_text);
         i18n::set(settings.language());
         if settings.minecraft_dir.is_none() {
             settings.minecraft_dir = backend::default_minecraft_dir();
@@ -1576,30 +1577,6 @@ impl Launcher {
         .detach();
     }
 
-    /// Pick an independent destination for Minecraft Java Edition version downloads.
-    /// The directory can be empty: the downloader creates versions/, libraries/ and assets/.
-    fn choose_java_versions_folder(&mut self, cx: &mut Context<Self>) {
-        let paths = cx.prompt_for_paths(PathPromptOptions {
-            files: false,
-            directories: true,
-            multiple: false,
-            prompt: Some(tr("Minecraft version download folder").to_string().into()),
-        });
-        cx.spawn(async move |this, cx| {
-            if let Ok(Ok(Some(mut paths))) = paths.await {
-                if let Some(path) = paths.pop() {
-                    let _ = this.update(cx, |this, cx| {
-                        this.settings.java_versions_dir = Some(path);
-                        this.settings.save();
-                        this.instances.java_install_error = None;
-                        cx.notify();
-                    });
-                }
-            }
-        })
-        .detach();
-    }
-
     /// Picks a Minecraft client jar to prepare from; preparing checks it is the right one.
     fn choose_jar(&mut self, cx: &mut Context<Self>) {
         let paths = cx.prompt_for_paths(PathPromptOptions {
@@ -1710,7 +1687,7 @@ fn text(step: theme::Step) -> Div {
     let d = if step.mono {
         d.font_family(theme::MONO)
     } else if step.px >= theme::HEADING.px {
-        d.font_family(theme::PIXEL)
+        d.font_family(theme::font())
     } else {
         d
     };
@@ -1749,7 +1726,7 @@ fn mark(size: f32, t: &Theme) -> Div {
         .justify_center()
         .child(
             div()
-                .font_family(theme::DISPLAY_FONT)
+                .font_family(theme::display_font())
                 .font_weight(FontWeight::BOLD)
                 .text_size(px(size * 0.72))
                 .line_height(px(size * 0.78))
@@ -1813,7 +1790,7 @@ fn button(
         .justify_center()
         .h(px(theme::CONTROL))
         .px(px(14.))
-        .font_family(theme::PIXEL)
+        .font_family(theme::font())
         .text_size(px(15.))
         .font_weight(FontWeight::MEDIUM)
         .cursor_pointer()
@@ -1971,7 +1948,7 @@ fn segments<T: Copy + PartialEq + 'static>(
                 .h(px(theme::SEGMENT))
                 .px(px(14.))
                 .pb(px(2.))
-                .font_family(theme::PIXEL)
+                .font_family(theme::font())
                 .text_size(px(14.))
                 .font_weight(FontWeight::MEDIUM)
                 .cursor_pointer()
@@ -2449,7 +2426,7 @@ impl Launcher {
                 .child(mark(24., &t))
                 .child(
                     shell::text(theme::night::TITLE, shell::c(n.ink))
-                        .font_family(theme::DISPLAY_FONT)
+                        .font_family(theme::display_font())
                         .child("NIROVA"),
                 )
         });
@@ -3289,6 +3266,7 @@ impl Launcher {
                     ))
                     .child(self.accent_row(cx))
                     .child(self.scenery_controls(cx))
+                    .child(self.pixel_text_row(cx))
                     .child(self.home_background_row(cx))
                     .child(self.language_row(cx))
                     .child(self.while_playing_row(n + 3, cx))
@@ -4009,220 +3987,50 @@ impl Launcher {
             .children(error.map(|e| notice(e, &t)))
     }
 
-    /// Reuse or create a vanilla Java instance for a locally installed version and start it.
-    /// Guest names work offline; servers that require Microsoft authentication still refuse them.
-    fn play_java_version_from_versions(&mut self, version: String) {
-        if self.client.is_some() || self.starting_client.is_some() {
+    fn choose_rust_archive(&mut self, cx: &mut Context<Self>) {
+        if self.installing.is_some() {
             return;
         }
-        let instance = self
-            .instances
-            .list
-            .iter()
-            .find(|instance| {
-                instance
-                    .java
-                    .as_ref()
-                    .is_some_and(|java| java.minecraft == version && java.loader.is_none())
-            })
-            .cloned()
-            .map(Ok)
-            .unwrap_or_else(|| instances::create_java(&format!("Vanilla {version}"), &version));
-        match instance {
-            Ok(instance) => {
-                self.select_instance(&instance);
-                self.reload_instances();
-                self.go(Page::Play);
-                self.play();
+        let paths = cx.prompt_for_paths(PathPromptOptions {
+            files: true,
+            directories: false,
+            multiple: false,
+            prompt: Some(tr("Import NIROVA Rust archive").to_string().into()),
+        });
+        cx.spawn(async move |this, cx| {
+            if let Ok(Ok(Some(mut paths))) = paths.await {
+                if let Some(path) = paths.pop() {
+                    let _ = this.update(cx, |this, cx| {
+                        if this.installing.is_some() {
+                            return;
+                        }
+                        this.installing = Some(("local-import".into(), 0.));
+                        this.install_started = Some(Instant::now());
+                        this.install_error = None;
+                        let tx = this.tx.clone();
+                        std::thread::spawn(move || {
+                            let result = backend::import_game_archive(&path, |p| {
+                                let _ = tx.send(Msg::Progress("local-import".into(), p));
+                            });
+                            let (tag, result) = match result {
+                                Ok(tag) => (tag, Ok(())),
+                                Err(e) => ("local-import".into(), Err(e)),
+                            };
+                            let _ = tx.send(Msg::Installed(tag, result));
+                        });
+                        cx.notify();
+                    });
+                }
             }
-            Err(e) => self.client_error = Some(e),
-        }
-    }
-
-    /// Public Minecraft Java Edition version catalogue, separate from NIROVA's own builds.
-    /// A guest can start a version already present locally, but the official download path
-    /// must still check Mojang ownership. No file is invented to simulate an installation.
-    fn java_versions_panel(&mut self, cx: &mut Context<Self>) -> Div {
-        if matches!(self.instances.versions, new_instance::VersionList::NotAsked) {
-            self.load_java_versions(cx);
-        }
-        let t = self.theme;
-        let mut panel = div()
-            .flex()
-            .flex_col()
-            .gap(px(12.))
-            .child(text(theme::HEADING).text_color(t.ink).child("Minecraft Java Edition"))
-            .child(
-                text(theme::UI)
-                    .text_color(t.muted)
-                    .child(tr("Choose a version and folder, select Download, then Play. Guests can play singleplayer and offline-mode servers; online servers use Microsoft sign-in.")),
-            )
-            .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap(px(12.))
-                    .px(px(12.))
-                    .py(px(10.))
-                    .pixel_bg(t.panel)
-                    .border_1()
-                    .pixel_border(t.outline)
-                    .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .flex_1()
-                            .min_w_0()
-                            .gap(px(4.))
-                            .child(text(theme::CAPTION).text_color(t.muted).child(tr("Version download folder")))
-                            .child(
-                                text(theme::UI)
-                                    .text_color(t.ink)
-                                    .truncate()
-                                    .child(backend::java_download_dir().display().to_string()),
-                            ),
-                    )
-                    .child(
-                        button("choose-java-download-dir", "Choose folder…", Kind::Secondary, &t)
-                            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
-                                this.choose_java_versions_folder(cx);
-                                cx.notify();
-                            })),
-                    ),
-            );
-        let search = self
-            .servers
-            .value(servers_page::Field::InstanceVersion)
-            .trim()
-            .to_lowercase();
-        panel = panel.child(self.field(
-            servers_page::Field::InstanceVersion,
-            "Search versions",
-            280.,
-            cx,
-        ));
-        let versions: Vec<horizon_launcher::minecraft_versions::Version> =
-            match &self.instances.versions {
-                new_instance::VersionList::NotAsked | new_instance::VersionList::Loading => {
-                    return panel.child(
-                        text(theme::UI)
-                            .text_color(t.muted)
-                            .child(tr("Loading versions…")),
-                    );
-                }
-                new_instance::VersionList::Failed(e) => {
-                    return panel.child(text(theme::UI).text_color(t.danger).child(e.clone()));
-                }
-                new_instance::VersionList::Ready(versions) => versions
-                    .all
-                    .iter()
-                    .filter(|v| search.is_empty() || v.id.to_lowercase().contains(&search))
-                    .take(50)
-                    .cloned()
-                    .collect(),
-            };
-        if versions.is_empty() {
-            return panel.child(
-                text(theme::UI)
-                    .text_color(t.muted)
-                    .child(tr("No versions found.")),
-            );
-        }
-        let root = self.settings.minecraft_dir.clone();
-        let download_root = backend::java_download_dir();
-        let own = backend::data_dir().join("minecraft");
-        let mut rows = div().flex().flex_col().gap(px(6.));
-        for version in versions {
-            let id = version.id;
-            let installed = backend::local_java_version_ready(&download_root, &id)
-                || backend::local_java_version_ready(&own, &id)
-                || root
-                    .as_deref()
-                    .is_some_and(|dir| backend::local_java_version_ready(dir, &id));
-            let kind = match version.kind {
-                horizon_launcher::minecraft_versions::Kind::Release => "Release",
-                horizon_launcher::minecraft_versions::Kind::Snapshot => "Snapshot",
-                horizon_launcher::minecraft_versions::Kind::OldBeta => "Beta",
-                horizon_launcher::minecraft_versions::Kind::OldAlpha => "Alpha",
-            };
-            let right: AnyElement =
-                if self.instances.java_installing.as_deref() == Some(id.as_str()) {
-                    text(theme::CAPTION)
-                        .text_color(t.muted)
-                        .child(tr("Downloading…"))
-                        .into_any_element()
-                } else if installed {
-                    let playing = id.clone();
-                    button(format!("java-play-{id}"), "Play", Kind::Secondary, &t)
-                        .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                            this.play_java_version_from_versions(playing.clone());
-                            cx.notify();
-                        }))
-                        .into_any_element()
-                } else {
-                    let downloading = id.clone();
-                    let install = button(
-                        format!("java-install-{id}"),
-                        "Download",
-                        Kind::Secondary,
-                        &t,
-                    );
-                    let install = if self.instances.java_installing.is_some() {
-                        disabled(install)
-                    } else {
-                        install.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                            this.install_java_version_id(downloading.clone(), cx);
-                            cx.notify();
-                        }))
-                    };
-                    install.into_any_element()
-                };
-            rows = rows.child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap(px(12.))
-                    .px(px(12.))
-                    .py(px(10.))
-                    .pixel_bg(t.panel)
-                    .border_1()
-                    .pixel_border(t.outline)
-                    .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .flex_1()
-                            .min_w_0()
-                            .gap(px(3.))
-                            .child(text(theme::UI).text_color(t.ink).child(id))
-                            .child(text(theme::CAPTION).text_color(t.muted).child(format!(
-                                "{kind} · {}{}",
-                                version.released.get(..10).unwrap_or(""),
-                                if installed { tr(" · Installed") } else { "" }
-                            ))),
-                    )
-                    .child(right),
-            );
-        }
-        panel = panel.child(rows);
-        if let Some(error) = &self.instances.java_install_error {
-            panel = panel.child(text(theme::UI).text_color(t.danger).child(error.clone()));
-        }
-        if let Some(id) = &self.instances.java_installed {
-            panel = panel.child(text(theme::UI).text_color(t.muted).child(trf(
-                "Minecraft {version} downloaded. Select Play.",
-                &[("version", id)],
-            )));
-        }
-        panel
+        })
+        .detach();
     }
 
     fn versions_page(&mut self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
-        let java_panel = self.java_versions_panel(cx);
         let header = page_header(
             "Versions",
-            tr("Minecraft Java Edition and NIROVA builds."),
+            tr("NIROVA Rust builds. Guest play is supported."),
             &t,
         );
         // Measured again when the installed versions change.
@@ -4249,7 +4057,11 @@ impl Launcher {
             .flex_col()
             .gap(px(32.))
             .child(header)
-            .child(java_panel)
+            .child(text(theme::UI).text_color(t.muted).child(tr("The game runs natively in Rust. A guest nickname works for single player and offline-mode servers. Game resources are prepared separately from your Minecraft files.")))
+            .child(button("import-rust-build", "Import NIROVA Rust archive", Kind::Secondary, &t)
+                .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.choose_rust_archive(cx))))
+            .children(self.installing.as_ref().filter(|(tag,_)| tag == "local-import").map(|_| progress_bar(Some(self.bar), &t)))
+            .children(self.install_error.as_ref().filter(|(tag,_)| tag == "local-import").map(|(_,e)| text(theme::UI).text_color(t.danger).child(e.clone())))
             .child(
                 text(theme::HEADING)
                     .text_color(t.ink)
@@ -4283,25 +4095,37 @@ impl Launcher {
                     ),
             )
         });
-        let releases = match &self.releases {
-            Load::Loading => return page.child(centered(tr("Loading releases…"), &t)),
-            Load::Failed(e) => {
-                return page.child(
-                    centered(&trf("Couldn't load releases. {error}", &[("error", e)]), &t).child(
-                        button("retry", "Try again", Kind::Secondary, &t).on_click(cx.listener(
-                            |this, _: &ClickEvent, _, cx| {
-                                this.fetch_releases();
-                                cx.notify();
-                            },
-                        )),
-                    ),
-                )
-            }
-            Load::Ready(r) if r.is_empty() => {
-                return page.child(centered(tr("No releases yet."), &t));
-            }
-            Load::Ready(r) => r,
+        let mut available = match &self.releases {
+            Load::Ready(r) => r.clone(),
+            Load::Loading => Vec::new(),
+            Load::Failed(_) => Vec::new(),
         };
+        for tag in &self.installed {
+            if !native_mods::is_native(tag) && !available.iter().any(|r| &r.tag == tag) {
+                available.push(Release {
+                    tag: tag.clone(),
+                    name: tr("Installed NIROVA Rust build").to_string(),
+                    body: String::new(),
+                    date: String::new(),
+                    asset: None,
+                    prerelease: false,
+                    nightly: None,
+                });
+            }
+        }
+        let page = match &self.releases {
+            Load::Loading => page.child(centered(tr("Loading releases…"), &t)),
+            Load::Failed(e) => page.child(centered(&trf("Couldn't load releases. {error}", &[("error",e)]), &t)
+                .child(button("retry", "Try again", Kind::Secondary, &t).on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                    this.fetch_releases(); cx.notify();
+                })))),
+            Load::Ready(r) if r.is_empty() => page.child(centered(tr("NIROVA Rust 26.3: no downloadable build has been published yet. Import a local NIROVA game archive to install it."), &t)),
+            _ => page,
+        };
+        if available.is_empty() {
+            return page;
+        }
+        let releases = &available;
         // A hundred releases: only the rows near the screen are drawn.
         let keep = |i: usize| {
             let tag = &releases[i].tag;
@@ -4415,7 +4239,14 @@ impl Launcher {
                                     .flex_1()
                                     .min_w_0()
                                     .gap(px(4.))
-                                    .child(version_tag(&tag).text_color(t.ink))
+                                    .child(
+                                        version_tag(if tag.starts_with("local-") {
+                                            "NIROVA Rust 26.3"
+                                        } else {
+                                            &tag
+                                        })
+                                        .text_color(t.ink),
+                                    )
                                     .child(
                                         text(theme::UI)
                                             .text_color(t.muted)
@@ -4714,7 +4545,7 @@ impl Render for Launcher {
             .flex()
             .flex_col()
             .size_full()
-            .font_family(theme::FONT)
+            .font_family(theme::font())
             .text_color(t.ink)
             .overflow_hidden()
             .child(
@@ -4789,7 +4620,7 @@ impl Render for Launcher {
             let gone = 1. - ease_out_cubic(reveal / 0.6);
             let word = div()
                 .flex()
-                .font_family(theme::PIXEL)
+                .font_family(theme::font())
                 .text_size(px(theme::WORDMARK.px * 0.5))
                 .line_height(px(theme::WORDMARK.px * 0.5))
                 .font_weight(FontWeight::BOLD)

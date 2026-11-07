@@ -829,6 +829,182 @@ pub(crate) fn install_as(
     Ok(())
 }
 
+/// Import an explicitly selected local CI archive. Automatic downloads still require
+/// signed release checksums; this path never fetches or executes a program.
+pub fn import_game_archive(path: &Path, progress: impl Fn(f32)) -> Result<String, String> {
+    let tag = import_game_archive_in(path, &versions_dir(), &progress)?;
+    reuse_prepared(&versions_dir(), &tag);
+    complete_assets(&tag);
+    progress(1.);
+    Ok(tag)
+}
+
+fn import_game_archive_in(
+    path: &Path,
+    root: &Path,
+    progress: &impl Fn(f32),
+) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or("Invalid archive name.")?;
+    if Some(name) != ASSET {
+        return Err(format!(
+            "Choose this platform's NIROVA Rust archive: {}",
+            ASSET.unwrap_or("unsupported platform")
+        ));
+    }
+    fs::create_dir_all(root).map_err(|e| e.to_string())?;
+    let mut source = fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut hasher = Sha256::new();
+    let mut block = [0u8; 65536];
+    loop {
+        let n = source.read(&mut block).map_err(|e| e.to_string())?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&block[..n]);
+    }
+    let hash = format!("{:x}", hasher.finalize());
+    let tag = format!("local-{}", &hash[..16]);
+    let target = root.join(&tag);
+    if target.join(COMPLETE).exists() {
+        return Ok(tag);
+    }
+    let partial = root.join(format!(".{tag}.partial"));
+    let result = (|| {
+        fs::create_dir_all(&partial).map_err(|e| e.to_string())?;
+        let snapshot = partial.join(name);
+        fs::copy(path, &snapshot).map_err(|e| e.to_string())?;
+        // Verify the copied snapshot too, so a changing source cannot change the installed identity.
+        let mut file = fs::File::open(&snapshot).map_err(|e| e.to_string())?;
+        let mut hash_copy = Sha256::new();
+        loop {
+            let n = file.read(&mut block).map_err(|e| e.to_string())?;
+            if n == 0 {
+                break;
+            }
+            hash_copy.update(&block[..n]);
+        }
+        if format!("{:x}", hash_copy.finalize()) != hash {
+            return Err("The archive changed while being imported.".into());
+        }
+        progress(0.3);
+        let unpacked = partial.join("unpacked");
+        validate_native_archive(&snapshot, name)?;
+        unpack(&snapshot, name, &unpacked)?;
+        let entries: Vec<_> = fs::read_dir(&unpacked)
+            .map_err(|e| e.to_string())?
+            .collect::<Result<_, _>>()
+            .map_err(|e| e.to_string())?;
+        let top = match entries.as_slice() {
+            [only] if only.path().is_dir() => only.path(),
+            _ => {
+                return Err(
+                    "Choose a packaged NIROVA game build, not a launcher or Java archive.".into(),
+                )
+            }
+        };
+        let prepare = if cfg!(windows) {
+            "horizon-prepare.exe"
+        } else {
+            "horizon-prepare"
+        };
+        for binary in [CLIENT, prepare] {
+            let binary_path = top.join(binary);
+            let meta = fs::symlink_metadata(&binary_path)
+                .map_err(|_| format!("The Rust build is missing {binary}."))?;
+            if !meta.is_file() {
+                return Err(format!("{binary} must be a regular native executable."));
+            }
+            let mut magic = [0u8; 4];
+            fs::File::open(&binary_path)
+                .and_then(|mut f| f.read_exact(&mut magic))
+                .map_err(|e| e.to_string())?;
+            let native = if cfg!(windows) {
+                magic.starts_with(b"MZ")
+            } else if cfg!(target_os = "macos") {
+                matches!(
+                    magic,
+                    [0xcf, 0xfa, 0xed, 0xfe] | [0xce, 0xfa, 0xed, 0xfe] | [0xca, 0xfe, 0xba, 0xbe]
+                )
+            } else {
+                magic == *b"\x7fELF"
+            };
+            if !native {
+                return Err(format!(
+                    "{binary} is not a native executable for this platform."
+                ));
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&binary_path, fs::Permissions::from_mode(0o755))
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        let lock: serde_json::Value = serde_json::from_slice(
+            &fs::read(top.join("research-lock.json"))
+                .map_err(|_| "The build has no resource version manifest.")?,
+        )
+        .map_err(|e| format!("Invalid resource manifest: {e}"))?;
+        if lock["minecraft"]["version"].as_str() != Some(horizon_core::version::VERSION_ID) {
+            return Err(format!(
+                "This launcher prepares resources for Minecraft {}.",
+                horizon_core::version::VERSION_ID
+            ));
+        }
+        progress(0.9);
+        // Never replace an existing version or any player files during a manual import.
+        fs::write(top.join(COMPLETE), "").map_err(|e| e.to_string())?;
+        fs::rename(&top, &target).map_err(|e| e.to_string())?;
+        Ok(tag)
+    })();
+    let _ = fs::remove_dir_all(&partial);
+    result
+}
+
+/// Local package imports accept regular files and directories, never links or escaping paths.
+fn validate_native_archive(path: &Path, name: &str) -> Result<(), String> {
+    let file = fs::File::open(path).map_err(|e| e.to_string())?;
+    let safe_path = |path: &Path| {
+        path.components().all(|c| {
+            matches!(
+                c,
+                std::path::Component::Normal(_) | std::path::Component::CurDir
+            )
+        })
+    };
+    if name.ends_with(".tar.gz") {
+        let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(file));
+        for entry in archive.entries().map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let kind = entry.header().entry_type();
+            if !(kind.is_file() || kind.is_dir())
+                || !safe_path(&entry.path().map_err(|e| e.to_string())?)
+            {
+                return Err("Native archives must contain only regular files and directories within the package.".into());
+            }
+        }
+    } else {
+        let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+        for i in 0..archive.len() {
+            let entry = archive.by_index(i).map_err(|e| e.to_string())?;
+            if entry.enclosed_name().is_none()
+                || entry
+                    .unix_mode()
+                    .is_some_and(|mode| mode & 0o170000 == 0o120000)
+            {
+                return Err(
+                    "Native archives cannot contain links or paths outside the package.".into(),
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn remove(tag: &str) -> Result<(), String> {
     let dir = version_dir(tag);
     // The marker goes first: a version counted as installed until its folder is gone comes back
@@ -1598,169 +1774,15 @@ pub fn local_java_version_ready(minecraft: &Path, id: &str) -> bool {
         .is_file()
 }
 
-/// Find a complete locally installed version, first in the folder the player selected,
-/// then in default launcher folders on this computer. No network call or ownership claim.
-fn find_local_java_folder(selected: &Path, id: &str, known: &[PathBuf]) -> Option<PathBuf> {
-    std::iter::once(selected)
-        .chain(known.iter().map(PathBuf::as_path))
-        .find(|root| local_java_version_ready(root, id))
-        .map(Path::to_path_buf)
-}
-
-/// Paths that can supply already installed Minecraft Java Edition files.
-/// This intentionally does not manufacture a client jar or use a third party's credentials.
-fn existing_java_folders(selected: &Path) -> Vec<PathBuf> {
-    let mut result = vec![
-        selected.to_path_buf(),
-        java_download_dir(),
-        data_dir().join("minecraft"),
-    ];
-    if let Some(folders) = sources::Folders::current() {
-        result.extend(
-            sources::known_folders(sources::Os::current(), &folders)
-                .into_iter()
-                .map(|(_, root)| root),
-        );
-    }
-    result
-}
-
-/// The command that starts a Java instance's Minecraft, for an account that owns the game: its
-/// version downloaded from Mojang the first time (then it starts offline too), the Java it needs
-/// (the instance's own, else one found here, else Mojang's, downloaded), and the game in the
-/// instance's folder. The caller wraps it (`launch::wrap`) and never logs it: it holds the token.
-/// A Java instance's game, ready to start; `server` (`host[:port]`) is joined once it has.
+/// Compatibility entry point for old CLI clients. Java gameplay is disabled;
+/// native resource preparation remains available separately.
 pub fn java_game(
     instance: &crate::instances::Instance,
     server: Option<&str>,
     log: &dyn Fn(String),
 ) -> Result<Command, String> {
-    let game = instance.java.as_ref().ok_or_else(|| {
-        format!(
-            "{} plays NIROVA, not Minecraft: Java Edition",
-            instance.name
-        )
-    })?;
-    let player = account::java_player()?;
-    let guest = player.token.is_empty();
-    let settings = Settings::load();
-    let preferred_download_dir = settings.java_versions_dir.is_some();
-    let download_dir = java_download_dir_for(&settings);
-    let selected = settings
-        .minecraft_dir
-        .filter(|path| path.join("versions").is_dir())
-        .unwrap_or_else(|| download_dir.clone());
-    let minecraft = if guest {
-        let sources = existing_java_folders(&selected);
-        match find_local_java_folder(&selected, &game.minecraft, &sources) {
-            Some(root) => {
-                if root != selected {
-                    log(format!(
-                        "Found installed Minecraft {} automatically in {}",
-                        game.minecraft,
-                        root.display()
-                    ));
-                }
-                root
-            }
-            None => download_dir.clone(),
-        }
-    } else if preferred_download_dir || local_java_version_ready(&download_dir, &game.minecraft) {
-        // Downloads and launches use the explicitly chosen version folder, even before
-        // that folder has a versions/ directory. Existing files take priority too.
-        download_dir.clone()
-    } else {
-        selected
-    };
-    let id = mojang::relative(&game.minecraft)?;
-    let natives = minecraft.join("natives").join(&id);
-    // Each version and loader profile is fetched once; it then starts offline too.
-    let downloaded = |id: &str| -> Result<PathBuf, String> {
-        Ok(minecraft
-            .join("versions")
-            .join(mojang::relative(id)?)
-            .join(".downloaded"))
-    };
-    let marker = downloaded(&game.minecraft)?;
-    // If missing, downloading and verifying an official version also works for guests:
-    // Java receives an offline identity, not an invented Microsoft access token.
-    if !marker.is_file() || !local_java_version_ready(&minecraft, &game.minecraft) {
-        if !local_java_version_ready(&minecraft, &game.minecraft) {
-            let listed = crate::minecraft_versions::load()?;
-            let version = listed.find(&game.minecraft).map_err(|_| {
-                format!(
-                    "The Minecraft {} profile is missing in {}, and no downloadable version was found.",
-                    game.minecraft, minecraft.display()
-                )
-            })?;
-            if guest {
-                // Play is a fresh user request even if an older download was cancelled.
-                mojang::CANCEL.store(false, std::sync::atomic::Ordering::Relaxed);
-                download_version_for_guest_in(&version.id, &version.sha1, &minecraft, log)?;
-            } else {
-                download_version_for_owner_in(&version.id, &version.sha1, &minecraft, log)?;
-            }
-        } else {
-            log(format!("Using installed Minecraft {}", game.minecraft));
-        }
-        fs::write(&marker, "").map_err(|e| format!("{}: {e}", marker.display()))?;
-    }
-    let mut start = game.minecraft.clone();
-    if let Some(loader) = &game.loader {
-        start = loader.kind.profile_id(&loader.version, &game.minecraft);
-        let marker = downloaded(&start)?;
-        if !marker.is_file() {
-            if guest && !local_java_version_ready(&minecraft, &start) {
-                return Err(format!(
-                    "Guest mode cannot download the {} loader profile. Import a complete                      installed version from your .minecraft folder first.",
-                    start
-                ));
-            }
-            if !guest {
-                start =
-                    crate::loaders::install(loader, &game.minecraft, &minecraft, &get_bytes, log)?;
-            }
-            fs::write(downloaded(&start)?, "").map_err(|e| e.to_string())?;
-        }
-    }
-    let file = minecraft
-        .join("versions")
-        .join(mojang::relative(&start)?)
-        .join(format!("{start}.json"));
-    let version = crate::java_launch::resolve(crate::java_launch::read(&file)?, &minecraft)?;
-    let need = crate::java::Need::of(&version);
-    let found = crate::java::pick(
-        &need,
-        game.home.as_deref(),
-        &crate::java::mojang_runtimes(&crate::java::runtimes_dir()),
-        &crate::java::installed(),
-    )?;
-    let runtime = match found {
-        Some(runtime) => runtime,
-        None => {
-            log(format!("Downloading Java {} from Mojang", need.major));
-            crate::java::install(&need, log)?
-        }
-    };
-    let jvm_args: Vec<String> = game.jvm_args.split_whitespace().map(String::from).collect();
-    fs::create_dir_all(&instance.home).map_err(|e| format!("{}: {e}", instance.home.display()))?;
-    crate::java_launch::command(
-        &version,
-        &crate::java_launch::Launch {
-            minecraft: &minecraft,
-            game_dir: &instance.home,
-            natives: &natives,
-            java: &runtime.java(),
-            memory_mb: game
-                .memory_mb
-                .unwrap_or(crate::instances::DEFAULT_MEMORY_MB),
-            jvm_args: &jvm_args,
-            player: &player,
-            os: crate::java_launch::os_name(),
-            window: game.window,
-            server,
-        },
-    )
+    let _ = (instance, server, log);
+    Err("NIROVA launches Rust builds only. Select a NIROVA Rust instance in Versions.".into())
 }
 
 /// What [`download_for_owner`] does with the owner gate's answer: Mojang's files only for its
@@ -3519,6 +3541,9 @@ pub struct Settings {
     /// Panel opacity in percent; older installations retain the default of 75%.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub panel_opacity: Option<u8>,
+    /// Optional pixel typography; ordinary readable text is the default, including old settings.
+    #[serde(default)]
+    pub pixel_text: bool,
     /// Ambient sky animation. Unset enables it unless reduced motion is requested.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub animate_sky: Option<bool>,
@@ -5295,5 +5320,100 @@ pub fn {f}("
             text,
             "Title\n\nSome words and a link (https://x.y).\n\n- one\n- two\n"
         );
+    }
+}
+
+#[cfg(test)]
+mod local_rust_build_tests {
+    use super::*;
+
+    #[test]
+    fn importing_native_packages_is_repeatable_and_rejects_java_without_damaging_installed_builds()
+    {
+        let work = std::env::temp_dir().join(format!("nirova-rust-import-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&work);
+        fs::create_dir_all(&work).unwrap();
+        let versions = work.join("versions");
+        let path = work.join(ASSET.unwrap());
+        let magic: &[u8] = if cfg!(windows) {
+            b"MZnative"
+        } else if cfg!(target_os = "macos") {
+            b"\xcf\xfa\xed\xfenative"
+        } else {
+            b"\x7fELFnative"
+        };
+        let prepare = if cfg!(windows) {
+            "horizon-prepare.exe"
+        } else {
+            "horizon-prepare"
+        };
+        let make_archive = |binary: &[u8]| {
+            let files = [
+                (CLIENT, binary),
+                (prepare, magic),
+                (
+                    "research-lock.json",
+                    b"{\"minecraft\":{\"version\":\"26.3\"}}".as_slice(),
+                ),
+            ];
+            let file = fs::File::create(&path).unwrap();
+            if path.to_str().unwrap().ends_with(".tar.gz") {
+                let mut archive = tar::Builder::new(flate2::write::GzEncoder::new(
+                    file,
+                    flate2::Compression::default(),
+                ));
+                for (name, bytes) in files {
+                    let mut header = tar::Header::new_gnu();
+                    header.set_size(bytes.len() as u64);
+                    header.set_mode(0o644);
+                    header.set_cksum();
+                    archive
+                        .append_data(&mut header, format!("nirova-game/{name}"), bytes)
+                        .unwrap();
+                }
+                archive.into_inner().unwrap().finish().unwrap();
+            } else {
+                let mut archive = zip::ZipWriter::new(file);
+                for (name, bytes) in files {
+                    archive
+                        .start_file(
+                            format!("nirova-game/{name}"),
+                            zip::write::SimpleFileOptions::default(),
+                        )
+                        .unwrap();
+                    archive.write_all(bytes).unwrap();
+                }
+                archive.finish().unwrap();
+            }
+        };
+        make_archive(magic);
+        let tag = import_game_archive_in(&path, &versions, &|_| {}).unwrap();
+        assert_eq!(installed_in(&versions), vec![tag.clone()]);
+        assert_eq!(fs::read(versions.join(&tag).join(CLIENT)).unwrap(), magic);
+        assert_eq!(
+            import_game_archive_in(&path, &versions, &|_| {}).unwrap(),
+            tag
+        );
+        make_archive(b"PKjava-profile");
+        assert!(import_game_archive_in(&path, &versions, &|_| {}).is_err());
+        assert_eq!(installed_in(&versions), vec![tag.clone()]);
+        assert_eq!(fs::read(versions.join(tag).join(CLIENT)).unwrap(), magic);
+        assert!(!fs::read_dir(&versions)
+            .unwrap()
+            .flatten()
+            .any(|e| e.file_name().to_string_lossy().ends_with(".partial")));
+        fs::remove_dir_all(work).unwrap();
+    }
+
+    #[test]
+    fn ordinary_text_is_default_and_pixel_preference_survives_settings_roundtrip() {
+        let mut settings = Settings::parse(r#"{"language":"uk","panel_opacity":50}"#);
+        assert!(!settings.pixel_text);
+        settings.pixel_text = true;
+        let saved = serde_json::to_string(&settings).unwrap();
+        let restored = Settings::parse(&saved);
+        assert!(restored.pixel_text);
+        assert_eq!(restored.panel_opacity, Some(50));
+        assert_eq!(restored.language(), crate::i18n::Language::Ukrainian);
     }
 }

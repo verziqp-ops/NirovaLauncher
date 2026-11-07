@@ -16,9 +16,9 @@ pub fn c(color: u32) -> Hsla {
 pub fn text(step: Step, color: Hsla) -> Div {
     div()
         .font_family(if step.px >= night::DISPLAY.px {
-            theme::DISPLAY_FONT
+            theme::display_font()
         } else {
-            theme::FONT
+            theme::font()
         })
         .font_weight(FontWeight(step.weight as f32))
         .text_size(px(step.px))
@@ -265,7 +265,7 @@ pub fn action(id: impl Into<SharedString>, kind: Action, t: &Theme) -> Stateful<
         .justify_center()
         .gap(px(10.))
         .px(px(16.))
-        .font_family(theme::FONT)
+        .font_family(theme::font())
         .font_weight(FontWeight::MEDIUM)
         .text_size(px(night::UI.px))
         .cursor_pointer();

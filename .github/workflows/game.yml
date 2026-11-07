@@ -145,10 +145,10 @@ jobs:
       - name: Build Nirova game and resource preparer from this checkout
         run: |
           set -euo pipefail
-          target=()
-          [[ -z "${{ matrix.target }}" ]] || target=(--target "${{ matrix.target }}")
-          cargo build --release --locked -p horizon-client --bin horizon-client "${target[@]}"
-          cargo build --release --locked -p horizon-prepare --bin horizon-prepare "${target[@]}"
+          build=(cargo build --release --locked)
+          [[ -z "${{ matrix.target }}" ]] || build+=(--target "${{ matrix.target }}")
+          "${build[@]}" -p horizon-client --bin horizon-client
+          "${build[@]}" -p horizon-prepare --bin horizon-prepare
           out=target/release
           [[ -z "${{ matrix.target }}" ]] || out="target/${{ matrix.target }}/release"
           echo "BUILD_OUT=$out" >> "$GITHUB_ENV"
@@ -233,11 +233,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          target=()
-          [[ -z "${{ matrix.target }}" ]] || target=(--target "${{ matrix.target }}")
-          cargo build --release --locked -p horizon-client --bin horizon-client "${target[@]}"
-          cargo build --release --locked -p horizon-prepare --bin horizon-prepare "${target[@]}"
-          cargo build --release --locked -p horizon-server --bin horizon-server "${target[@]}"
+          build=(cargo build --release --locked)
+          [[ -z "${{ matrix.target }}" ]] || build+=(--target "${{ matrix.target }}")
+          "${build[@]}" -p horizon-client --bin horizon-client
+          "${build[@]}" -p horizon-prepare --bin horizon-prepare
+          "${build[@]}" -p horizon-server --bin horizon-server
           out=target/release
           [[ -z "${{ matrix.target }}" ]] || out="target/${{ matrix.target }}/release"
           echo "BUILD_OUT=$out" >> "$GITHUB_ENV"
@@ -263,7 +263,7 @@ jobs:
             ditto -c -k --norsrc --noextattr --noqtn --keepParent "$bundle" "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}"
           else
             tar -czf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" -C "$GITHUB_WORKSPACE/dist" "nirova-server-${{ matrix.name }}"
-            tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" | grep -q "nirova-server-${{ matrix.name }}/horizon-server"
+            tar -tzf "$GITHUB_WORKSPACE/dist/${{ matrix.asset }}" | grep "nirova-server-${{ matrix.name }}/horizon-server" > /dev/null
           fi
       - uses: actions/upload-artifact@v4
         with:

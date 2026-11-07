@@ -1,6 +1,6 @@
 //! The launcher's view of Nirova's design tokens (`crates/horizon-theme`, described in
 //! `docs/design-system.md`): the night look (`horizon_theme::night`, a night sky or a dawn with
-//! Nirova's accent) in Pixelify Sans, with Geist Mono for paths and codes (all bundled, SIL
+//! Nirova's accent) with readable Bricolage text, optional Pixelify Sans, and Geist Mono for paths and codes (all bundled, SIL
 //! Open Font License). Every screen uses the same Nirova palette and type scale, including the legacy page components.
 use gpui::{rgb, Hsla, WindowAppearance};
 use horizon_launcher::backend::Appearance;
@@ -10,14 +10,30 @@ use std::time::Duration;
 
 pub use tokens::night::{self, Night};
 pub use tokens::{Step, CAPTION, DISPLAY, HEADING, LABEL, MICRO, TITLE, UI, WORDMARK};
-pub const FONT: &str = tokens::PIXEL;
-pub const DISPLAY_FONT: &str = tokens::PIXEL;
-pub const MONO: &str = tokens::MONO;
-/// What the Blocks parts set in their pixel face (headings, navigation, buttons) until their
-/// screens are rebuilt: the night's UI family.
-pub const PIXEL: &str = tokens::PIXEL;
+static PIXEL_TEXT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-pub use tokens::{BLOCK_BEVEL as BEVEL, BLOCK_LIP as LIP};
+pub fn set_pixel_text(enabled: bool) {
+    PIXEL_TEXT.store(enabled, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub fn font() -> &'static str {
+    if PIXEL_TEXT.load(std::sync::atomic::Ordering::Relaxed) {
+        tokens::PIXEL
+    } else {
+        tokens::night::FONT
+    }
+}
+
+pub fn display_font() -> &'static str {
+    if PIXEL_TEXT.load(std::sync::atomic::Ordering::Relaxed) {
+        tokens::PIXEL
+    } else {
+        tokens::night::DISPLAY_FONT
+    }
+}
+pub const MONO: &str = tokens::MONO;
+
+pub use tokens::BLOCK_BEVEL as BEVEL;
 /// Shapes and controls, shared with the game's menus and the website.
 pub use tokens::{CONTROL_LARGE, DISABLED, FIELD, PRESSED, RISE, ROW, SEGMENT};
 

@@ -34,7 +34,7 @@ pub(super) struct JavaChoice {
 impl Default for JavaChoice {
     fn default() -> Self {
         JavaChoice {
-            kind: NewKind::Vanilla,
+            kind: NewKind::Horizon,
             loader: Loader::Fabric,
             version: None,
             snapshots: false,
@@ -242,13 +242,14 @@ impl Launcher {
         .detach();
     }
 
-    /// New instances offer NIROVA Rust and vanilla Java. Fabric/Quilt setup is retained
-    /// only to run existing legacy instances; new mod installs belong to NIROVA Rust.
+    /// Only native Rust instances are offered. Legacy Java metadata stays on disk.
     pub(super) fn kind_tabs(&self, cx: &mut Context<Self>) -> Div {
         let t = self.theme;
         let now = self.instances.dialog.as_ref().map(|d| d.java.kind);
-        div().flex().gap(px(4.)).children(
-            [(NewKind::Horizon, "NIROVA"), (NewKind::Vanilla, "Vanilla")].map(|(kind, label)| {
+        div()
+            .flex()
+            .gap(px(4.))
+            .children([(NewKind::Horizon, "NIROVA Rust")].map(|(kind, label)| {
                 shell::tab(
                     format!("new-kind-{label}"),
                     tr(label),
@@ -259,8 +260,7 @@ impl Launcher {
                     this.pick_kind(kind, cx);
                     cx.notify();
                 }))
-            }),
-        )
+            }))
     }
 
     /// A Java kind's part of the dialog: the version (search, kinds, list), the loader for

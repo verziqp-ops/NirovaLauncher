@@ -40,7 +40,7 @@ pub fn icon(name: &'static str, size: f32, color: Hsla) -> Svg {
 /// Text in the pixel face: headings, navigation, buttons, badges.
 pub fn pixel(size: f32, weight: FontWeight) -> Div {
     div()
-        .font_family(theme::PIXEL)
+        .font_family(theme::font())
         .font_weight(weight)
         .text_size(px(size))
         .line_height(px((size * 1.2).round()))

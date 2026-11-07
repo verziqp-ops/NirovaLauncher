@@ -419,7 +419,7 @@ pub fn selected() -> Instance {
     let all = list();
     backend::Settings::load()
         .instance
-        .and_then(|id| all.iter().find(|i| i.id == id).cloned())
+        .and_then(|id| all.iter().find(|i| i.id == id && i.java.is_none()).cloned())
         .unwrap_or_else(|| all[0].clone())
 }
 

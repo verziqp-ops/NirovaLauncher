@@ -21,9 +21,9 @@ const BANDS: [f32; 6] = [0.2, 0.18, 0.17, 0.15, 0.15, 0.15];
 fn text(step: horizon_theme::Step, color: impl Into<Hsla>) -> Div {
     div()
         .font_family(if step.px >= night::DISPLAY.px {
-            theme::DISPLAY_FONT
+            theme::display_font()
         } else {
-            theme::FONT
+            theme::font()
         })
         .font_weight(FontWeight(step.weight as f32))
         .text_size(px(step.px))
@@ -89,7 +89,7 @@ pub fn render(t: &Theme) -> Div {
         ]
         .map(|(name, w)| {
             div()
-                .font_family(theme::FONT)
+                .font_family(theme::font())
                 .font_weight(FontWeight(w))
                 .text_size(px(18.))
                 .text_color(ink)

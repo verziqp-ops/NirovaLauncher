@@ -1,5 +1,13 @@
 use super::*;
 
+// Legacy profile discovery remains covered for resource import compatibility.
+fn find_local_java_folder(selected: &Path, id: &str, known: &[PathBuf]) -> Option<PathBuf> {
+    std::iter::once(selected)
+        .chain(known.iter().map(PathBuf::as_path))
+        .find(|root| local_java_version_ready(root, id))
+        .map(Path::to_path_buf)
+}
+
 #[test]
 fn selected_jdk_reaches_external_preparers() {
     const CHILD: &str = "HORIZON_LAUNCHER_JAVA_TEST";
@@ -86,10 +94,8 @@ fn selected_jdk_reaches_external_preparers() {
 
 #[test]
 fn local_guest_version_needs_both_profile_and_client_jar() {
-    let root = std::env::temp_dir().join(format!(
-        "nirova-local-java-profile-{}",
-        std::process::id()
-    ));
+    let root =
+        std::env::temp_dir().join(format!("nirova-local-java-profile-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     let version = root.join("versions").join("1.21.4");
     fs::create_dir_all(&version).unwrap();
@@ -97,7 +103,8 @@ fn local_guest_version_needs_both_profile_and_client_jar() {
     fs::write(
         version.join("1.21.4.json"),
         r#"{"id":"1.21.4","mainClass":"net.minecraft.client.main.Main"}"#,
-    ).unwrap();
+    )
+    .unwrap();
     assert!(!local_java_version_ready(&root, "1.21.4"));
     fs::write(version.join("1.21.4.jar"), b"test jar").unwrap();
     assert!(local_java_version_ready(&root, "1.21.4"));
@@ -106,10 +113,8 @@ fn local_guest_version_needs_both_profile_and_client_jar() {
 
 #[test]
 fn guest_discovers_an_installed_java_version_without_creating_game_files() {
-    let root = std::env::temp_dir().join(format!(
-        "nirova-guest-autodiscovery-{}",
-        std::process::id()
-    ));
+    let root =
+        std::env::temp_dir().join(format!("nirova-guest-autodiscovery-{}", std::process::id()));
     let selected = root.join("empty-choice");
     let installed = root.join("existing-minecraft");
     let version = installed.join("versions").join("1.21.4");
@@ -119,8 +124,13 @@ fn guest_discovers_an_installed_java_version_without_creating_game_files() {
     fs::write(
         version.join("1.21.4.json"),
         r#"{"id":"1.21.4","mainClass":"net.minecraft.client.main.Main"}"#,
-    ).unwrap();
-    fs::write(version.join("1.21.4.jar"), b"existing locally installed jar").unwrap();
+    )
+    .unwrap();
+    fs::write(
+        version.join("1.21.4.jar"),
+        b"existing locally installed jar",
+    )
+    .unwrap();
 
     assert_eq!(
         find_local_java_folder(&selected, "1.21.4", &[installed.clone()]),
@@ -134,10 +144,8 @@ fn guest_discovers_an_installed_java_version_without_creating_game_files() {
 
 #[test]
 fn java_version_download_folder_can_be_empty_and_is_persisted() {
-    let root = std::env::temp_dir().join(format!(
-        "nirova-java-version-folder-{}",
-        std::process::id()
-    ));
+    let root =
+        std::env::temp_dir().join(format!("nirova-java-version-folder-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     let empty = root.join("versions-go-here");
     let legacy = root.join("legacy-minecraft");
@@ -210,13 +218,18 @@ fn guest_installer_creates_a_verified_playable_java_version_from_public_manifest
     })
     .to_string();
     let manifest_sha1 = sources::sha1_hex(manifest.as_bytes());
-    let manifest_url = format!(
-        "https://piston-meta.mojang.com/v1/packages/{manifest_sha1}/1.21.4.json"
-    );
+    let manifest_url =
+        format!("https://piston-meta.mojang.com/v1/packages/{manifest_sha1}/1.21.4.json");
     let files = HashMap::from([
         (manifest_url, manifest.into_bytes()),
-        ("https://piston-data.mojang.com/guest-test.jar".to_owned(), client.to_vec()),
-        ("https://piston-meta.mojang.com/guest-assets.json".to_owned(), assets.to_vec()),
+        (
+            "https://piston-data.mojang.com/guest-test.jar".to_owned(),
+            client.to_vec(),
+        ),
+        (
+            "https://piston-meta.mojang.com/guest-assets.json".to_owned(),
+            assets.to_vec(),
+        ),
     ]);
     let asked = std::sync::Mutex::new(Vec::new());
     let fetch = |url: &str| {
@@ -227,9 +240,17 @@ fn guest_installer_creates_a_verified_playable_java_version_from_public_manifest
             .ok_or_else(|| format!("Mock does not have {url}"))
     };
     let cancel = AtomicBool::new(false);
-    let install = || download_version_for_guest_with(
-        "1.21.4", &manifest_sha1, &root, "windows", &fetch, &cancel, &|_| {}
-    );
+    let install = || {
+        download_version_for_guest_with(
+            "1.21.4",
+            &manifest_sha1,
+            &root,
+            "windows",
+            &fetch,
+            &cancel,
+            &|_| {},
+        )
+    };
     assert_eq!(install().unwrap(), root);
     assert_eq!(
         fs::read(root.join("versions/1.21.4/1.21.4.jar")).unwrap(),
@@ -240,6 +261,9 @@ fn guest_installer_creates_a_verified_playable_java_version_from_public_manifest
 
     asked.lock().unwrap().clear();
     install().unwrap();
-    assert!(asked.lock().unwrap().is_empty(), "Complete files should be reused");
+    assert!(
+        asked.lock().unwrap().is_empty(),
+        "Complete files should be reused"
+    );
     fs::remove_dir_all(root).unwrap();
 }

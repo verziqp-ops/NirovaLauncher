@@ -79,7 +79,10 @@ pub(super) struct Instances {
 
 impl Launcher {
     pub(super) fn reload_instances(&mut self) {
-        self.instances.list = instances::list();
+        self.instances.list = instances::list()
+            .into_iter()
+            .filter(|i| i.java.is_none())
+            .collect();
         // A picture may have come or gone with the change.
         self.instances
             .icons
@@ -392,17 +395,6 @@ impl Launcher {
     }
 
     pub(super) fn instance_dialog(&mut self, cx: &mut Context<Self>) -> Option<Stateful<Div>> {
-        // A new Java instance opens with Vanilla selected, so fetch Mojang's version manifest
-        // immediately instead of hiding the version selector behind a second tab click.
-        if self
-            .instances
-            .dialog
-            .as_ref()
-            .is_some_and(|d| d.editing.is_none() && d.java.kind != new_instance::NewKind::Horizon)
-            && matches!(self.instances.versions, new_instance::VersionList::NotAsked)
-        {
-            self.pick_kind(new_instance::NewKind::Vanilla, cx);
-        }
         let t = self.theme;
         let d = self.instances.dialog.as_ref()?;
         let editing_id = d.editing.clone();

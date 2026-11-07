@@ -33,7 +33,7 @@ impl Launcher {
                 .child(
                     div()
                         .flex_1()
-                        .font_family(theme::PIXEL)
+                        .font_family(theme::font())
                         .text_size(px(15.))
                         .font_weight(FontWeight::MEDIUM)
                         .text_color(t.ink)
