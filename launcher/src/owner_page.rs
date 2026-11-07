@@ -277,7 +277,7 @@ fn resource_owner_shown(owner: Option<bool>, player: account::Player) -> Option<
 }
 
 #[cfg(test)]
-mod tests {
+mod guest_preparation_tests {
     use super::*;
 
     #[test]
