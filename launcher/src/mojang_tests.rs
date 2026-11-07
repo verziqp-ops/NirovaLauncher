@@ -176,6 +176,24 @@ fn an_owner_gets_the_official_layout_with_this_systems_libraries() {
     )
     .unwrap();
     assert_eq!(server.asked(), Vec::<String>::new());
+    // A missing library (like lz4-java in a partial install) is repaired without
+    // fetching the already verified client, assets, or other libraries again.
+    fs::remove_file(libraries.join("common/1/common-1.jar")).unwrap();
+    download(
+        &pins,
+        &dir,
+        "linux",
+        3,
+        &|url| server.fetch(url),
+        &GO,
+        &|_| {},
+    )
+    .unwrap();
+    assert_eq!(
+        fs::read(libraries.join("common/1/common-1.jar")).unwrap(),
+        COMMON
+    );
+    assert_eq!(server.asked().len(), 1);
     fs::remove_dir_all(&dir).unwrap();
 }
 

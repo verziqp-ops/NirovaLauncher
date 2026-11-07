@@ -2113,50 +2113,27 @@ pub fn preparer(
         let pins = read_json(&dir.join("research-lock.json"))
             .and_then(|lock| sources::Pins::read(&lock))
             .ok_or("The version's research-lock.json doesn't pin the Minecraft files")?;
-        let own = data_dir().join("minecraft");
-        let mut known = vec![("Horizon's own download", own.clone())];
-        known.extend(
-            sources::Folders::current()
-                .map(|f| sources::known_folders(sources::Os::current(), &f))
-                .unwrap_or_default(),
-        );
-        let fetch = |url: &str| -> Result<Vec<u8>, String> {
-            let mut body = Vec::new();
-            get(url)?
-                .into_reader()
-                .read_to_end(&mut body)
-                .map_err(|e| e.to_string())?;
-            Ok(body)
-        };
-        let linked = data_dir().join("linked-minecraft");
-        // Without a signed-in owner, Mojang's download can't happen: the player's own install
-        // is used instead.
-        let mojang =
-            from == MinecraftFrom::Mojang && account::Accounts::load().has_owner(account::store());
-        if mojang {
-            // Straight from Mojang (what is already there and whole is kept), for an owner only.
+        // Native resources live with the selected Rust installation, including on
+        // a fresh computer. Download only publicly indexed files; no credentials
+        // or multiplayer authentication are fabricated for an offline profile.
+        let own = versions_dir().join("minecraft-resources");
+        let fetch = |url: &str| -> Result<Vec<u8>, String> { get_bytes(url) };
+        if from == MinecraftFrom::Mojang {
             download_for_owner(&pins, &own, &fetch, log)
                 .map_err(|e| e.trim_start_matches("\n  • ").to_string())?;
-            own
         } else {
-            let resolved = if minecraft.is_file() {
-                sources::from_jar(minecraft, &pins, &linked, &fetch, log)
-            } else {
-                sources::resolve(minecraft, &pins, &known, &linked, &fetch, log)
+            let os = match sources::Os::current() {
+                sources::Os::Linux => "linux",
+                sources::Os::MacOs => "osx",
+                sources::Os::Windows => "windows",
             };
-            if reused {
-                assets_folder(resolved, &chosen, &version, log)
-            } else {
-                match resolved? {
-                    sources::Resolved::Folder(dir) => dir,
-                    sources::Resolved::NotFound(checked) => {
-                        let not_found = sources::not_found(&version, &checked, minecraft);
-                        download_for_owner(&pins, &own, &fetch, log).map_err(|e| not_found + &e)?;
-                        own
-                    }
-                }
-            }
+            log(format!(
+                "Preparing NIROVA Rust resources in {}",
+                own.display()
+            ));
+            mojang::download(&pins, &own, os, 8, &fetch, &mojang::CANCEL, log)?;
         }
+        own
     };
     let manifest = minecraft
         .join("versions")
@@ -3904,8 +3881,8 @@ mod tests {
         assert!(asked.lock().unwrap().is_empty());
         let _ = fs::remove_dir_all(&dir);
 
-        // There are two download paths: verified-owner downloads for the preparer,
-        // and the separate offline client installer using Mojang's public manifest.
+        // Verified-owner downloads, the offline installer, and native preparation
+        // use the shared manifest/checksum-verified public downloader.
         let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut files = vec![src.clone()];
         let mut sources = Vec::new();
@@ -3930,7 +3907,7 @@ mod tests {
                     .map(move |_| name.as_str())
             })
             .collect();
-        assert_eq!(calls, ["backend.rs", "backend.rs"]);
+        assert_eq!(calls, ["backend.rs", "backend.rs", "backend.rs"]);
         let backend = &sources.iter().find(|(n, ..)| n == "backend.rs").unwrap().2;
         let body = |f: &str| {
             let start = backend.find(&format!("\nfn {f}(")).unwrap();
