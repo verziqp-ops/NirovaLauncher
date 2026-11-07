@@ -16,10 +16,10 @@ impl Launcher {
             && self.opening.is_none()
     }
 
-    /// `owner` as the window shows it: the developer option that lets offline names play without
-    /// an owner (`dev_options`) hides the gate, as if the keychain hadn't answered yet.
+    /// Guest profiles prepare resources from their own files. Only a selected Microsoft
+    /// profile displays its ownership answer; Mojang downloads keep their backend gate.
     pub(crate) fn owner_shown(&self) -> Option<bool> {
-        self.owner
+        resource_owner_shown(self.owner, self.accounts.player())
     }
 
     /// Opens the screen and starts the sign-in on it.
@@ -264,6 +264,47 @@ mod tests {
         assert_eq!(
             super::short_link("https://login.live.com/oauth20_remoteconnect.srf"),
             "login.live.com/oauth20_remoteconnect.srf"
+        );
+    }
+}
+
+/// A missing license must not replace the guest's local preparation action with sign-in.
+fn resource_owner_shown(owner: Option<bool>, player: account::Player) -> Option<bool> {
+    match player {
+        account::Player::Microsoft(_) => owner,
+        account::Player::Offline(_) | account::Player::GameName => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn guest_preparation_stays_available_without_claiming_microsoft_ownership() {
+        assert_eq!(
+            resource_owner_shown(Some(false), account::Player::Offline("Guest".into())),
+            None
+        );
+        assert_eq!(
+            resource_owner_shown(Some(true), account::Player::Offline("Guest".into())),
+            None
+        );
+        assert_eq!(
+            resource_owner_shown(Some(false), account::Player::GameName),
+            None
+        );
+        assert_eq!(
+            resource_owner_shown(Some(false), account::Player::Microsoft("id".into())),
+            Some(false)
+        );
+        assert_eq!(
+            resource_owner_shown(Some(true), account::Player::Microsoft("id".into())),
+            Some(true)
+        );
+        assert_eq!(
+            resource_owner_shown(None, account::Player::Microsoft("id".into())),
+            None
         );
     }
 }
